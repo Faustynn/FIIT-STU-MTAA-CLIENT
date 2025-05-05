@@ -9,7 +9,7 @@ const AUTH_URL = `${API_URL}authenticate`;
 const REGISTR_URL = `${API_URL}register`;
 const FIND_USER_BY_EMAIL_URL = `${API_URL}user/email/`;
 const CONFIRM_CODE_TO_EMAIL = `${API_URL}user/email/code`;
-const CHANGE_PASSWORD = `${API_URL}change_pass`;
+const CHANGE_PASSWORD = `${API_URL}user/email/password`;
 const REFRESH_TOKENS_URL = `${API_URL}refresh`;
 const SUBJECTS_URL = `${API_URL}resources/subjects`;
 const TEACHERS_URL = `${API_URL}resources/teachers`;
@@ -204,7 +204,7 @@ export const sendNewPasswordRequest = async (email: string,password: string) => 
     if (response.ok) {
       return true;
     } else {
-      console.error(`Authentication failed with status code: ${response.status}`);
+      console.error(`sendNewPasswordRequest failed with status code: ${response.status}`);
       return false;
     }
   } catch (error) {
