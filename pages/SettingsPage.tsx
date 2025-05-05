@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet, Switch, ScrollView } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Switch, ScrollView, Image } from "react-native";
 import { useTheme } from '../components/SettingsController';
-import { H1, XStack, YStack, Text, View, Select, Adapt, Sheet } from "tamagui";
+import { H1, XStack, YStack, Text, View, Select, Adapt, Sheet, Spinner } from "tamagui";
 import { ChevronDown, Check } from '@tamagui/lucide-icons';
+import User from "../components/User";
 
 
 type ComboBoxProps = {
@@ -120,6 +121,31 @@ const SettingsPage = () => {
   const { theme, toggleTheme } = useTheme();
   const isDarkMode = theme === 'dark';
 
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasData, setHasData] = useState(false);
+
+  useEffect(() => {
+    const fetchAndParseUser = async () => {
+      try {
+        const storedUser = await User.fromStorage();
+        if (storedUser) {
+          setUser(storedUser);
+          setHasData(true);
+        } else {
+          setHasData(false);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setHasData(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAndParseUser();
+  }, []);
+
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [language, setLanguage] = useState('en');
@@ -156,6 +182,14 @@ const SettingsPage = () => {
     { label: '100%', value: '100' }
   ];
 
+  if (isLoading) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor={backgroundColor}>
+        <Spinner size="large" color={headerTextColor} />
+      </YStack>
+    );
+  }
+
   return (
     <ScrollView style={[styles.container, { backgroundColor }]}>
       {/* Header */}
@@ -165,8 +199,14 @@ const SettingsPage = () => {
         </H1>
         <XStack alignItems="center" space="$2">
           <YStack alignItems="flex-end">
-            <Text color={subTextColor} fontSize={10}>@nmeredov</Text>
-            <Text color={headerTextColor} fontWeight="bold">Nazar Meredov</Text>
+            {hasData ? (
+              <>
+                <Text color={subTextColor} fontSize={10}>@{user?.login}</Text>
+                <Text color={headerTextColor} fontWeight="bold">{user?.getFullName()}</Text>
+              </>
+            ) : (
+              <Text color={subTextColor} fontSize={10}>@guest</Text>
+            )}
           </YStack>
           <View
             width={40}
@@ -176,10 +216,26 @@ const SettingsPage = () => {
             alignItems="center"
             justifyContent="center"
           >
-            <Text>😏</Text>
+            {hasData && user?.getAvatarBase64() ? (
+              <Image
+                source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                style={{ width: 40, height: 40, borderRadius: 20 }}
+              />
+            ) : (
+              <Text>😏</Text>
+            )}
           </View>
         </XStack>
       </XStack>
+      {!hasData && (
+        <YStack alignItems="center" justifyContent="center" flex={1}>
+          <Text color={subTextColor} fontSize={16}>
+            No data found. Showing default content.
+          </Text>
+        </YStack>
+      )}
+
+
 
       <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
         <Text style={[styles.settingTitle, { color: textColor }]}>Appearance</Text>

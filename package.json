@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
+    "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-navigation/native": "^7.0.3",
     "@react-navigation/stack": "^7.0.4",
     "@tamagui/animations-react-native": "^1.125.8",
@@ -20,6 +21,7 @@
     "@tamagui/shorthands": "^1.125.8",
     "@tamagui/themes": "^1.125.8",
     "@tamagui/web": "^1.126.5",
+    "dotenv": "^16.5.0",
     "expo": "^52.0.37",
     "expo-font": "~13.0.3",
     "expo-splash-screen": "~0.29.22",

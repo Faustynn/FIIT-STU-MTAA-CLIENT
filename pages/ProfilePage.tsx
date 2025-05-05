@@ -1,15 +1,51 @@
-import React, { useState } from 'react';
-import { YStack, H1, Theme, XStack, Text, View, Button, Input } from "tamagui";
+import React, { useEffect, useState } from "react";
+import { YStack, H1, Theme, XStack, Text, View, Button, Input, Spinner } from "tamagui";
 import { useTheme } from '../components/SettingsController';
 import { NavigationProp } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from "react-native";
+import User from "../components/User";
 
 type ProfilePageProps = {
   navigation: NavigationProp<any>;
 };
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('ACCESS_TOKEN');
+    await AsyncStorage.removeItem('REFRESH_TOKEN');
+    await AsyncStorage.removeItem('USER_DATA');
+    navigation.navigate('Login');
+  };
+
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasData, setHasData] = useState(false);
+
+  useEffect(() => {
+    const fetchAndParseUser = async () => {
+      try {
+        const storedUser = await User.fromStorage();
+        if (storedUser) {
+          setUser(storedUser);
+          setHasData(true);
+        } else {
+          setHasData(false);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setHasData(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAndParseUser();
+  }, []);
 
   const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
   const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
@@ -22,6 +58,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const [email, setEmail] = useState('Write your email here');
   const [password, setPassword] = useState('');
 
+  if (isLoading) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor={backgroundColor}>
+        <Spinner size="large" color={headerTextColor} />
+      </YStack>
+    );
+  }
+
   return (
     <Theme name={isDarkMode ? 'dark' : 'light'}>
       <YStack flex={1} backgroundColor={backgroundColor} padding="$0">
@@ -32,8 +76,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
           </H1>
           <XStack alignItems="center" space="$2">
             <YStack alignItems="flex-end">
-              <Text color={subTextColor} fontSize={10}>@nmeredov</Text>
-              <Text color={headerTextColor} fontWeight="bold">Nazar Meredov</Text>
+              {hasData ? (
+                <>
+                  <Text color={subTextColor} fontSize={10}>@{user?.login}</Text>
+                  <Text color={headerTextColor} fontWeight="bold">{user?.getFullName()}</Text>
+                </>
+              ) : (
+                <Text color={subTextColor} fontSize={10}>@guest</Text>
+              )}
             </YStack>
             <View
               width={40}
@@ -43,10 +93,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
               alignItems="center"
               justifyContent="center"
             >
-              <Text>😏</Text>
+              {hasData && user?.getAvatarBase64() ? (
+                <Image
+                  source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                  style={{ width: 40, height: 40, borderRadius: 20 }}
+                />
+              ) : (
+                <Text>😏</Text>
+              )}
             </View>
           </XStack>
         </XStack>
+        {!hasData && (
+          <YStack alignItems="center" justifyContent="center" flex={1}>
+            <Text color={subTextColor} fontSize={16}>
+              No data found. Showing default content.
+            </Text>
+          </YStack>
+        )}
+
+
 
         {/* Main Content */}
         <YStack flex={1} paddingHorizontal="$4" space="$5">
@@ -155,7 +221,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 fontWeight="bold"
                 paddingVertical="$3"
                 borderRadius="$2"
-                onPress={() => navigation.navigate('Login')}
+                onPress={handleLogout}
               >
                 Log Out
               </Button>

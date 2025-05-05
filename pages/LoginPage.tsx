@@ -4,6 +4,8 @@ import { useTheme } from '../components/SettingsController';
 import { Image } from 'react-native';
 import { NavigationProp } from "@react-navigation/native";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { sendAuthenticationRequest } from '../services/apiService'; // Импорт функции для HTTP-запроса
+
 
 const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -11,6 +13,20 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
   const [password, setPassword] = React.useState('');
   const isDarkMode = theme === 'dark';
 
+
+  const handleLogin = async () => {
+    try {
+      // Send HTTP with email and password
+      const response = await sendAuthenticationRequest(email, password);
+      if (response) {
+        navigation.navigate('Main');
+      } else {
+        console.error('Error while login');
+      }
+    } catch (error) {
+      console.error('Error with login request:', error);
+    }
+  };
 
   return (
     <Theme name={theme}>
@@ -133,7 +149,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
             </XStack>
 
             <Button
-              onPress={() => navigation.navigate('Main')}
+              onPress={handleLogin}
               backgroundColor="#79E3A5"
               hoverStyle={{ backgroundColor: '#66D294' }}
               color="#191C22"

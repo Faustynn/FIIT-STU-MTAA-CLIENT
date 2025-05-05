@@ -1,6 +1,8 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "module": "esnext",
+    "target": "es6",
     "strict": true,
     "jsx": "react-jsx",
 
