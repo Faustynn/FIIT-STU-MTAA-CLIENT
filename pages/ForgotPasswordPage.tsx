@@ -3,10 +3,14 @@ import { YStack, Input, Button, Text, Theme, XStack, H1 } from "tamagui";
 import { useTheme } from '../components/SettingsController';
 import { NavigationProp } from '@react-navigation/native';
 import { Image } from "react-native";
+import { ChevronLeft } from "@tamagui/lucide-icons";
+import { sendEmailConfirmationRequest, sendCodeConfirmationRequest, sendNewPasswordRequest } from '../services/apiService';
 
 const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+
+  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
 
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
@@ -15,32 +19,52 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleNext = () => {
-    if (step === 1) {
-      if (!email) {
-        setError('Please enter your email');
-        return;
+  const handleNext = async () => {
+    try {
+      if (step === 1) {
+        if (!email) {
+          setError('Please enter your email');
+          return;
+        }
+        const success = await sendEmailConfirmationRequest(email);
+        if (success) {
+          setError(null);
+          setStep(2);
+        } else {
+          setError('Failed to send verification code. Please try again.');
+        }
+      } else if (step === 2) {
+        if (!verificationCode) {
+          setError('Please enter the verification code');
+          return;
+        }
+        const success = await sendCodeConfirmationRequest(email, verificationCode);
+        if (success) {
+          setError(null);
+          setStep(3);
+        } else {
+          setError('Invalid verification code. Please try again.');
+        }
+      } else if (step === 3) {
+        if (newPassword !== confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        const success = await sendNewPasswordRequest(email, newPassword);
+        if (success) {
+          setError(null);
+          navigation.navigate('Login');
+        } else {
+          setError('Failed to reset password. Please try again.');
+        }
       }
-      setError(null);
-      console.log(`Verification code sent to ${email}`);
-      setStep(2);
-    } else if (step === 2) {
-      if (!verificationCode) {
-        setError('Please enter the verification code');
-        return;
-      }
-      setError(null);
-      console.log(`Verification code verified: ${verificationCode}`);
-      setStep(3);
-    } else if (step === 3) {
-      if (newPassword !== confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
-      setError(null);
-      console.log(`Password reset for ${email}`);
-      navigation.navigate('Login');
+    } catch (err) {
+      setError('An error occurred. Please try again.');
     }
+  };
+
+  const handleGoBack = () => {
+    navigation.goBack();
   };
 
   return (
@@ -53,9 +77,11 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
         backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
       >
         <XStack alignItems="center" marginBottom="$4" space="$0">
-          <Image
-            source={require('../assets/icon.png')}
-            style={{ width: 80, height: 80 }}
+          <Button
+            icon={<ChevronLeft size="$1" />}
+            onPress={handleGoBack}
+            backgroundColor="transparent"
+            color={headerTextColor}
           />
           <H1
             fontSize={32}
@@ -64,6 +90,10 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
           >
             UNIMAP
           </H1>
+          <Image
+            source={require('../assets/icon.png')}
+            style={{ width: 80, height: 80 }}
+          />
         </XStack>
 
         <YStack
@@ -142,6 +172,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
               color="#191C22"
               padding="$3"
               borderRadius="$2"
+              marginTop="$4"
             >
               {step === 3 ? 'Reset Password' : 'Next'}
             </Button>

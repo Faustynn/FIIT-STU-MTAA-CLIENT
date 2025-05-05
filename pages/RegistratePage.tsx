@@ -2,10 +2,20 @@ import React, { useState } from 'react';
 import { YStack, Input, Button, Text, Theme, XStack, H1 } from "tamagui";
 import { useTheme } from '../components/SettingsController';
 import { Image } from "react-native";
+import { ChevronLeft } from "@tamagui/lucide-icons";
+import { NavigationProp } from "@react-navigation/native";
+import { AppStackParamList } from "../navigation/AppNavigator";
+import { sendRegistrationRequest } from "../services/apiService";
 
-const RegistratePage: React.FC = () => {
+type RegistrateProps = {
+  navigation: NavigationProp<AppStackParamList>;
+};
+
+const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+
+  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
 
   const [name, setName] = useState('');
   const [login, setLogin] = useState('');
@@ -14,14 +24,34 @@ const RegistratePage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleRegister = () => {
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleRegister = async () => {
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    setError(null);
-    // TODO: send registration request
-    console.log({ name, login, email, password });
+    const isRegistered = await sendRegistrationRequest(login, name, email, password);
+
+    if (isRegistered) {
+      setSuccessMessage('Registration successful!');
+      setError(null);
+
+      // Clear fields
+      setName('');
+      setLogin('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+    } else {
+      setError('Registration failed. Please try again.');
+      setSuccessMessage(null);
+    }
+  //  console.log({ name, login, email, password });
+  };
+
+  const handleGoBack = () => {
+    navigation.goBack();
   };
 
   return (
@@ -33,11 +63,15 @@ const RegistratePage: React.FC = () => {
         padding="$4"
         backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
       >
+
         <XStack alignItems="center" marginBottom="$4" space="$0">
-          <Image
-            source={require('../assets/icon.png')}
-            style={{ width: 80, height: 80 }}
+          <Button
+            icon={<ChevronLeft size="$1" />}
+            onPress={handleGoBack}
+            backgroundColor="transparent"
+            color={headerTextColor}
           />
+
           <H1
             fontSize={32}
             fontWeight="bold"
@@ -45,6 +79,10 @@ const RegistratePage: React.FC = () => {
           >
             UNIMAP
           </H1>
+          <Image
+            source={require('../assets/icon.png')}
+            style={{ width: 80, height: 80 }}
+          />
         </XStack>
 
         <YStack
@@ -65,7 +103,7 @@ const RegistratePage: React.FC = () => {
             Registration
           </Text>
 
-          <YStack space="$4">
+          <YStack space="$3">
             <Input
               placeholder="Name"
               value={name}
@@ -118,9 +156,16 @@ const RegistratePage: React.FC = () => {
               color="#191C22"
               padding="$3"
               borderRadius="$2"
+              marginTop="$4"
             >
               Register
             </Button>
+
+            {successMessage && (
+              <Text color="$green10" fontSize={14} textAlign="center">
+                {successMessage}
+              </Text>
+            )}
           </YStack>
         </YStack>
       </YStack>

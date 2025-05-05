@@ -9,7 +9,7 @@ const AUTH_URL = `${API_URL}authenticate`;
 const REGISTR_URL = `${API_URL}register`;
 const FIND_USER_BY_EMAIL_URL = `${API_URL}user/email/`;
 const CONFIRM_CODE_TO_EMAIL = `${API_URL}user/email/code`;
-const CHANGE_PASSWORD = `${API_URL}user/email/change_pass`;
+const CHANGE_PASSWORD = `${API_URL}change_pass`;
 const REFRESH_TOKENS_URL = `${API_URL}refresh`;
 const SUBJECTS_URL = `${API_URL}resources/subjects`;
 const TEACHERS_URL = `${API_URL}resources/teachers`;
@@ -131,8 +131,87 @@ export const sendAuthenticationRequest = async (email: string, password: string)
   }
 };
 
+// Send registration request
+export const sendRegistrationRequest = async (login: string,username: string,email: string,password: string) => {
+  try {
+    const response = await fetch(REGISTR_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: `${username}:${email}:${login}:${password}` }),
+    });
 
+    if (response.ok) {
+      return true;
+    } else {
+      console.error(`Authentication failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Registation request failed:', error);
+    return false;
+  }
+}
 
+// Send password change request
+  // Confirm email
+export const sendEmailConfirmationRequest = async (email: string) => {
+  try {
+    const response = await fetch(`${FIND_USER_BY_EMAIL_URL}${email}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+      return true;
+    } else {
+      console.error(`Authentication failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Email confirmation request failed:', error);
+    return false;
+  }
+}
+  // Confirm code
+export const sendCodeConfirmationRequest = async (email: string,code: string) => {
+  try {
+    const response = await fetch(CONFIRM_CODE_TO_EMAIL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: `${email}:${code}` }),
+    });
+
+    if (response.ok) {
+      return true;
+    } else {
+      console.error(`Authentication failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Code confirmation failed:', error);
+    return false;
+  }
+}
+  // Set new password
+export const sendNewPasswordRequest = async (email: string,password: string) => {
+  try {
+    const response = await fetch(CHANGE_PASSWORD, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: `${email}:${password}` }),
+    });
+
+    if (response.ok) {
+      return true;
+    } else {
+      console.error(`Authentication failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('NewPass request failed:', error);
+    return false;
+  }
+}
 
 // Fetch subjects from local storage
 export const fetchSubjects = async () => {
