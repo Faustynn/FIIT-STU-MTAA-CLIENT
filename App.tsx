@@ -3,11 +3,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
 import { TamaguiProvider } from 'tamagui';
 import { NavigationContainer } from '@react-navigation/native';
+import { useColorScheme } from 'react-native';
 import 'react-native-match-media-polyfill';
 
 // components
 import AppNavigator from './navigation/AppNavigator';
-import { ThemeProvider } from './components/SettingsController';
+import { ThemeProvider, useTheme } from './components/SettingsController';
 import config from './tamagui.config';
 
 SplashScreen.preventAutoHideAsync();
@@ -29,6 +30,8 @@ const App = () => {
 
 
   const [appReady, setAppReady] = useState(false);
+  const systemTheme = useColorScheme();
+
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -42,7 +45,7 @@ const App = () => {
   }
 
   return (
-    <TamaguiProvider config={config} defaultTheme="light">
+    <TamaguiProvider config={config} defaultTheme={systemTheme || 'light'}>
       <ThemeProvider>
         <NavigationContainer>
           <AppNavigator />

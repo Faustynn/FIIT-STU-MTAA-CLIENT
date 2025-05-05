@@ -4,7 +4,9 @@ import { useTheme } from '../components/SettingsController';
 import { H1, XStack, YStack, Text, View, Select, Adapt, Sheet, Spinner } from "tamagui";
 import { ChevronDown, Check } from '@tamagui/lucide-icons';
 import User from "../components/User";
-
+import { NavigationProp } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
+import '../utils/i18n';
 
 type ComboBoxProps = {
   value: string;
@@ -15,31 +17,13 @@ type ComboBoxProps = {
   textColor: string;
 };
 
-const ComboBox = ({
-                    value,
-                    onValueChange,
-                    items,
-                    placeholder,
-                    labelColor,
-                    textColor,
-                  }: ComboBoxProps) => {
+const ComboBox = ({ value, onValueChange, items, placeholder, labelColor, textColor }: ComboBoxProps) => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
   return (
-    <Select
-      value={value}
-      onValueChange={onValueChange}
-      disablePreventBodyScroll
-    >
-      <Select.Trigger
-        iconAfter={ChevronDown}
-        borderColor={labelColor}
-        backgroundColor="transparent"
-        padding="$2"
-        borderRadius="$2"
-        borderWidth={1}
-      >
+    <Select value={value} onValueChange={onValueChange} disablePreventBodyScroll>
+      <Select.Trigger iconAfter={ChevronDown} borderColor={labelColor} backgroundColor="transparent" padding="$2" borderRadius="$2" borderWidth={1}>
         <Select.Value color={textColor} placeholder={placeholder} />
       </Select.Trigger>
 
@@ -68,13 +52,7 @@ const ComboBox = ({
         }}
       >
         <Select.Content>
-          <Select.ScrollUpButton
-            alignItems="center"
-            justifyContent="center"
-            position="relative"
-            width="100%"
-            height="$3"
-          >
+          <Select.ScrollUpButton alignItems="center" justifyContent="center" position="relative" width="100%" height="$3">
             <YStack zIndex={10} />
           </Select.ScrollUpButton>
 
@@ -99,13 +77,7 @@ const ComboBox = ({
             </Select.Group>
           </Select.Viewport>
 
-          <Select.ScrollDownButton
-            alignItems="center"
-            justifyContent="center"
-            position="relative"
-            width="100%"
-            height="$3"
-          >
+          <Select.ScrollDownButton alignItems="center" justifyContent="center" position="relative" width="100%" height="$3">
             <YStack zIndex={10} />
           </Select.ScrollDownButton>
         </Select.Content>
@@ -114,16 +86,24 @@ const ComboBox = ({
   );
 };
 
+type SettingsPageProps = {
+  navigation: NavigationProp<any>;
+  onSwipeLockChange: (enabled: boolean) => void;
+};
 
-
-
-const SettingsPage = () => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChange }) => {
   const { theme, toggleTheme } = useTheme();
   const isDarkMode = theme === 'dark';
+  const { t, i18n } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [language, setLanguage] = useState(i18n.language || 'en');
+  const [fontSize, setFontSize] = useState('12');
+  const [contrast, setContrast] = useState('0');
 
   useEffect(() => {
     const fetchAndParseUser = async () => {
@@ -142,16 +122,8 @@ const SettingsPage = () => {
         setIsLoading(false);
       }
     };
-
     fetchAndParseUser();
   }, []);
-
-  const [notifications, setNotifications] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [language, setLanguage] = useState('en');
-  const [fontSize, setFontSize] = useState('12');
-  const [contrast, setContrast] = useState('0');
-
 
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const cardColor = isDarkMode ? '#2a2f3b' : '#F0F0F0';
@@ -161,9 +133,9 @@ const SettingsPage = () => {
   const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
 
   const languages = [
-    { label: 'English', value: 'en' },
-    { label: 'Slovak', value: 'sk' },
-    { label: 'Ukrainian', value: 'uk' }
+    { label: t('en_lang'), value: 'en' },
+    { label: t('sk_lang'), value: 'sk' },
+    { label: t('ua_lang'), value: 'ua' }
   ];
 
   const fontSizes = [
@@ -182,6 +154,11 @@ const SettingsPage = () => {
     { label: '100%', value: '100' }
   ];
 
+  const handleLanguageChange = (value: string) => {
+    setLanguage(value);
+    i18n.changeLanguage(value);
+  };
+
   if (isLoading) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor={backgroundColor}>
@@ -192,11 +169,8 @@ const SettingsPage = () => {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor }]}>
-      {/* Header */}
       <XStack padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
-        <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
-          UNIMAP
-        </H1>
+        <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>UNIMAP</H1>
         <XStack alignItems="center" space="$2">
           <YStack alignItems="flex-end">
             {hasData ? (
@@ -217,73 +191,48 @@ const SettingsPage = () => {
             justifyContent="center"
           >
             {hasData && user?.getAvatarBase64() ? (
-              <Image
-                source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
-                style={{ width: 40, height: 40, borderRadius: 20 }}
-              />
+              <Image source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }} style={{ width: 40, height: 40, borderRadius: 20 }} />
             ) : (
               <Text>😏</Text>
             )}
           </View>
         </XStack>
       </XStack>
+
       {!hasData && (
         <YStack alignItems="center" justifyContent="center" flex={1}>
-          <Text color={subTextColor} fontSize={16}>
-            No data found. Showing default content.
-          </Text>
+          <Text color={subTextColor} fontSize={16}>{t('no_data_found')}</Text>
         </YStack>
       )}
 
-
-
       <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-        <Text style={[styles.settingTitle, { color: textColor }]}>Appearance</Text>
-
+        <Text style={[styles.settingTitle, { color: textColor }]}>{t('appearance')}</Text>
         <View style={styles.settingRow}>
-          <Text style={[styles.settingLabel, { color: textColor }]}>Dark Mode</Text>
-          <Switch
-            value={isDarkMode}
-            onValueChange={toggleTheme}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={isDarkMode ? '#374b6a' : '#f4f3f4'}
-          />
+          <Text style={[styles.settingLabel, { color: textColor }]}>{t('d_mod')}</Text>
+          <Switch value={isDarkMode} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: '#81b0ff' }} thumbColor={isDarkMode ? '#374b6a' : '#f4f3f4'} />
         </View>
       </View>
 
       <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-        <Text style={[styles.settingTitle, { color: textColor }]}>Notifications</Text>
-
+        <Text style={[styles.settingTitle, { color: textColor }]}>{t('notification')}</Text>
         <View style={styles.settingRow}>
-          <Text style={[styles.settingLabel, { color: textColor }]}>Enable Notifications</Text>
-          <Switch
-            value={notifications}
-            onValueChange={setNotifications}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={notifications ? '#374b6a' : '#f4f3f4'}
-          />
+          <Text style={[styles.settingLabel, { color: textColor }]}>{t('en_not')}</Text>
+          <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: '#767577', true: '#81b0ff' }} thumbColor={notifications ? '#374b6a' : '#f4f3f4'} />
         </View>
-
         <View style={styles.settingRow}>
-          <Text style={[styles.settingLabel, { color: textColor }]}>Sound Enabled</Text>
-          <Switch
-            value={soundEnabled}
-            onValueChange={setSoundEnabled}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={soundEnabled ? '#374b6a' : '#f4f3f4'}
-          />
+          <Text style={[styles.settingLabel, { color: textColor }]}>{t('s_not')}</Text>
+          <Switch value={soundEnabled} onValueChange={setSoundEnabled} trackColor={{ false: '#767577', true: '#81b0ff' }} thumbColor={soundEnabled ? '#374b6a' : '#f4f3f4'} />
         </View>
       </View>
 
       <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-        <Text style={[styles.settingTitle, { color: textColor }]}>Language</Text>
+        <Text style={[styles.settingTitle, { color: textColor }]}>{t('language')}</Text>
         <YStack space="$2">
-          <Text color={labelColor} fontSize={16}>Language</Text>
           <ComboBox
             value={language}
-            onValueChange={setLanguage}
+            onValueChange={handleLanguageChange}
             items={languages}
-            placeholder="Select language"
+            placeholder={t('select_language')}
             labelColor={labelColor}
             textColor={textColor}
           />
@@ -291,28 +240,26 @@ const SettingsPage = () => {
       </View>
 
       <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-        <Text style={[styles.settingTitle, { color: textColor }]}>Display Settings</Text>
-
+        <Text style={[styles.settingTitle, { color: textColor }]}>{t('displ_sett')}</Text>
         <YStack space="$4">
           <YStack space="$2">
-            <Text color={labelColor} fontSize={16}>Font Size</Text>
+            <Text color={labelColor} fontSize={16}>{t('font_s')}</Text>
             <ComboBox
               value={fontSize}
               onValueChange={setFontSize}
               items={fontSizes}
-              placeholder="Select font size"
+              placeholder={t('select_font')}
               labelColor={labelColor}
               textColor={textColor}
             />
           </YStack>
-
           <YStack space="$2">
-            <Text color={labelColor} fontSize={16}>Contrast</Text>
+            <Text color={labelColor} fontSize={16}>{t('contrast')}</Text>
             <ComboBox
               value={contrast}
               onValueChange={setContrast}
               items={contrastOptions}
-              placeholder="Select contrast level"
+              placeholder={t('select_contrast')}
               labelColor={labelColor}
               textColor={textColor}
             />
@@ -327,11 +274,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
   },
   settingCard: {
     borderRadius: 8,
@@ -352,11 +294,6 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
   },
-  settingDescription: {
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  }
 });
 
 export default SettingsPage;
