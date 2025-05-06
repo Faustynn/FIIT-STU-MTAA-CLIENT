@@ -5,6 +5,7 @@ import { NavigationProp } from "@react-navigation/native";
 import { fetchTeachers } from '../services/apiService';
 import { Image } from "react-native";
 import User from "../components/User";
+import { useTranslation } from 'react-i18next';
 
 export interface Teacher {
   id: number | string;
@@ -23,6 +24,7 @@ type TeachersPageProps = {
 const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers }) => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +81,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
           setTeachers(data);
           setError(null);
         } catch (err) {
-          setError('Failed to load teachers. Please try again later.');
+          setError(t('no_data_found'));
           console.error('Error fetching teachers:', err);
         } finally {
           setLoading(false);
@@ -88,7 +90,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
 
       loadTeachers();
     }
-  }, [initialTeachers]);
+  }, [initialTeachers, t]);
 
   if (isLoading) {
     return (
@@ -139,24 +141,23 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
         {!hasData && (
           <YStack alignItems="center" justifyContent="center" flex={1}>
             <Text color={subTextColor} fontSize={16}>
-              No data found. Showing default content.
+              {t('no_data_found')}
             </Text>
           </YStack>
         )}
-
 
         {/* Main Content */}
         <YStack flex={1} paddingHorizontal="$4" space="$4">
           {/* Title */}
           <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
-            Teachers
+            {t('teachers')}
           </Text>
 
           {/* Search Bar */}
           <Input
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search for a teacher"
+            placeholder={t('search_teach')}
             placeholderTextColor={subTextColor}
             backgroundColor={inputBackgroundColor}
             borderRadius={8}
@@ -166,7 +167,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
 
           {/* Filters */}
           <YStack space="$2">
-            <Text color={subTextColor} fontSize={14}>Filters</Text>
+            <Text color={subTextColor} fontSize={14}>{t('filters')}</Text>
             <XStack space="$2">
               <View
                 backgroundColor={itemBackgroundColor}
@@ -179,7 +180,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                 width="$12"
                 flex={1}
               >
-                <Text color={headerTextColor}>Role</Text>
+                <Text color={headerTextColor}>{t('role')}</Text>
                 <Text color={headerTextColor}>▼</Text>
               </View>
             </XStack>
@@ -187,23 +188,23 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
 
           {/* Results */}
           <YStack space="$2" flex={1}>
-            <Text color={subTextColor} fontSize={14}>Results</Text>
+            <Text color={subTextColor} fontSize={14}>{t('result')}</Text>
 
             {loading ? (
               <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
                 <Spinner size="large" color={headerTextColor} />
-                <Text color={subTextColor} marginTop="$2">Loading teachers...</Text>
+                <Text color={subTextColor} marginTop="$2">{t('loading')}</Text>
               </YStack>
             ) : error ? (
               <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
                 <Text color="$red10" fontSize={16}>{error}</Text>
-                <Text color={subTextColor} marginTop="$2">Pull down to refresh</Text>
+                <Text color={subTextColor} marginTop="$2">{t('pull_to_refresh')}</Text>
               </YStack>
             ) : filteredTeachers.length === 0 ? (
               <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                <Text color={subTextColor} fontSize={16}>No teachers found</Text>
+                <Text color={subTextColor} fontSize={16}>{t('no_teachers_found')}</Text>
                 {searchQuery && (
-                  <Text color={subTextColor} marginTop="$2">Try adjusting your search</Text>
+                  <Text color={subTextColor} marginTop="$2">{t('adjust_search')}</Text>
                 )}
               </YStack>
             ) : (
@@ -223,7 +224,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                       </Text>
                       <XStack justifyContent="space-between">
                         <Text color={subTextColor} fontSize={14}>
-                          AIS ID: {teacher.aisId}
+                          {t('ais_id')}: {teacher.aisId}
                         </Text>
                         <Text color={subTextColor} fontSize={14}>
                           {teacher.rating}
@@ -231,7 +232,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                       </XStack>
                       {teacher.department && (
                         <Text color={subTextColor} fontSize={14}>
-                          Department: {teacher.department}
+                          {t('department')}: {teacher.department}
                         </Text>
                       )}
                     </YStack>

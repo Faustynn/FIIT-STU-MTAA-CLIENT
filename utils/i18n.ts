@@ -59,6 +59,54 @@ const resources = {
       select_contrast: "Select contrast level",
       no_data_found: "No data found. Showing default content",
 
+      // Subjects Page
+      search_subj: "Search for a subject",
+      filters: "Filters",
+      result: "Results",
+
+      semester: "Semester",
+      subj_type: "Subject Type",
+      p: "compulsory",
+      pv: "semi-compulsory",
+      v: "optional",
+      study_lvl: "Study Level",
+      bc: "Bachelor",
+      ing: "Ingenier",
+
+      // Subjects details
+
+      // Teachers Page
+      search_teach: "Search for a teacher",
+      role: "Roles",
+      garant: "Garant",
+      cvik: "Instructor",
+      predn: "Lecturer",
+
+      // Teachers details
+
+      // Login Page
+      login: "Login",
+      email_field: "Write your email or login",
+      pass_field: "Wrire your password",
+      fgt_pass: "Forgot password?",
+      dnt_hv_acc: "Don't have an account?",
+      reg: "Register!",
+
+      // Register Page
+      registration: "Registration",
+      name: "Username",
+      pass: "Password",
+      conf_pass: "Confirm password",
+
+      // Change Password Page
+      entr_email: "Enter your Email",
+      entr_code: "Enter verification code",
+      verif_code_field: "Verification code",
+      next: "Next",
+      set_new_pass: "Set new Password",
+      new_pass: "New Password",
+      conf_new_pass: "Confirm new Password",
+      rst_pass_btn: "Reset Password",
     },
   },
   sk: {
@@ -88,7 +136,7 @@ const resources = {
 
       // Profile Page
       change_pic: "Zmeniť obrázok",
-      b_premium: "Stať sa prémiovým",
+      b_premium: "Kupiť prémium",
       email: "Email",
       password: "Heslo (Podržte pole na zobrazenie)",
       change_btn: "Zmeniť",
@@ -118,6 +166,54 @@ const resources = {
       select_contrast: "Vyberte úroveň kontrastu",
       no_data_found: "Načítanie zlyhalo. Zobrazujú sa predvolené údaje",
 
+      // Subjects Page
+      search_subj: "Hľadať predmet",
+      filters: "Filtre",
+      result: "Výsledky",
+
+      semester: "Semester",
+      subj_type: "Typ predmetu",
+      p: "povinný",
+      pv: "povinne voliteľný",
+      v: "voliteľný",
+      study_lvl: "Stupeň štúdia",
+      bc: "Bakalár",
+      ing: "Inžinier",
+
+      // Subjects details
+
+      // Teachers Page
+      search_teach: "Hľadať učiteľa",
+      role: "Funkcie",
+      garant: "Garant",
+      cvik: "Cvičiaci",
+      predn: "Prednášajúci",
+
+      // Teachers details
+
+      // Login Page
+      login: "Prihlásenie",
+      email_field: "Zadajte váš email alebo prihlasovacie meno",
+      pass_field: "Zadajte vaše heslo",
+      fgt_pass: "Zabudli ste heslo?",
+      dnt_hv_acc: "Nemáte účet?",
+      reg: "Registrujte sa!",
+
+      // Register Page
+      registration: "Registrácia",
+      name: "Používateľské meno",
+      pass: "Heslo",
+      conf_pass: "Potvrďte heslo",
+
+      // Change Password Page
+      entr_email: "Zadajte váš Email",
+      entr_code: "Zadajte verifikačný kód",
+      verif_code_field: "Verifikačný kód",
+      next: "Ďalej",
+      set_new_pass: "Nastavte nové heslo",
+      new_pass: "Nové heslo",
+      conf_new_pass: "Potvrďte nové heslo",
+      rst_pass_btn: "Obnoviť heslo",
     },
   },
   ua: {
@@ -147,7 +243,7 @@ const resources = {
 
       // Profile Page
       change_pic: "Змінити фото",
-      b_premium: "Стати преміум",
+      b_premium: "Купити преміум",
       email: "Електронна пошта",
       password: "Пароль (Утримуйте поле для перегляду)",
       change_btn: "Змінити",
@@ -177,6 +273,54 @@ const resources = {
       select_contrast: "Виберіть контраст",
       no_data_found: "Немає даних. Показано стандартний контент",
 
+      // Subjects Page
+      search_subj: "Пошук предмета",
+      filters: "Фільтри",
+      result: "Результати",
+
+      semester: "Семестр",
+      subj_type: "Тип предмета",
+      p: "обов'язковий",
+      pv: "частково обов'язковий",
+      v: "вибірковий",
+      study_lvl: "Рівень навчання",
+      bc: "Бакалавр",
+      ing: "Інженер",
+
+      // Subjects details
+
+      // Teachers Page
+      search_teach: "Пошук викладача",
+      role: "Посади",
+      garant: "Гарант",
+      cvik: "Інструктор",
+      predn: "Лектор",
+
+      // Teachers details
+
+      // Login Page
+      login: "Вхід",
+      email_field: "Введіть вашу електронну пошту або логін",
+      pass_field: "Введіть ваш пароль",
+      fgt_pass: "Забули пароль?",
+      dnt_hv_acc: "Немає облікового запису?",
+      reg: "Зареєструватися!",
+
+      // Register Page
+      registration: "Реєстрація",
+      name: "Ім'я користувача",
+      pass: "Пароль",
+      conf_pass: "Підтвердіть пароль",
+
+      // Change Password Page
+      entr_email: "Введіть вашу електронну пошту",
+      entr_code: "Введіть код підтвердження",
+      verif_code_field: "Код підтвердження",
+      next: "Далі",
+      set_new_pass: "Встановіть новий пароль",
+      new_pass: "Новий пароль",
+      conf_new_pass: "Підтвердіть новий пароль",
+      rst_pass_btn: "Скинути пароль",
     },
   },
 };

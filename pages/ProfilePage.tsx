@@ -4,6 +4,7 @@ import { useTheme } from '../components/SettingsController';
 import { NavigationProp } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from "react-native";
+import { useTranslation } from "react-i18next";
 import User from "../components/User";
 
 type ProfilePageProps = {
@@ -11,6 +12,9 @@ type ProfilePageProps = {
 };
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('ACCESS_TOKEN');
@@ -18,9 +22,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
     await AsyncStorage.removeItem('USER_DATA');
     navigation.navigate('Login');
   };
-
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +38,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
           setHasData(false);
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error(t('error_fetching_user'), error);
         setHasData(false);
       } finally {
         setIsLoading(false);
@@ -55,7 +56,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const secondaryButtonColor = '#B3C7EE';
   const dangerButtonColor = '#FF617D';
 
-  const [email, setEmail] = useState('Write your email here');
+  const [email, setEmail] = useState(t(''));
   const [password, setPassword] = useState('');
 
   if (isLoading) {
@@ -82,7 +83,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   <Text color={headerTextColor} fontWeight="bold">{user?.getFullName()}</Text>
                 </>
               ) : (
-                <Text color={subTextColor} fontSize={10}>@guest</Text>
+                <Text color={subTextColor} fontSize={10}>@{t('guest')}</Text>
               )}
             </YStack>
             <View
@@ -107,18 +108,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         {!hasData && (
           <YStack alignItems="center" justifyContent="center" flex={1}>
             <Text color={subTextColor} fontSize={16}>
-              No data found. Showing default content.
+              {t('no_data_found')}
             </Text>
           </YStack>
         )}
-
-
 
         {/* Main Content */}
         <YStack flex={1} paddingHorizontal="$4" space="$5">
           {/* Profile Title */}
           <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
-            Profile
+            {t('profile')}
           </Text>
 
           {/* Profile Info */}
@@ -135,7 +134,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 borderWidth={1}
                 borderColor="#DDDDDD"
               >
-                <Text fontSize={50}>😊</Text>
+                {hasData && user?.getAvatarBase64() ? (
+                  <Image
+                    source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                    style={{ width: 100, height: 100, borderRadius: 20 }}
+                  />
+                ) : (
+                  <Text>😏</Text>
+                )}
               </View>
 
               {/* Change Pic Button */}
@@ -146,15 +152,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 backgroundColor="#3D4049"
                 color="#FFFFFF"
               >
-                Change pic
+                {t('change_pic')}
               </Button>
             </YStack>
 
             {/* User Info */}
             <YStack flex={1} space="$4">
               <YStack>
-                <Text fontSize={22} fontWeight="bold" color={headerTextColor}>Nazar Meredov</Text>
-                <Text fontSize={14} color={subTextColor}>@xmeredov</Text>
+                {hasData ? (
+                  <>
+                    <Text color={headerTextColor} fontSize={22} fontWeight="bold">{user?.getFullName()}</Text>
+                    <Text color={subTextColor} fontSize={14}>@{user?.login}</Text>
+                  </>
+                ) : (
+                  <Text color={subTextColor} fontSize={10}>@{t('guest')}</Text>
+                )}
               </YStack>
 
               {/* Premium Button */}
@@ -165,14 +177,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 paddingVertical="$2"
                 borderRadius="$4"
               >
-                BUY PREMIUM
+                {t('b_premium')}
               </Button>
             </YStack>
           </XStack>
 
           {/* Email Section */}
           <YStack space="$2" marginTop="$2">
-            <Text color={subTextColor} fontSize={14}>Email</Text>
+            <Text color={subTextColor} fontSize={14}>{t('email')}</Text>
             <Input
               value={email}
               onChangeText={setEmail}
@@ -185,7 +197,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
           {/* Password Section */}
           <YStack space="$2">
-            <Text color={subTextColor} fontSize={14}>Password (Hold the field to see)</Text>
+            <Text color={subTextColor} fontSize={14}>{t('password')}</Text>
             <XStack space="$2" alignItems="center">
               <Input
                 flex={1}
@@ -205,14 +217,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 paddingHorizontal="$4"
                 borderRadius="$2"
               >
-                Change
+                {t('change_btn')}
               </Button>
             </XStack>
           </YStack>
 
           {/* Privacy Section */}
           <YStack space="$3" marginTop="$2">
-            <Text color={subTextColor} fontSize={14}>Privacy</Text>
+            <Text color={subTextColor} fontSize={14}>{t('privacy')}</Text>
             <XStack space="$3">
               <Button
                 flex={1}
@@ -223,7 +235,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 borderRadius="$2"
                 onPress={handleLogout}
               >
-                Log Out
+                {t('logout')}
               </Button>
               <Button
                 flex={1}
@@ -233,7 +245,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 paddingVertical="$3"
                 borderRadius="$2"
               >
-                Delete all feedbacks
+                {t('d_comm')}
               </Button>
             </XStack>
           </YStack>

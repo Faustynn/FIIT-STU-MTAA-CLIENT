@@ -5,6 +5,7 @@ import { NavigationProp } from "@react-navigation/native";
 import { fetchSubjects } from '../services/apiService';
 import { Image } from "react-native";
 import User from "../components/User";
+import { useTranslation } from 'react-i18next';
 
 export interface Subject {
   id: number | string;
@@ -23,6 +24,7 @@ type SubjectsPageProps = {
 const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects }) => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +77,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
           setSubjects(data);
           setError(null);
         } catch (err) {
-          setError('Failed to load subjects. Please try again later.');
+          setError(t('no_data_found'));
           console.error('Error fetching subjects:', err);
         } finally {
           setLoading(false);
@@ -84,8 +86,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
 
       loadSubjects();
     }
-  }, [initialSubjects]);
-
+  }, [initialSubjects, t]);
 
   if (isLoading) {
     return (
@@ -136,24 +137,23 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
         {!hasData && (
           <YStack alignItems="center" justifyContent="center" flex={1}>
             <Text color={subTextColor} fontSize={16}>
-              No data found. Showing default content.
+              {t('no_data_found')}
             </Text>
           </YStack>
         )}
-
 
         {/* Main Content */}
         <YStack flex={1} paddingHorizontal="$4" space="$4">
           {/* Title */}
           <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
-            Subjects
+            {t('subjects')}
           </Text>
 
           {/* Search Bar */}
           <Input
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search for a subject"
+            placeholder={t('search_subj')}
             placeholderTextColor={subTextColor}
             backgroundColor={inputBackgroundColor}
             borderRadius={8}
@@ -163,7 +163,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
 
           {/* Filters */}
           <YStack space="$2">
-            <Text color={subTextColor} fontSize={14}>Filters</Text>
+            <Text color={subTextColor} fontSize={14}>{t('filters')}</Text>
             <XStack space="$2">
               <View
                 backgroundColor={itemBackgroundColor}
@@ -175,7 +175,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
                 justifyContent="space-between"
                 width="$10"
               >
-                <Text color={headerTextColor}>Semester</Text>
+                <Text color={headerTextColor}>{t('semester')}</Text>
                 <Text color={headerTextColor}>▼</Text>
               </View>
               <View
@@ -188,7 +188,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
                 justifyContent="space-between"
                 width="$12"
               >
-                <Text color={headerTextColor}>Subject Type</Text>
+                <Text color={headerTextColor}>{t('subj_type')}</Text>
                 <Text color={headerTextColor}>▼</Text>
               </View>
               <View
@@ -201,7 +201,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
                 justifyContent="space-between"
                 width="$10"
               >
-                <Text color={headerTextColor}>Study Level</Text>
+                <Text color={headerTextColor}>{t('study_lvl')}</Text>
                 <Text color={headerTextColor}>▼</Text>
               </View>
             </XStack>
@@ -209,23 +209,23 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
 
           {/* Results */}
           <YStack space="$2" flex={1}>
-            <Text color={subTextColor} fontSize={14}>Results</Text>
+            <Text color={subTextColor} fontSize={14}>{t('result')}</Text>
 
             {loading ? (
               <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
                 <Spinner size="large" color={headerTextColor} />
-                <Text color={subTextColor} marginTop="$2">Loading subjects...</Text>
+                <Text color={subTextColor} marginTop="$2">{t('loading')}</Text>
               </YStack>
             ) : error ? (
               <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
                 <Text color="$red10" fontSize={16}>{error}</Text>
-                <Text color={subTextColor} marginTop="$2">Pull down to refresh</Text>
+                <Text color={subTextColor} marginTop="$2">{t('pull_to_refresh')}</Text>
               </YStack>
             ) : filteredSubjects.length === 0 ? (
               <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                <Text color={subTextColor} fontSize={16}>No subjects found</Text>
+                <Text color={subTextColor} fontSize={16}>{t('no_subjects_found')}</Text>
                 {searchQuery && (
-                  <Text color={subTextColor} marginTop="$2">Try adjusting your search</Text>
+                  <Text color={subTextColor} marginTop="$2">{t('adjust_search')}</Text>
                 )}
               </YStack>
             ) : (
@@ -249,7 +249,7 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
                         </Text>
                       </XStack>
                       <Text color={subTextColor} fontSize={14}>
-                        Guarantee: {subject.guarantor}
+                        {t('guarantee')}: {subject.guarantor}
                       </Text>
                       <Text color={subTextColor} fontSize={14}>
                         {subject.type}, {subject.semester}
@@ -261,8 +261,6 @@ const SubjectsPage: React.FC<SubjectsPageProps> = ({ navigation, initialSubjects
             )}
           </YStack>
         </YStack>
-
-
       </YStack>
     </Theme>
   );
