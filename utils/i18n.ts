@@ -31,11 +31,12 @@ const resources = {
       change_pic: "Change pic",
       b_premium: "Become Premium",
       email: "Email",
-      password: "Password (Hold the field to see)",
+      change_password: "Press to start change Password",
       change_btn: "Change",
       privacy: "Privacy",
       logout: "Logout",
       d_comm: "Delete comments",
+      change_pass_btn: "Change password",
 
       // Settings Page
       appearance: "Appearance",
@@ -138,11 +139,12 @@ const resources = {
       change_pic: "Zmeniť obrázok",
       b_premium: "Kupiť prémium",
       email: "Email",
-      password: "Heslo (Podržte pole na zobrazenie)",
+      change_password: "Stlačte pre zmenu hesla",
       change_btn: "Zmeniť",
       privacy: "Súkromie",
       logout: "Odhlásiť sa",
       d_comm: "Vymazať komentáre",
+      change_pass_btn: "Zmeniť heslo",
 
       // Settings Page
       appearance: "Vzhľad",
@@ -245,11 +247,12 @@ const resources = {
       change_pic: "Змінити фото",
       b_premium: "Купити преміум",
       email: "Електронна пошта",
-      password: "Пароль (Утримуйте поле для перегляду)",
+      change_password: "Натисніть, щоб змінити пароль",
       change_btn: "Змінити",
       privacy: "Конфіденційність",
       logout: "Вийти",
       d_comm: "Видалити коментарі",
+      change_pass_btn: "Змінити пароль",
 
       // Settings Page
       appearance: "Зовнішній вигляд",

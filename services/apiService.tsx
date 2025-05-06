@@ -15,6 +15,7 @@ const SUBJECTS_URL = `${API_URL}resources/subjects`;
 const TEACHERS_URL = `${API_URL}resources/teachers`;
 const LOG_URL = `${API_URL}log`;
 const COMMENTS_URL = `${API_URL}comments/`;
+const PREMIUM_URL = `${API_URL}premium/`;
 
 // Comment API endpoints
 const ALL_TEACHERS_URL = `${API_URL}comments/teacher/`;
@@ -343,3 +344,32 @@ export const fetchTeacherDetails = async (teacherId: string | number) => {
     throw error;
   }
 };
+
+// Buy premium
+export const buyPremium = async (userId: string) => {
+  if (!userId) return false;
+
+  try {
+    const response = await fetch(`${PREMIUM_URL}${userId}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`, },
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      const user = json.user;
+
+      console.log(user);
+      await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
+        return true;
+    } else {
+      console.error(`Buying Premium failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Premium buying request failed:', error);
+    return false;
+  }
+  return true;
+}
+

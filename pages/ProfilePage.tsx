@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import User from "../components/User";
+import { buyPremium, sendRegistrationRequest } from "../services/apiService";
 
 type ProfilePageProps = {
   navigation: NavigationProp<any>;
@@ -26,6 +27,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchAndParseUser = async () => {
@@ -66,6 +70,30 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
       </YStack>
     );
   }
+
+  const handlePremium = async () => {
+    const isChanged = await buyPremium(user?.login || 'none');
+
+    if (isChanged) {
+      setSuccessMessage(t('buy_prem_success'));
+      setError(null);
+    } else {
+      setError(t('buy_prem_failed'));
+      setSuccessMessage(null);
+    }
+  };
+
+  const handleEmailChange = async () => {
+
+  };
+
+  const handledeleteComments = async () => {
+
+  };
+
+  const handlePicture = async () => {
+
+  };
 
   return (
     <Theme name={isDarkMode ? 'dark' : 'light'}>
@@ -151,6 +179,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 paddingHorizontal="$2"
                 backgroundColor="#3D4049"
                 color="#FFFFFF"
+                onPress={handlePicture}
               >
                 {t('change_pic')}
               </Button>
@@ -170,22 +199,27 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
               </YStack>
 
               {/* Premium Button */}
-              <Button
-                backgroundColor={primaryButtonColor}
-                color="#000000"
-                fontWeight="bold"
-                paddingVertical="$2"
-                borderRadius="$4"
-              >
-                {t('b_premium')}
-              </Button>
+              {!user?.isPremium && (
+                <Button
+                  backgroundColor={primaryButtonColor}
+                  color="#000000"
+                  fontWeight="bold"
+                  paddingVertical="$2"
+                  borderRadius="$4"
+                  onPress={handlePremium}
+                >
+                  {t('b_premium')}
+                </Button>
+              )}
             </YStack>
           </XStack>
 
           {/* Email Section */}
           <YStack space="$2" marginTop="$2">
             <Text color={subTextColor} fontSize={14}>{t('email')}</Text>
+            <XStack space="$2" alignItems="center">
             <Input
+              flex={1}
               value={email}
               onChangeText={setEmail}
               backgroundColor={inputBackgroundColor}
@@ -193,33 +227,34 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
               padding="$3"
               color={headerTextColor}
             />
+            <Button
+              backgroundColor={secondaryButtonColor}
+              color="#000000"
+              fontWeight="bold"
+              paddingVertical="$3"
+              paddingHorizontal="$4"
+              borderRadius="$2"
+              onPress={handleEmailChange}
+            >
+              {t('change_btn')}
+            </Button>
+            </XStack>
           </YStack>
 
           {/* Password Section */}
           <YStack space="$2">
-            <Text color={subTextColor} fontSize={14}>{t('password')}</Text>
-            <XStack space="$2" alignItems="center">
-              <Input
-                flex={1}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                backgroundColor={inputBackgroundColor}
-                borderRadius={8}
-                padding="$3"
-                color={headerTextColor}
-              />
-              <Button
-                backgroundColor={secondaryButtonColor}
-                color="#000000"
-                fontWeight="bold"
-                paddingVertical="$3"
-                paddingHorizontal="$4"
-                borderRadius="$2"
-              >
-                {t('change_btn')}
-              </Button>
-            </XStack>
+            <Text color={subTextColor} fontSize={14}>{t('change_password')}</Text>
+            <Button
+              backgroundColor={secondaryButtonColor}
+              color="#000000"
+              fontWeight="bold"
+              paddingVertical="$3"
+              paddingHorizontal="$4"
+              borderRadius="$2"
+              onPress={() => navigation.navigate('ForgotPasswordPage')}
+            >
+              {t('change_pass_btn')}
+            </Button>
           </YStack>
 
           {/* Privacy Section */}
@@ -244,6 +279,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 fontWeight="bold"
                 paddingVertical="$3"
                 borderRadius="$2"
+                onPress={handledeleteComments}
               >
                 {t('d_comm')}
               </Button>
