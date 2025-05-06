@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {startTokenRefreshTask} from '../components/TokenRefresher';
 // API URLs
-const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
+const API_URL = 'http://147.175.162.157:8080/api/unimap_pc/';
 
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
 const GET_NEWS_URL = `${API_URL}news/all`;

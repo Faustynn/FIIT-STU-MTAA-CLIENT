@@ -5,13 +5,14 @@ import { NavigationProp } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Linking, Image } from 'react-native';
 import User from '../components/User';
+import { useTranslation } from "react-i18next";
+import '../utils/i18n';
 
 export interface News {
   id: number | string;
   title: string;
   description: string;
 }
-
 
 type HomePageProps = {
   navigation: NavigationProp<any>;
@@ -22,6 +23,7 @@ const openWebLink = (url: string) => {
 };
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
@@ -120,7 +122,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           <XStack alignItems="center" marginBottom="$3">
             <MaterialIcons name="article" size={20} color={subTextColor} style={{ marginRight: 8 }} />
             <Text fontSize={18} color={subTextColor}>
-              Latest News and Updates:
+              {t('news_upd')}
             </Text>
           </XStack>
 
@@ -133,10 +135,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             width="100%"
           >
             <Text fontSize={20} fontWeight="bold" color={headerTextColor} marginBottom="$2">
-              Title of the thing
+              {t('fiit_dis')}
             </Text>
             <Text fontSize={16} color={subTextColor} lineHeight={22}>
-              Text describing the thing so much precisely as it is only possible...
+              {t('fiit_dis_desc')}
             </Text>
           </YStack>
 
@@ -144,11 +146,9 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           <XStack alignItems="center" marginTop="$4" marginBottom="$3">
             <MaterialIcons name="build" size={20} color={subTextColor} style={{ marginRight: 8 }} />
             <Text fontSize={18} color={subTextColor}>
-              Useful Utilities
+              {t('utils')}
             </Text>
           </XStack>
-
-          {/* Example UtilityLink */}
 
           {/* FIIT Discord */}
           <YStack
@@ -160,10 +160,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             onPress={() => openWebLink("https://discord.gg/dX48acpNS8")}
           >
             <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              FIIT Discord
+              {t('fiit_dis')}
             </Text>
             <Text fontSize={16} color={subTextColor}>
-              Official Discord of STU FIIT, provided by teachers and enthusiastic students
+              {t('fiit_dis_desc')}
             </Text>
           </YStack>
 
@@ -177,10 +177,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             onPress={() => openWebLink("https://www.notion.so/FX-com-54cdb158085e4377b832ece310a5603d")}
           >
             <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              Fx - com
+              {t('fx_com')}
             </Text>
             <Text fontSize={16} color={subTextColor}>
-              Notion page created by a few students to help others. Here, you can read and download materials for various subjects
+              {t('fx_com_desc')}
             </Text>
           </YStack>
 
@@ -194,10 +194,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             onPress={() => openWebLink("https://protective-april-ef1.notion.site/SD-Mladost-abe968a31d404360810b53acbbb357cc")}
           >
             <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              Mladost Guide
+              {t('mladost')}
             </Text>
             <Text fontSize={16} color={subTextColor}>
-              Notion page for students who want to move into or already live in the Mladost dormitory, where you can find many useful tips
+              {t('mladost_desc')}
             </Text>
           </YStack>
 
@@ -211,10 +211,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             onPress={() => openWebLink("https://t.me/fiitstu")}
           >
             <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              FIIT Telegram
+              {t('fiit_tg')}
             </Text>
             <Text fontSize={16} color={subTextColor}>
-              Telegram channel for foreign students, provided by enthusiastic students
+              {t('fiit_tg_desc')}
             </Text>
           </YStack>
         </ScrollView>

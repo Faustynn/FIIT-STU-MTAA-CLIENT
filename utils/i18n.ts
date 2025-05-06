@@ -4,6 +4,13 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   en: {
     translation: {
+      // Navigation
+      home: "Home",
+      profile: "Profile",
+      settings: "Settings",
+      subjects: "Subjects",
+      teachers: "Teachers",
+
       // Home Page
       news_upd: "Latest News and Updates",
       utils: "Useful Utilities",
@@ -21,7 +28,6 @@ const resources = {
       fiit_tg_desc: "Telegram channel for foreign students, provided by enthusiastic students",
 
       // Profile Page
-      profile: "Profile",
       change_pic: "Change pic",
       b_premium: "Become Premium",
       email: "Email",
@@ -57,6 +63,13 @@ const resources = {
   },
   sk: {
     translation: {
+      // Navigation
+      home: "Domov",
+      profile: "Profil",
+      settings: "Nastavenia",
+      subjects: "Predmety",
+      teachers: "Učitelia",
+
       // Home Page
       news_upd: "Najnovšie správy a aktualizácie",
       utils: "Užitočné nástroje",
@@ -74,7 +87,6 @@ const resources = {
       fiit_tg_desc: "Telegram kanál pre zahraničných študentov, spravovaný nadšenými študentmi",
 
       // Profile Page
-      profile: "Profil",
       change_pic: "Zmeniť obrázok",
       b_premium: "Stať sa prémiovým",
       email: "Email",
@@ -110,6 +122,13 @@ const resources = {
   },
   ua: {
     translation: {
+      // Navigation
+      home: "Головна",
+      profile: "Профіль",
+      settings: "Налаштуваня",
+      subjects: "Предмети",
+      teachers: "Викладачі",
+
       // Home Page
       news_upd: "Останні новини та оновлення",
       utils: "Корисні інструменти",
@@ -127,7 +146,6 @@ const resources = {
       fiit_tg_desc: "Телеграм-канал для іноземних студентів, створений активними студентами",
 
       // Profile Page
-      profile: "Профіль",
       change_pic: "Змінити фото",
       b_premium: "Стати преміум",
       email: "Електронна пошта",

@@ -15,6 +15,8 @@ import { NavigationProp } from '@react-navigation/native';
 import LoginPage from "../pages/LoginPage";
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import RegistratePage from '../pages/RegistratePage';
+import { useTranslation } from "react-i18next";
+import '../utils/i18n';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -40,12 +42,14 @@ const TabContent = ({ navigation }: TabContentProps) => {
   const isDarkMode = theme === 'dark';
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const { t, i18n } = useTranslation();
+
   const tabs = [
-    { key: 'home', title: 'Home', icon: 'home', component: () => <HomePage navigation={navigation} /> },
-    { key: 'subjects', title: 'Subjects', icon: 'book', component: () => <SubjectsPage navigation={navigation} /> },
-    { key: 'profile', title: 'Profile', icon: 'person', component: () => <ProfilePage navigation={navigation} /> },
-    { key: 'teachers', title: 'Teachers', icon: 'school', component: () => <TeachersPage navigation={navigation} /> },
-    { key: 'settings', title: 'Settings', icon: 'settings', component: () => <SettingsPage navigation={navigation} onSwipeLockChange={setSwipingDisabled} /> },
+    { key: 'home', title: t('home'), icon: 'home', component: () => <HomePage navigation={navigation} /> },
+    { key: 'subjects', title: t('subjects'), icon: 'book', component: () => <SubjectsPage navigation={navigation} /> },
+    { key: 'profile', title: t('profile'), icon: 'person', component: () => <ProfilePage navigation={navigation} /> },
+    { key: 'teachers', title: t('teachers'), icon: 'school', component: () => <TeachersPage navigation={navigation} /> },
+    { key: 'settings', title: t('settings'), icon: 'settings', component: () => <SettingsPage navigation={navigation} onSwipeLockChange={setSwipingDisabled} /> },
   ];
 
   const changeTab = (newIndex: number) => {
