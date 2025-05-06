@@ -193,7 +193,7 @@ const resources = {
 
       // Login Page
       login: "Prihlásenie",
-      email_field: "Zadajte váš email alebo prihlasovacie meno",
+      email_field: "Zadajte váš email alebo username",
       pass_field: "Zadajte vaše heslo",
       fgt_pass: "Zabudli ste heslo?",
       dnt_hv_acc: "Nemáte účet?",

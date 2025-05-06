@@ -6,6 +6,7 @@ import { ChevronLeft } from "@tamagui/lucide-icons";
 import { NavigationProp } from "@react-navigation/native";
 import { AppStackParamList } from "../navigation/AppNavigator";
 import { sendRegistrationRequest } from "../services/apiService";
+import { useTranslation } from 'react-i18next';
 
 type RegistrateProps = {
   navigation: NavigationProp<AppStackParamList>;
@@ -13,6 +14,7 @@ type RegistrateProps = {
 
 const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const isDarkMode = theme === 'dark';
 
   const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
@@ -23,18 +25,17 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('pass_mismatch'));
       return;
     }
     const isRegistered = await sendRegistrationRequest(login, name, email, password);
 
     if (isRegistered) {
-      setSuccessMessage('Registration successful!');
+      setSuccessMessage(t('reg_success'));
       setError(null);
 
       // Clear fields
@@ -44,10 +45,9 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
       setPassword('');
       setConfirmPassword('');
     } else {
-      setError('Registration failed. Please try again.');
+      setError(t('reg_failed'));
       setSuccessMessage(null);
     }
-  //  console.log({ name, login, email, password });
   };
 
   const handleGoBack = () => {
@@ -63,7 +63,6 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
         padding="$4"
         backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
       >
-
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Button
             icon={<ChevronLeft size="$1" />}
@@ -71,7 +70,6 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
             backgroundColor="transparent"
             color={headerTextColor}
           />
-
           <H1
             fontSize={32}
             fontWeight="bold"
@@ -100,26 +98,26 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
             marginBottom="$4"
             textAlign="center"
           >
-            Registration
+            {t('registration')}
           </Text>
 
           <YStack space="$3">
             <Input
-              placeholder="Name"
+              placeholder={t('name')}
               value={name}
               onChangeText={setName}
               backgroundColor="transparent"
               color={isDarkMode ? '#FFFFFF' : '$gray800'}
             />
             <Input
-              placeholder="Login"
+              placeholder={t('login')}
               value={login}
               onChangeText={setLogin}
               backgroundColor="transparent"
               color={isDarkMode ? '#FFFFFF' : '$gray800'}
             />
             <Input
-              placeholder="Email"
+              placeholder={t('email_field')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -127,7 +125,7 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
               color={isDarkMode ? '#FFFFFF' : '$gray800'}
             />
             <Input
-              placeholder="Password"
+              placeholder={t('pass')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -135,7 +133,7 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
               color={isDarkMode ? '#FFFFFF' : '$gray800'}
             />
             <Input
-              placeholder="Confirm Password"
+              placeholder={t('conf_pass')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -158,7 +156,7 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
               borderRadius="$2"
               marginTop="$4"
             >
-              Register
+              {t('reg')}
             </Button>
 
             {successMessage && (

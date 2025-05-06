@@ -4,27 +4,26 @@ import { useTheme } from '../components/SettingsController';
 import { Image } from 'react-native';
 import { NavigationProp } from "@react-navigation/native";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { sendAuthenticationRequest } from '../services/apiService'; // Импорт функции для HTTP-запроса
-
+import { sendAuthenticationRequest } from '../services/apiService';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const isDarkMode = theme === 'dark';
 
-
   const handleLogin = async () => {
     try {
-      // Send HTTP with email and password
       const response = await sendAuthenticationRequest(email, password);
       if (response) {
         navigation.navigate('Main');
       } else {
-        console.error('Error while login');
+        console.error(t('login_error'));
       }
     } catch (error) {
-      console.error('Error with login request:', error);
+      console.error(t('login_error'), error);
     }
   };
 
@@ -67,7 +66,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
             marginBottom="$4"
             textAlign="center"
           >
-            Log In
+            {t('login')}
           </H2>
 
           <YStack space="$4">
@@ -78,7 +77,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                 color={isDarkMode ? '#79E3A5' : '$blue600'}
               />
               <Input
-                placeholder="Write your login or email"
+                placeholder={t('email_field')}
                 value={email}
                 onChangeText={setEmail}
                 flex={1}
@@ -98,7 +97,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                 color={isDarkMode ? '#79E3A5' : '$blue600'}
               />
               <Input
-                placeholder="Write your password"
+                placeholder={t('pass_field')}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -122,7 +121,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                 cursor="pointer"
                 onPress={() => navigation.navigate('ForgotPasswordPage')}
               >
-                Forgot Password?
+                {t('fgt_pass')}
               </Text>
 
               <XStack alignItems="center" space="$1">
@@ -132,7 +131,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                   fontWeight="500"
                   color={isDarkMode ? '#FFFFFF' : '$gray800'}
                 >
-                  Don't have an account?
+                  {t('dnt_hv_acc')}
                 </Text>
                 <Text
                   textAlign="right"
@@ -143,7 +142,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                   cursor="pointer"
                   onPress={() => navigation.navigate('RegistratePage')}
                 >
-                  Register!
+                  {t('reg')}
                 </Text>
               </XStack>
             </XStack>
@@ -156,7 +155,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
               padding="$3"
               borderRadius="$2"
             >
-              Log In
+              {t('login')}
             </Button>
           </YStack>
         </YStack>

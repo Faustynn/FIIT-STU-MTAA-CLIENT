@@ -5,9 +5,11 @@ import { NavigationProp } from '@react-navigation/native';
 import { Image } from "react-native";
 import { ChevronLeft } from "@tamagui/lucide-icons";
 import { sendEmailConfirmationRequest, sendCodeConfirmationRequest, sendNewPasswordRequest } from '../services/apiService';
+import { useTranslation } from 'react-i18next';
 
 const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const isDarkMode = theme === 'dark';
 
   const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
@@ -23,7 +25,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
     try {
       if (step === 1) {
         if (!email) {
-          setError('Please enter your email');
+          setError(t('entr_email'));
           return;
         }
         const success = await sendEmailConfirmationRequest(email);
@@ -31,11 +33,11 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
           setError(null);
           setStep(2);
         } else {
-          setError('Failed to send verification code. Please try again.');
+          setError(t('email_error'));
         }
       } else if (step === 2) {
         if (!verificationCode) {
-          setError('Please enter the verification code');
+          setError(t('entr_code'));
           return;
         }
         const success = await sendCodeConfirmationRequest(email, verificationCode);
@@ -43,11 +45,11 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
           setError(null);
           setStep(3);
         } else {
-          setError('Invalid verification code. Please try again.');
+          setError(t('code_error'));
         }
       } else if (step === 3) {
         if (newPassword !== confirmPassword) {
-          setError('Passwords do not match');
+          setError(t('pass_mismatch'));
           return;
         }
         const success = await sendNewPasswordRequest(email, newPassword);
@@ -55,11 +57,11 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
           setError(null);
           navigation.navigate('Login');
         } else {
-          setError('Failed to reset password. Please try again.');
+          setError(t('reset_error'));
         }
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(t('general_error'));
     }
   };
 
@@ -111,15 +113,15 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
             marginBottom="$4"
             textAlign="center"
           >
-            {step === 1 && 'Enter Your Email'}
-            {step === 2 && 'Enter Verification Code'}
-            {step === 3 && 'Set New Password'}
+            {step === 1 && t('entr_email')}
+            {step === 2 && t('entr_code')}
+            {step === 3 && t('set_new_pass')}
           </Text>
 
           <YStack space="$4">
             {step === 1 && (
               <Input
-                placeholder="Email"
+                placeholder={t('email_field')}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -130,7 +132,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
 
             {step === 2 && (
               <Input
-                placeholder="Verification Code"
+                placeholder={t('verif_code_field')}
                 value={verificationCode}
                 onChangeText={setVerificationCode}
                 backgroundColor="transparent"
@@ -141,7 +143,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
             {step === 3 && (
               <>
                 <Input
-                  placeholder="New Password"
+                  placeholder={t('new_pass')}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry
@@ -149,7 +151,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
                   color={isDarkMode ? '#FFFFFF' : '$gray800'}
                 />
                 <Input
-                  placeholder="Confirm New Password"
+                  placeholder={t('conf_new_pass')}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
@@ -174,7 +176,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
               borderRadius="$2"
               marginTop="$4"
             >
-              {step === 3 ? 'Reset Password' : 'Next'}
+              {step === 3 ? t('rst_pass_btn') : t('next')}
             </Button>
           </YStack>
         </YStack>
