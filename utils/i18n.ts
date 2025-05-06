@@ -300,10 +300,10 @@ const resources = {
 
       // Login Page
       login: "Вхід",
-      email_field: "Введіть вашу електронну пошту або логін",
+      email_field: "Введіть вашу пошту або логін",
       pass_field: "Введіть ваш пароль",
       fgt_pass: "Забули пароль?",
-      dnt_hv_acc: "Немає облікового запису?",
+      dnt_hv_acc: "Немає запису?",
       reg: "Зареєструватися!",
 
       // Register Page

@@ -1,18 +1,21 @@
-import React from 'react';
-import { YStack, H1, H2, Input, Button, Text, Theme, XStack } from 'tamagui';
+import React, { useState } from "react";
+import { YStack, H1, H2, Input, Button, Text, Theme, XStack, View} from "tamagui";
 import { useTheme } from '../components/SettingsController';
-import { Image } from 'react-native';
+import { StyleSheet, Image } from 'react-native';
 import { NavigationProp } from "@react-navigation/native";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { sendAuthenticationRequest } from '../services/apiService';
 import { useTranslation } from 'react-i18next';
+import '../utils/i18n';
+import { ComboBox} from "../components/ComboBox";
 
 const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const isDarkMode = theme === 'dark';
+  const [language, setLanguage] = useState(i18n.language || 'en');
 
   const handleLogin = async () => {
     try {
@@ -27,8 +30,39 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
     }
   };
 
+  const handleLanguageChange = (value: string) => {
+    setLanguage(value);
+    i18n.changeLanguage(value);
+  };
+  const languages = [
+    { label: t('en_lang'), value: 'en' },
+    { label: t('sk_lang'), value: 'sk' },
+    { label: t('ua_lang'), value: 'ua' }
+  ];
+
+  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
+  const cardColor = isDarkMode ? '#2a2f3b' : '#F0F0F0';
+  const labelColor = isDarkMode ? '#A0A7B7' : '#555555';
+
   return (
     <Theme name={theme}>
+      <View
+        style={[
+          styles.settingCard,
+          { backgroundColor: cardColor, position: 'absolute', top: 16, right: 16, zIndex: 1 },
+        ]}
+      >
+        <YStack space="$2">
+          <ComboBox
+            value={language}
+            onValueChange={handleLanguageChange}
+            items={languages}
+            placeholder={t('select_language')}
+            labelColor={labelColor}
+            textColor={textColor}
+          />
+        </YStack>
+      </View>
       <YStack
         flex={1}
         alignItems="center"
@@ -36,6 +70,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
         padding="$4"
         backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
       >
+
         {/* Header */}
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Image
@@ -163,5 +198,31 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
     </Theme>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  settingCard: {
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  settingTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  settingLabel: {
+    fontSize: 16,
+  },
+});
 
 export default LoginPage;
