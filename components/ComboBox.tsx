@@ -1,7 +1,7 @@
 import { useTheme } from "./SettingsController";
 import { Adapt, Select, Sheet, YStack } from "tamagui";
-import { Check, ChevronDown } from "@tamagui/lucide-icons";
 import React from "react";
+import { MaterialIcons } from "@expo/vector-icons";
 
 type ComboBoxProps = {
   value: string;
@@ -17,7 +17,7 @@ export const ComboBox = ({ value, onValueChange, items, placeholder, labelColor,
 
   return (
     <Select value={value} onValueChange={onValueChange} disablePreventBodyScroll>
-      <Select.Trigger iconAfter={ChevronDown} borderColor={labelColor} backgroundColor="transparent" padding="$2" borderRadius="$2" borderWidth={1}>
+      <Select.Trigger icon={<MaterialIcons name="chevron-left" size={24} color="black" />} borderColor={labelColor} backgroundColor="transparent" padding="$2" borderRadius="$2" borderWidth={1}>
         <Select.Value color={textColor} placeholder={placeholder} />
       </Select.Trigger>
 
@@ -64,7 +64,7 @@ export const ComboBox = ({ value, onValueChange, items, placeholder, labelColor,
                 >
                   <Select.ItemText color={textColor}>{item.label}</Select.ItemText>
                   <Select.ItemIndicator marginLeft="auto">
-                    <Check size={16} />
+                    <MaterialIcons name="check" size={16} />
                   </Select.ItemIndicator>
                 </Select.Item>
               ))}

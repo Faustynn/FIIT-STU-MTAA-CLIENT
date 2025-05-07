@@ -5,7 +5,17 @@
     "version": "1.0.0",
 
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "s_icon_0": "./assets/avatars/0.png",
+      "s_icon_1": "./assets/avatars/1.png",
+      "s_icon_2": "./assets/avatars/2.png",
+      "s_icon_3": "./assets/avatars/3.png",
+      "s_icon_4": "./assets/avatars/4.png",
+      "s_icon_5": "./assets/avatars/5.png",
+      "s_icon_6": "./assets/avatars/6.png",
+      "s_icon_7": "./assets/avatars/7.png",
+      "s_icon_8": "./assets/avatars/8.png",
+      "s_icon_9": "./assets/avatars/9.png"
     },
 
     "experiments": {

@@ -3,9 +3,9 @@ import { YStack, Input, Button, Text, Theme, XStack, H1 } from "tamagui";
 import { useTheme } from '../components/SettingsController';
 import { NavigationProp } from '@react-navigation/native';
 import { Image } from "react-native";
-import { ChevronLeft } from "@tamagui/lucide-icons";
 import { sendEmailConfirmationRequest, sendCodeConfirmationRequest, sendNewPasswordRequest } from '../services/apiService';
 import { useTranslation } from 'react-i18next';
+import { MaterialIcons } from "@expo/vector-icons";
 
 const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -80,7 +80,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
       >
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Button
-            icon={<ChevronLeft size="$1" />}
+            icon={<MaterialIcons name="chevron-left" size={24} color="black" />}
             onPress={handleGoBack}
             backgroundColor="transparent"
             color={headerTextColor}

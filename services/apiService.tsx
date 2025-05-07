@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {startTokenRefreshTask} from '../components/TokenRefresher';
+import {User} from '../components/User'
+import { Platform } from 'react-native';
+
 // API URLs
-const API_URL = 'http://147.175.162.157:8080/api/unimap_pc/';
+const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
 
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
 const GET_NEWS_URL = `${API_URL}news/all`;
@@ -16,6 +19,9 @@ const TEACHERS_URL = `${API_URL}resources/teachers`;
 const LOG_URL = `${API_URL}log`;
 const COMMENTS_URL = `${API_URL}comments/`;
 const PREMIUM_URL = `${API_URL}premium/`;
+const CHANGE_USERNAME_URL = `${API_URL}change_username`;
+const CHANGE_USER_EMAIL_URL = `${API_URL}change_email`;
+const CHANGE_USER_AVATAR_URL = `${API_URL}change_avatar?fileName=`;
 
 // Comment API endpoints
 const ALL_TEACHERS_URL = `${API_URL}comments/teacher/`;
@@ -107,9 +113,9 @@ export const sendAuthenticationRequest = async (email: string, password: string)
       const refreshToken = extractRefreshToken(response);
 
       if (accessToken && refreshToken) {
-      //  console.log('Access ', accessToken);
-      //  console.log('Refresh ', refreshToken);
-      //  console.log('User :', user);
+        //  console.log('Access ', accessToken);
+        //  console.log('Refresh ', refreshToken);
+        //  console.log('User :', user);
         await AsyncStorage.setItem('ACCESS_TOKEN', accessToken);
         await AsyncStorage.setItem('REFRESH_TOKEN', refreshToken);
         await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
@@ -154,7 +160,7 @@ export const sendRegistrationRequest = async (login: string,username: string,ema
 }
 
 // Send password change request
-  // Confirm email
+// Confirm email
 export const sendEmailConfirmationRequest = async (email: string) => {
   try {
     const response = await fetch(`${FIND_USER_BY_EMAIL_URL}${email}`, {
@@ -173,7 +179,7 @@ export const sendEmailConfirmationRequest = async (email: string) => {
     return false;
   }
 }
-  // Confirm code
+// Confirm code
 export const sendCodeConfirmationRequest = async (email: string,code: string) => {
   try {
     const response = await fetch(CONFIRM_CODE_TO_EMAIL, {
@@ -193,7 +199,7 @@ export const sendCodeConfirmationRequest = async (email: string,code: string) =>
     return false;
   }
 }
-  // Set new password
+// Set new password
 export const sendNewPasswordRequest = async (email: string,password: string) => {
   try {
     const response = await fetch(CHANGE_PASSWORD, {
@@ -217,40 +223,40 @@ export const sendNewPasswordRequest = async (email: string,password: string) => 
 // Fetch subjects from local storage
 export const fetchSubjects = async () => {
 
-    return [
-      {
-        id: 1,
-        name: 'Web Technologies',
-        code: 'WTECH_B',
-        guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
-        type: 'Obligatory',
-        semester: 'Winter Semester'
-      },
-      {
-        id: 2,
-        name: 'System Programming in Assembly',
-        code: 'SPAASM_B',
-        guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-        type: 'Optional',
-        semester: 'Summer Semester'
-      },
-      {
-        id: 3,
-        name: 'Probability and Statistics',
-        code: 'PAS_B',
-        guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-        type: 'Optional',
-        semester: 'Winter Semester'
-      },
-      {
-        id: 4,
-        name: 'Programming in Rust Language',
-        code: 'RUST_B',
-        guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-        type: 'Optional',
-        semester: 'Summer Semester'
-      }
-    ];
+  return [
+    {
+      id: 1,
+      name: 'Web Technologies',
+      code: 'WTECH_B',
+      guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
+      type: 'Obligatory',
+      semester: 'Winter Semester'
+    },
+    {
+      id: 2,
+      name: 'System Programming in Assembly',
+      code: 'SPAASM_B',
+      guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+      type: 'Optional',
+      semester: 'Summer Semester'
+    },
+    {
+      id: 3,
+      name: 'Probability and Statistics',
+      code: 'PAS_B',
+      guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
+      type: 'Optional',
+      semester: 'Winter Semester'
+    },
+    {
+      id: 4,
+      name: 'Programming in Rust Language',
+      code: 'RUST_B',
+      guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
+      type: 'Optional',
+      semester: 'Summer Semester'
+    }
+  ];
 
 };
 // Fetch concrete subject from local storage
@@ -279,49 +285,49 @@ export const fetchSubjectDetails = async (subjectId: string | number) => {
 // Fetch teachers from local storage
 export const fetchTeachers = async () => {
 
-    // For demo purposes, return test data if API fails
-    return [
-      {
-        id: 1,
-        name: 'Prof. Doc. Yaroslav Marochok, PhD',
-        aisId: '127421',
-        rating: '3.16',
-        role: 'Professor',
-        department: 'Computer Science'
-      },
-      {
-        id: 2,
-        name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-        aisId: '127421',
-        rating: '3.16',
-        role: 'Associate Professor',
-        department: 'Software Engineering'
-      },
-      {
-        id: 3,
-        name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-        aisId: '127421',
-        rating: '3.16',
-        role: 'Associate Professor',
-        department: 'Mathematics'
-      },
-      {
-        id: 4,
-        name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-        aisId: '127421',
-        rating: '3.16',
-        role: 'Assistant Professor',
-        department: 'Information Systems'
-      },
-      {
-        id: 5,
-        name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-        aisId: '127421',
-        rating: '3.16',
-        role: 'Professor',
-        department: 'Artificial Intelligence'
-      }
-    ];
+  // For demo purposes, return test data if API fails
+  return [
+    {
+      id: 1,
+      name: 'Prof. Doc. Yaroslav Marochok, PhD',
+      aisId: '127421',
+      rating: '3.16',
+      role: 'Professor',
+      department: 'Computer Science'
+    },
+    {
+      id: 2,
+      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+      aisId: '127421',
+      rating: '3.16',
+      role: 'Associate Professor',
+      department: 'Software Engineering'
+    },
+    {
+      id: 3,
+      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+      aisId: '127421',
+      rating: '3.16',
+      role: 'Associate Professor',
+      department: 'Mathematics'
+    },
+    {
+      id: 4,
+      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+      aisId: '127421',
+      rating: '3.16',
+      role: 'Assistant Professor',
+      department: 'Information Systems'
+    },
+    {
+      id: 5,
+      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+      aisId: '127421',
+      rating: '3.16',
+      role: 'Professor',
+      department: 'Artificial Intelligence'
+    }
+  ];
 };
 // Fetch concrete teacher from local storage
 export const fetchTeacherDetails = async (teacherId: string | number) => {
@@ -361,7 +367,7 @@ export const buyPremium = async (userId: string) => {
 
       console.log(user);
       await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
-        return true;
+      return true;
     } else {
       console.error(`Buying Premium failed with status code: ${response.status}`);
       return false;
@@ -373,3 +379,170 @@ export const buyPremium = async (userId: string) => {
   return true;
 }
 
+// Delete all user comments
+export const deleteComments = async (userId: number | undefined) => {
+  if (!userId) return false;
+
+  try {
+    const response = await fetch(`${DELETE_COMMENTS_USER_URL}${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
+    });
+
+    if (response.ok) {
+      console.log('Deleting comments successful');
+
+      return true;
+    } else {
+      console.error(`Deleting comments failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Deleting comments request failed:', error);
+    return false;
+  }
+  return true;
+};
+
+// Delete user
+export const deleteUser = async (userId: number | undefined) => {
+  if (!userId) return false;
+
+  try {
+    const response = await fetch(`${DELETE_USER_URL}${userId}`, {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`, },
+    });
+
+    if (response.ok) {
+      console.log('Deleting user successful');
+
+      return true;
+    } else {
+      console.error(`Delete user failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Delete user request failed:', error);
+    return false;
+  }
+  return true;
+}
+
+// Change user email
+export const changeUserEmail = async (login: string | undefined, newEmail: string) => {
+  if (!login || !newEmail) return false;
+
+  try {
+    const response = await fetch(CHANGE_USER_EMAIL_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, email: newEmail }),
+    });
+
+    if (response.ok) {
+      await User.setEmail(newEmail);
+      return true;
+    } else {
+      console.error(`Email changing failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Change email request failed:', error);
+    return false;
+  }
+  return true;
+};
+
+// Change user name
+export const changeUserName = async (email: string | undefined, newName: string) => {
+  console.log('Change user name: ', newName);
+  if (!email || !newName) return false;
+
+  try {
+    const response = await fetch(CHANGE_USERNAME_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, username: newName }),
+    });
+
+    if (response.ok) {
+      await User.setName(newName);
+      return true;
+    } else {
+      console.error(`Username changing failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Change username request failed:', error);
+    return false;
+  }
+  return true;
+};
+
+// Change user avatar
+export const updateUserAvatar = async (userId: number | undefined, base64ImageData: string, fileName: string | undefined) => {
+  if (!userId || !base64ImageData || !fileName) return false;
+
+  try {
+    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+    if (!accessToken) {
+      console.error('No access token available for avatar upload');
+      return false;
+    }
+
+    const fileExtension = fileName.split('.').pop()?.toLowerCase();
+    let contentType = '';
+    switch (fileExtension) {
+      case 'png':
+        contentType = 'image/png';
+        break;
+      case 'jpeg':
+      case 'jpg':
+        contentType = 'image/jpeg';
+        break;
+      case 'gif':
+        contentType = 'image/gif';
+        break;
+      default:
+        contentType = 'image/jpeg';
+    }
+
+    const formData = new FormData();
+    formData.append('file', {
+      uri: Platform.OS === 'android'
+        ? `data:${contentType};base64,${base64ImageData}`
+        : base64ImageData.includes('data:')
+          ? base64ImageData
+          : `data:${contentType};base64,${base64ImageData}`,
+      name: fileName,
+      type: contentType,
+    } as any);
+
+    const response = await fetch(CHANGE_USER_AVATAR_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    if (response.ok) {
+      console.log('Avatar updated successfully');
+
+      await User.setAvatarBase64(base64ImageData);
+      await User.setAvatarName(fileName);
+      return true;
+    } else {
+      const errorText = await response.text();
+      console.error(`Avatar update failed: ${response.status} - ${errorText}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Change avatar request failed:', error);
+    return false;
+  }
+};

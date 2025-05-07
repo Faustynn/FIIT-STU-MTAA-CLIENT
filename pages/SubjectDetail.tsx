@@ -4,8 +4,8 @@ import { useTheme } from '../components/SettingsController';
 import { NavigationProp, RouteProp } from "@react-navigation/native";
 import { fetchSubjectDetails } from '../services/apiService';
 import { Subject } from './SubjectsPage';
-import { ChevronLeft } from '@tamagui/lucide-icons';
 import { AppStackParamList } from '../navigation/AppNavigator';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type SubjectDetailProps = {
   route: RouteProp<AppStackParamList, 'SubjectSubPage'>;
@@ -72,7 +72,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
         {/* Header with back button */}
         <XStack padding="$4" paddingTop="$6" alignItems="center" space="$2">
           <Button
-            icon={<ChevronLeft size="$1" />}
+            icon={<MaterialIcons name="chevron-left" size={24} color="black" />}
             onPress={handleGoBack}
             backgroundColor="transparent"
             color={headerTextColor}
