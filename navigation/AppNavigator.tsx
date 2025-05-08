@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScrollView, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useTheme } from '../components/SettingsController';
+import { useTheme, TiltNavigationEvent } from '../components/SettingsController';
 import HomePage from '../pages/HomePage';
 import SubjectsPage from '../pages/SubjectsPage';
 import ProfilePage from '../pages/ProfilePage';
@@ -38,9 +38,10 @@ type TabContentProps = {
 const TabContent = ({ navigation }: TabContentProps) => {
   const [activeTab, setActiveTab] = useState(0);
   const [swipingDisabled, setSwipingDisabled] = useState(false);
-  const { theme } = useTheme();
+  const { theme, gestureNavigationEnabled, gestureMode } = useTheme();
   const isDarkMode = theme === 'dark';
   const scrollViewRef = useRef<ScrollView>(null);
+  const lastTabChangeTime = useRef(0);
 
   const { t, i18n } = useTranslation();
 
@@ -53,11 +54,34 @@ const TabContent = ({ navigation }: TabContentProps) => {
   ];
 
   const changeTab = (newIndex: number) => {
+    const now = Date.now();
+    const TAB_CHANGE_TIMEOUT = 300; // cooldown
+
+    if (now - lastTabChangeTime.current < TAB_CHANGE_TIMEOUT) {
+      return;
+    }
+
     if (newIndex >= 0 && newIndex < tabs.length) {
       setActiveTab(newIndex);
       scrollViewRef.current?.scrollTo({ x: screenWidth * newIndex, animated: true });
+      lastTabChangeTime.current = now;
     }
   };
+
+  useEffect(() => {
+    const tiltListener = TiltNavigationEvent.addListener((event) => {
+      if (event.direction !== null &&
+        gestureNavigationEnabled &&
+        (gestureMode === 'tilt' || gestureMode === 'both')) {
+        const nextTab = activeTab + event.direction;
+        changeTab(nextTab);
+      }
+    });
+
+    return () => {
+      tiltListener();
+    };
+  }, [activeTab, gestureNavigationEnabled, gestureMode]);
 
   const handleScroll = (event: any) => {
     if (!swipingDisabled) {
@@ -66,6 +90,7 @@ const TabContent = ({ navigation }: TabContentProps) => {
 
       if (newIndex !== activeTab) {
         setActiveTab(newIndex);
+        lastTabChangeTime.current = Date.now();
       }
     }
   };
@@ -88,9 +113,11 @@ const TabContent = ({ navigation }: TabContentProps) => {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
-        scrollEventThrottle={16}
+        scrollEventThrottle={32}
         style={styles.scrollView}
         scrollEnabled={!swipingDisabled}
+        overScrollMode="never"
+        bounces={false}
       >
         {tabs.map((tab, index) => (
           <View key={tab.key} style={{ width: screenWidth }}>

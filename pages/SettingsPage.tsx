@@ -6,15 +6,14 @@ import User from "../components/User";
 import { NavigationProp } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import '../utils/i18n';
-import { ComboBox} from "../components/ComboBox";
+import { ComboBox } from "../components/ComboBox";
 
 type SettingsPageProps = {
   navigation: NavigationProp<any>;
   onSwipeLockChange: (enabled: boolean) => void;
 };
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChange }) => {
-  const { theme, toggleTheme } = useTheme();
+const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChange }) => { const { theme, toggleTheme, gestureNavigationEnabled, toggleGestureNavigation, gestureMode, setGestureMode } = useTheme();
   const isDarkMode = theme === 'dark';
   const { t, i18n } = useTranslation();
 
@@ -26,6 +25,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
   const [language, setLanguage] = useState(i18n.language || 'en');
   const [fontSize, setFontSize] = useState('12');
   const [contrast, setContrast] = useState('0');
+  const [swipeLocked, setSwipeLocked] = useState(false);
 
   useEffect(() => {
     const fetchAndParseUser = async () => {
@@ -76,9 +76,26 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
     { label: '100%', value: '100' }
   ];
 
+  const gestureModes = [
+    { label: t('shake_only'), value: 'shake' },
+    { label: t('tilt_only'), value: 'tilt' },
+    { label: t('both_gestures'), value: 'both' }
+  ];
+
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
     i18n.changeLanguage(value);
+  };
+
+  const handleSwipeLockChange = (value: boolean) => {
+    setSwipeLocked(value);
+    onSwipeLockChange(value);
+  };
+
+  const handleGestureModeChange = (value: string) => {
+    if (value === 'shake' || value === 'tilt' || value === 'both') {
+      setGestureMode(value);
+    }
   };
 
   if (isLoading) {
@@ -131,7 +148,54 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
         <Text style={[styles.settingTitle, { color: textColor }]}>{t('appearance')}</Text>
         <View style={styles.settingRow}>
           <Text style={[styles.settingLabel, { color: textColor }]}>{t('d_mod')}</Text>
-          <Switch value={isDarkMode} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: '#81b0ff' }} thumbColor={isDarkMode ? '#374b6a' : '#f4f3f4'} />
+          <Switch
+            value={isDarkMode}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={isDarkMode ? '#374b6a' : '#f4f3f4'}
+          />
+        </View>
+      </View>
+
+      <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
+        <Text style={[styles.settingTitle, { color: textColor }]}>{t('gestureNavigation')}</Text>
+        <View style={styles.settingRow}>
+          <Text style={[styles.settingLabel, { color: textColor }]}>{t('enableGestureNav')}</Text>
+          <Switch
+            value={gestureNavigationEnabled}
+            onValueChange={toggleGestureNavigation}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={gestureNavigationEnabled ? '#374b6a' : '#f4f3f4'}
+          />
+        </View>
+
+        {gestureNavigationEnabled && (
+          <YStack space="$2" marginTop="$2">
+            <Text color={labelColor} fontSize={16}>{t('gestureMode')}</Text>
+            <ComboBox
+              value={gestureMode}
+              onValueChange={handleGestureModeChange}
+              items={gestureModes}
+              placeholder={t('select_gesture_mode')}
+              labelColor={labelColor}
+              textColor={textColor}
+            />
+            <Text style={[styles.settingNote, { color: subTextColor }]}>
+              {gestureMode === 'shake' ? t('shake_note') :
+                gestureMode === 'tilt' ? t('tilt_note') :
+                  t('both_note')}
+            </Text>
+          </YStack>
+        )}
+
+        <View style={[styles.settingRow, { marginTop: 12 }]}>
+          <Text style={[styles.settingLabel, { color: textColor }]}>{t('disableSwipe')}</Text>
+          <Switch
+            value={swipeLocked}
+            onValueChange={handleSwipeLockChange}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={swipeLocked ? '#374b6a' : '#f4f3f4'}
+          />
         </View>
       </View>
 
@@ -139,11 +203,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
         <Text style={[styles.settingTitle, { color: textColor }]}>{t('notification')}</Text>
         <View style={styles.settingRow}>
           <Text style={[styles.settingLabel, { color: textColor }]}>{t('en_not')}</Text>
-          <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: '#767577', true: '#81b0ff' }} thumbColor={notifications ? '#374b6a' : '#f4f3f4'} />
+          <Switch
+            value={notifications}
+            onValueChange={setNotifications}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={notifications ? '#374b6a' : '#f4f3f4'}
+          />
         </View>
         <View style={styles.settingRow}>
           <Text style={[styles.settingLabel, { color: textColor }]}>{t('s_not')}</Text>
-          <Switch value={soundEnabled} onValueChange={setSoundEnabled} trackColor={{ false: '#767577', true: '#81b0ff' }} thumbColor={soundEnabled ? '#374b6a' : '#f4f3f4'} />
+          <Switch
+            value={soundEnabled}
+            onValueChange={setSoundEnabled}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={soundEnabled ? '#374b6a' : '#f4f3f4'}
+          />
         </View>
       </View>
 
@@ -216,6 +290,11 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
   },
+  settingNote: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
+  }
 });
 
 export default SettingsPage;
