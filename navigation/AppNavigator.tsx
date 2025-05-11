@@ -1,24 +1,24 @@
+import { NavigationProp } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScrollView, GestureHandlerRootView } from 'react-native-gesture-handler';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
 import { useTheme, TiltNavigationEvent } from '../components/SettingsController';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import HomePage from '../pages/HomePage';
-import SubjectsPage from '../pages/SubjectsPage';
+import LoginPage from '../pages/LoginPage';
 import ProfilePage from '../pages/ProfilePage';
-import TeachersPage from '../pages/TeachersPage';
+import RegistratePage from '../pages/RegistratePage';
 import SettingsPage from '../pages/SettingsPage';
 import SubjectDetail from '../pages/SubjectDetail';
+import SubjectsPage from '../pages/SubjectsPage';
+import TeachersPage from '../pages/TeachersPage';
 import TeacherDetail from '../pages/TeacherDetail';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { createStackNavigator } from '@react-navigation/stack';
-import { NavigationProp } from '@react-navigation/native';
-import LoginPage from "../pages/LoginPage";
-import ForgotPasswordPage from '../pages/ForgotPasswordPage';
-import RegistratePage from '../pages/RegistratePage';
-import { useTranslation } from "react-i18next";
-import '../utils/i18n';
 
-const { width: screenWidth } = Dimensions.get('window');
+import '../utils/i18n';
 
 export type AppStackParamList = {
   Login: undefined;
@@ -42,37 +42,77 @@ const TabContent = ({ navigation }: TabContentProps) => {
   const isDarkMode = theme === 'dark';
   const scrollViewRef = useRef<ScrollView>(null);
   const lastTabChangeTime = useRef(0);
+  const { t } = useTranslation();
 
-  const { t, i18n } = useTranslation();
+  // 🧠 Dynamic screen width
+  const [currentWidth, setCurrentWidth] = useState(Dimensions.get('window').width);
+
+  useEffect(() => {
+    const onChange = ({ window }: { window: any }) => {
+      setCurrentWidth(window.width);
+    };
+    const subscription = Dimensions.addEventListener('change', onChange);
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo({ x: currentWidth * activeTab, animated: false });
+  }, [currentWidth]);
 
   const tabs = [
-    { key: 'home', title: t('home'), icon: 'home', component: () => <HomePage navigation={navigation} /> },
-    { key: 'subjects', title: t('subjects'), icon: 'book', component: () => <SubjectsPage navigation={navigation} /> },
-    { key: 'profile', title: t('profile'), icon: 'person', component: () => <ProfilePage navigation={navigation} /> },
-    { key: 'teachers', title: t('teachers'), icon: 'school', component: () => <TeachersPage navigation={navigation} /> },
-    { key: 'settings', title: t('settings'), icon: 'settings', component: () => <SettingsPage navigation={navigation} onSwipeLockChange={setSwipingDisabled} /> },
+    {
+      key: 'home',
+      title: t('home'),
+      icon: 'home',
+      component: () => <HomePage navigation={navigation} />,
+    },
+    {
+      key: 'subjects',
+      title: t('subjects'),
+      icon: 'book',
+      component: () => <SubjectsPage navigation={navigation} />,
+    },
+    {
+      key: 'profile',
+      title: t('profile'),
+      icon: 'person',
+      component: () => <ProfilePage navigation={navigation} />,
+    },
+    {
+      key: 'teachers',
+      title: t('teachers'),
+      icon: 'school',
+      component: () => <TeachersPage navigation={navigation} />,
+    },
+    {
+      key: 'settings',
+      title: t('settings'),
+      icon: 'settings',
+      component: () => (
+        <SettingsPage navigation={navigation} onSwipeLockChange={setSwipingDisabled} />
+      ),
+    },
   ];
 
   const changeTab = (newIndex: number) => {
     const now = Date.now();
-    const TAB_CHANGE_TIMEOUT = 300; // cooldown
-
-    if (now - lastTabChangeTime.current < TAB_CHANGE_TIMEOUT) {
-      return;
-    }
+    const TAB_CHANGE_TIMEOUT = 300;
+    if (now - lastTabChangeTime.current < TAB_CHANGE_TIMEOUT) return;
 
     if (newIndex >= 0 && newIndex < tabs.length) {
       setActiveTab(newIndex);
-      scrollViewRef.current?.scrollTo({ x: screenWidth * newIndex, animated: true });
+      scrollViewRef.current?.scrollTo({ x: currentWidth * newIndex, animated: true });
       lastTabChangeTime.current = now;
     }
   };
 
   useEffect(() => {
     const tiltListener = TiltNavigationEvent.addListener((event) => {
-      if (event.direction !== null &&
+      if (
+        event.direction !== null &&
         gestureNavigationEnabled &&
-        (gestureMode === 'tilt' || gestureMode === 'both')) {
+        (gestureMode === 'tilt' || gestureMode === 'both')
+      ) {
         const nextTab = activeTab + event.direction;
         changeTab(nextTab);
       }
@@ -86,8 +126,7 @@ const TabContent = ({ navigation }: TabContentProps) => {
   const handleScroll = (event: any) => {
     if (!swipingDisabled) {
       const offsetX = event.nativeEvent.contentOffset.x;
-      const newIndex = Math.round(offsetX / screenWidth);
-
+      const newIndex = Math.round(offsetX / currentWidth);
       if (newIndex !== activeTab) {
         setActiveTab(newIndex);
         lastTabChangeTime.current = Date.now();
@@ -97,7 +136,7 @@ const TabContent = ({ navigation }: TabContentProps) => {
 
   useEffect(() => {
     if (swipingDisabled && scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ x: screenWidth * activeTab, animated: false });
+      scrollViewRef.current.scrollTo({ x: currentWidth * activeTab, animated: false });
     }
   }, [swipingDisabled, activeTab]);
 
@@ -117,10 +156,9 @@ const TabContent = ({ navigation }: TabContentProps) => {
         style={styles.scrollView}
         scrollEnabled={!swipingDisabled}
         overScrollMode="never"
-        bounces={false}
-      >
+        bounces={false}>
         {tabs.map((tab, index) => (
-          <View key={tab.key} style={{ width: screenWidth }}>
+          <View key={tab.key} style={{ width: currentWidth }}>
             <tab.component />
           </View>
         ))}
@@ -133,8 +171,7 @@ const TabContent = ({ navigation }: TabContentProps) => {
             key={tab.key}
             style={styles.tabButton}
             onPress={() => changeTab(index)}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <MaterialIcons
               name={tab.icon}
               size={24}
@@ -145,10 +182,9 @@ const TabContent = ({ navigation }: TabContentProps) => {
                 styles.tabItem,
                 {
                   color: activeTab === index ? activeTabColor : inactiveTabColor,
-                  fontWeight: activeTab === index ? 'bold' : 'normal'
-                }
-              ]}
-            >
+                  fontWeight: activeTab === index ? 'bold' : 'normal',
+                },
+              ]}>
               {tab.title}
             </Text>
           </TouchableOpacity>
@@ -202,7 +238,6 @@ const AppNavigator = () => {
       <Stack.Screen name="Login" component={LoginPage} />
       <Stack.Screen name="ForgotPasswordPage" component={ForgotPasswordPage} />
       <Stack.Screen name="RegistratePage" component={RegistratePage} />
-
       <Stack.Screen name="Main" component={MainTabNavigator} />
       <Stack.Screen name="TeacherSubPage" component={TeacherDetail} />
       <Stack.Screen name="SubjectSubPage" component={SubjectDetail} />

@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { YStack, XStack, H1, Text, Theme, Button, ScrollView, View, Spinner } from "tamagui";
-import { useTheme } from '../components/SettingsController';
 import { NavigationProp } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Linking, Image, useWindowDimensions } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { Linking, Image } from 'react-native';
+import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner } from 'tamagui';
+
+import { useTheme } from '../components/SettingsController';
 import User from '../components/User';
-import { useTranslation } from "react-i18next";
+
 import '../utils/i18n';
 
 export interface News {
@@ -19,13 +21,15 @@ type HomePageProps = {
 };
 
 const openWebLink = (url: string) => {
-  Linking.openURL(url).catch((err) => console.error("Failed to open URL:", err));
+  Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
 };
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +46,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           setHasData(false);
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error('Error fetching user:', error);
         setHasData(false);
       } finally {
         setIsLoading(false);
@@ -55,12 +59,16 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
   const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
   const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
-  const cardBackgroundColor = isDarkMode ? '#1E2129' : '#F5F5F5';
+  const cardBackgroundColor = isDarkMode ? '#1E2129' : '$F5F5F5';
   const linkTextColor = isDarkMode ? '#79E3A5' : '$blue600';
 
   if (isLoading) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor={backgroundColor}>
+      <YStack
+        flex={1}
+        justifyContent="center"
+        alignItems="center"
+        backgroundColor={backgroundColor}>
         <Spinner size="large" color={headerTextColor} />
       </YStack>
     );
@@ -68,156 +76,170 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
   return (
     <Theme name={isDarkMode ? 'dark' : 'light'}>
-      <YStack flex={1} backgroundColor={backgroundColor} padding="$4">
-        {/* Header */}
-        <XStack padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
-          <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
-            UNIMAP
-          </H1>
-          <XStack alignItems="center" space="$2">
-            <YStack alignItems="flex-end">
-              {hasData ? (
-                <>
-                  <Text color={subTextColor} fontSize={10}>@{user?.login}</Text>
-                  <Text color={headerTextColor} fontWeight="bold">{user?.getFullName()}</Text>
-                </>
+      <YStack
+        flex={1}
+        backgroundColor={backgroundColor}
+        paddingTop="$6"
+        paddingBottom="$2"
+        paddingLeft={isLandscape ? 45 : '$4'}
+        paddingRight={isLandscape ? 24 : '$4'}
+        flexDirection={isLandscape ? 'row' : 'column'}>
+        {/* Left panel */}
+        <YStack>
+          <XStack
+            justifyContent="space-between"
+            alignItems={isLandscape ? 'flex-start' : 'center'}
+            flexDirection={isLandscape ? 'column' : 'row'}
+            gap="$4">
+            <H1 fontSize={isLandscape ? 32 : 24} fontWeight="bold" color={headerTextColor}>
+              UNIMAP
+            </H1>
+            {hasData ? (
+              isLandscape ? (
+                <YStack alignItems="flex-start">
+                  <Text color={subTextColor} fontSize={10}>
+                    @{user?.login}
+                  </Text>
+                  <Text color={headerTextColor} fontWeight="bold">
+                    {user?.getFullName()}
+                  </Text>
+                  <View
+                    marginTop="$2"
+                    width={60}
+                    height={60}
+                    borderRadius={30}
+                    backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
+                    alignItems="center"
+                    justifyContent="center">
+                    <Image
+                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                      style={{ width: 60, height: 60, borderRadius: 30 }}
+                    />
+                  </View>
+                </YStack>
               ) : (
-                <Text color={subTextColor} fontSize={10}>@guest</Text>
-              )}
+                <XStack alignItems="center" space="$2">
+                  <YStack alignItems="flex-end">
+                    <Text color={subTextColor} fontSize={10}>
+                      @{user?.login}
+                    </Text>
+                    <Text color={headerTextColor} fontWeight="bold">
+                      {user?.getFullName()}
+                    </Text>
+                  </YStack>
+                  <View
+                    width={40}
+                    height={40}
+                    borderRadius={20}
+                    backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
+                    alignItems="center"
+                    justifyContent="center">
+                    <Image
+                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                      style={{ width: 40, height: 40, borderRadius: 20 }}
+                    />
+                  </View>
+                </XStack>
+              )
+            ) : (
+              <Text color={subTextColor} fontSize={10}>
+                @guest
+              </Text>
+            )}
+          </XStack>
+
+          {!hasData && (
+            <YStack alignItems="center" justifyContent="center" flex={1}>
+              <Text color={subTextColor} fontSize={16}>
+                No data found. Showing default content.
+              </Text>
             </YStack>
-            <View
-              width={40}
-              height={40}
-              borderRadius={20}
-              backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
-              alignItems="center"
-              justifyContent="center"
-            >
-              {hasData && user?.getAvatarBase64() ? (
-                <Image
-                  source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
-                  style={{ width: 40, height: 40, borderRadius: 20 }}
-                />
-              ) : (
-                <Text>😏</Text>
-              )}
-            </View>
-          </XStack>
-        </XStack>
-        {!hasData && (
-        <YStack alignItems="center" justifyContent="center" flex={1}>
-          <Text color={subTextColor} fontSize={16}>
-            No data found. Showing default content.
-          </Text>
+          )}
         </YStack>
-      )}
 
-        {/* Main Content */}
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          padding="$4"
-          contentContainerStyle={{ paddingBottom: 20 }}
-        >
-          {/* News Section */}
-          <XStack alignItems="center" marginBottom="$3">
-            <MaterialIcons name="article" size={20} color={subTextColor} style={{ marginRight: 8 }} />
-            <Text fontSize={18} color={subTextColor}>
-              {t('news_upd')}
-            </Text>
-          </XStack>
+        {/* Right panel */}
+        <YStack flex={isLandscape ? 3 : 2}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingTop: isLandscape ? 5 : 56,
+              paddingBottom: 24,
+              paddingLeft: isLandscape ? 19 : 0,
+            }}>
+            <XStack alignItems="center" marginBottom="$3">
+              <MaterialIcons
+                name="article"
+                size={20}
+                color={subTextColor}
+                style={{ marginRight: 8 }}
+              />
+              <Text fontSize={18} color={subTextColor}>
+                {t('news_upd')}
+              </Text>
+            </XStack>
 
-          {/* Example NewsCard */}
-          <YStack
-            backgroundColor={cardBackgroundColor}
-            borderRadius="$2"
-            padding="$4"
-            marginBottom="$3"
-            width="100%"
-          >
-            <Text fontSize={20} fontWeight="bold" color={headerTextColor} marginBottom="$2">
-              {t('fiit_dis')}
-            </Text>
-            <Text fontSize={16} color={subTextColor} lineHeight={22}>
-              {t('fiit_dis_desc')}
-            </Text>
-          </YStack>
+            <YStack
+              backgroundColor={cardBackgroundColor}
+              borderRadius="$2"
+              padding="$4"
+              marginBottom="$3"
+              width="100%">
+              <Text fontSize={20} fontWeight="bold" color={headerTextColor} marginBottom="$2">
+                {t('fiit_dis')}
+              </Text>
+              <Text fontSize={16} color={subTextColor} lineHeight={22}>
+                {t('fiit_dis_desc')}
+              </Text>
+            </YStack>
 
-          {/* Utilities Section */}
-          <XStack alignItems="center" marginTop="$4" marginBottom="$3">
-            <MaterialIcons name="build" size={20} color={subTextColor} style={{ marginRight: 8 }} />
-            <Text fontSize={18} color={subTextColor}>
-              {t('utils')}
-            </Text>
-          </XStack>
+            <XStack alignItems="center" marginTop="$4" marginBottom="$3">
+              <MaterialIcons
+                name="build"
+                size={20}
+                color={subTextColor}
+                style={{ marginRight: 8 }}
+              />
+              <Text fontSize={18} color={subTextColor}>
+                {t('utils')}
+              </Text>
+            </XStack>
 
-          {/* FIIT Discord */}
-          <YStack
-            backgroundColor={cardBackgroundColor}
-            borderRadius="$2"
-            padding="$4"
-            marginBottom="$3"
-            width="100%"
-            onPress={() => openWebLink("https://discord.gg/dX48acpNS8")}
-          >
-            <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              {t('fiit_dis')}
-            </Text>
-            <Text fontSize={16} color={subTextColor}>
-              {t('fiit_dis_desc')}
-            </Text>
-          </YStack>
-
-          {/* FX-com */}
-          <YStack
-            backgroundColor={cardBackgroundColor}
-            borderRadius="$2"
-            padding="$4"
-            marginBottom="$3"
-            width="100%"
-            onPress={() => openWebLink("https://www.notion.so/FX-com-54cdb158085e4377b832ece310a5603d")}
-          >
-            <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              {t('fx_com')}
-            </Text>
-            <Text fontSize={16} color={subTextColor}>
-              {t('fx_com_desc')}
-            </Text>
-          </YStack>
-
-          {/* Mladost Guide */}
-          <YStack
-            backgroundColor={cardBackgroundColor}
-            borderRadius="$2"
-            padding="$4"
-            marginBottom="$3"
-            width="100%"
-            onPress={() => openWebLink("https://protective-april-ef1.notion.site/SD-Mladost-abe968a31d404360810b53acbbb357cc")}
-          >
-            <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              {t('mladost')}
-            </Text>
-            <Text fontSize={16} color={subTextColor}>
-              {t('mladost_desc')}
-            </Text>
-          </YStack>
-
-          {/* FIIT Telegram */}
-          <YStack
-            backgroundColor={cardBackgroundColor}
-            borderRadius="$2"
-            padding="$4"
-            marginBottom="$3"
-            width="100%"
-            onPress={() => openWebLink("https://t.me/fiitstu")}
-          >
-            <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
-              {t('fiit_tg')}
-            </Text>
-            <Text fontSize={16} color={subTextColor}>
-              {t('fiit_tg_desc')}
-            </Text>
-          </YStack>
-        </ScrollView>
+            {[
+              {
+                title: t('fiit_dis'),
+                desc: t('fiit_dis_desc'),
+                url: 'https://discord.gg/dX48acpNS8',
+              },
+              {
+                title: t('fx_com'),
+                desc: t('fx_com_desc'),
+                url: 'https://www.notion.so/FX-com-54cdb158085e4377b832ece310a5603d',
+              },
+              {
+                title: t('mladost'),
+                desc: t('mladost_desc'),
+                url: 'https://protective-april-ef1.notion.site/SD-Mladost-abe968a31d404360810b53acbbb357cc',
+              },
+              { title: t('fiit_tg'), desc: t('fiit_tg_desc'), url: 'https://t.me/fiitstu' },
+            ].map(({ title, desc, url }, i) => (
+              <YStack
+                key={i}
+                backgroundColor={cardBackgroundColor}
+                borderRadius="$2"
+                padding="$4"
+                marginBottom="$3"
+                width="100%"
+                onPress={() => openWebLink(url)}>
+                <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
+                  {title}
+                </Text>
+                <Text fontSize={16} color={subTextColor}>
+                  {desc}
+                </Text>
+              </YStack>
+            ))}
+          </ScrollView>
+        </YStack>
       </YStack>
     </Theme>
   );

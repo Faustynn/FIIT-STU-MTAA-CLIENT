@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {startTokenRefreshTask} from '../components/TokenRefresher';
-import {User} from '../components/User'
 import { Platform } from 'react-native';
 
+import { startTokenRefreshTask } from '../components/TokenRefresher';
+import { User } from '../components/User';
+
 // API URLs
-const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
+const API_URL = 'http://172.20.10.4:8080/api/unimap_pc/';
 
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
 const GET_NEWS_URL = `${API_URL}news/all`;
@@ -54,7 +55,6 @@ export const checkConnection = async () => {
   }
 };
 
-
 // Refresh access token
 export const refreshAccessToken = async () => {
   try {
@@ -92,7 +92,6 @@ export const refreshAccessToken = async () => {
     return false;
   }
 };
-
 
 // Send authentication request
 export const sendAuthenticationRequest = async (email: string, password: string) => {
@@ -139,7 +138,12 @@ export const sendAuthenticationRequest = async (email: string, password: string)
 };
 
 // Send registration request
-export const sendRegistrationRequest = async (login: string,username: string,email: string,password: string) => {
+export const sendRegistrationRequest = async (
+  login: string,
+  username: string,
+  email: string,
+  password: string
+) => {
   try {
     const response = await fetch(REGISTR_URL, {
       method: 'POST',
@@ -157,7 +161,7 @@ export const sendRegistrationRequest = async (login: string,username: string,ema
     console.error('Registation request failed:', error);
     return false;
   }
-}
+};
 
 // Send password change request
 // Confirm email
@@ -178,9 +182,9 @@ export const sendEmailConfirmationRequest = async (email: string) => {
     console.error('Email confirmation request failed:', error);
     return false;
   }
-}
+};
 // Confirm code
-export const sendCodeConfirmationRequest = async (email: string,code: string) => {
+export const sendCodeConfirmationRequest = async (email: string, code: string) => {
   try {
     const response = await fetch(CONFIRM_CODE_TO_EMAIL, {
       method: 'POST',
@@ -198,9 +202,9 @@ export const sendCodeConfirmationRequest = async (email: string,code: string) =>
     console.error('Code confirmation failed:', error);
     return false;
   }
-}
+};
 // Set new password
-export const sendNewPasswordRequest = async (email: string,password: string) => {
+export const sendNewPasswordRequest = async (email: string, password: string) => {
   try {
     const response = await fetch(CHANGE_PASSWORD, {
       method: 'PUT',
@@ -218,47 +222,70 @@ export const sendNewPasswordRequest = async (email: string,password: string) => 
     console.error('NewPass request failed:', error);
     return false;
   }
-}
-
-// Fetch subjects from local storage
-export const fetchSubjects = async () => {
-
-  return [
-    {
-      id: 1,
-      name: 'Web Technologies',
-      code: 'WTECH_B',
-      guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
-      type: 'Obligatory',
-      semester: 'Winter Semester'
-    },
-    {
-      id: 2,
-      name: 'System Programming in Assembly',
-      code: 'SPAASM_B',
-      guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      type: 'Optional',
-      semester: 'Summer Semester'
-    },
-    {
-      id: 3,
-      name: 'Probability and Statistics',
-      code: 'PAS_B',
-      guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-      type: 'Optional',
-      semester: 'Winter Semester'
-    },
-    {
-      id: 4,
-      name: 'Programming in Rust Language',
-      code: 'RUST_B',
-      guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-      type: 'Optional',
-      semester: 'Summer Semester'
-    }
-  ];
-
 };
+
+// // Fetch subjects from local storage
+// export const fetchSubjects = async () => {
+//   return [
+//     {
+//       id: 1,
+//       name: 'Web Technologies',
+//       code: 'WTECH_B',
+//       guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
+//       type: 'Obligatory',
+//       semester: 'Winter Semester',
+//     },
+//     {
+//       id: 2,
+//       name: 'System Programming in Assembly',
+//       code: 'SPAASM_B',
+//       guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+//       type: 'Optional',
+//       semester: 'Summer Semester',
+//     },
+//     {
+//       id: 3,
+//       name: 'Probability and Statistics',
+//       code: 'PAS_B',
+//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
+//       type: 'Optional',
+//       semester: 'Winter Semester',
+//     },
+//     {
+//       id: 4,
+//       name: 'Programming in Rust Language',
+//       code: 'RUST_B',
+//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
+//       type: 'Optional',
+//       semester: 'Summer Semester',
+//     },
+//   ];
+// };
+
+export const fetchSubjects = async (): Promise<Subject[]> => {
+  const token = await AsyncStorage.getItem('accessToken');
+
+  const response = await fetch(SUBJECTS_URL, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) throw new Error('Ошибка при получении предметов');
+
+  const json = await response.json();
+
+  return parseSubjects(json.subjects || []);
+};
+
+export const parseSubjects = (raw: any[]): Subject[] => {
+  return raw.map((s) => ({
+    ...s,
+    languages: s.languages?.split(',') ?? [],
+  }));
+};
+
 // Fetch concrete subject from local storage
 export const fetchSubjectDetails = async (subjectId: string | number) => {
   try {
@@ -281,10 +308,8 @@ export const fetchSubjectDetails = async (subjectId: string | number) => {
   }
 };
 
-
 // Fetch teachers from local storage
 export const fetchTeachers = async () => {
-
   // For demo purposes, return test data if API fails
   return [
     {
@@ -293,7 +318,7 @@ export const fetchTeachers = async () => {
       aisId: '127421',
       rating: '3.16',
       role: 'Professor',
-      department: 'Computer Science'
+      department: 'Computer Science',
     },
     {
       id: 2,
@@ -301,7 +326,7 @@ export const fetchTeachers = async () => {
       aisId: '127421',
       rating: '3.16',
       role: 'Associate Professor',
-      department: 'Software Engineering'
+      department: 'Software Engineering',
     },
     {
       id: 3,
@@ -309,7 +334,7 @@ export const fetchTeachers = async () => {
       aisId: '127421',
       rating: '3.16',
       role: 'Associate Professor',
-      department: 'Mathematics'
+      department: 'Mathematics',
     },
     {
       id: 4,
@@ -317,7 +342,7 @@ export const fetchTeachers = async () => {
       aisId: '127421',
       rating: '3.16',
       role: 'Assistant Professor',
-      department: 'Information Systems'
+      department: 'Information Systems',
     },
     {
       id: 5,
@@ -325,8 +350,8 @@ export const fetchTeachers = async () => {
       aisId: '127421',
       rating: '3.16',
       role: 'Professor',
-      department: 'Artificial Intelligence'
-    }
+      department: 'Artificial Intelligence',
+    },
   ];
 };
 // Fetch concrete teacher from local storage
@@ -358,7 +383,10 @@ export const buyPremium = async (userId: string) => {
   try {
     const response = await fetch(`${PREMIUM_URL}${userId}`, {
       method: 'PUT',
-      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`, },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
     });
 
     if (response.ok) {
@@ -377,7 +405,7 @@ export const buyPremium = async (userId: string) => {
     return false;
   }
   return true;
-}
+};
 
 // Delete all user comments
 export const deleteComments = async (userId: number | undefined) => {
@@ -414,7 +442,10 @@ export const deleteUser = async (userId: number | undefined) => {
   try {
     const response = await fetch(`${DELETE_USER_URL}${userId}`, {
       method: 'DELETE',
-      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`, },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
     });
 
     if (response.ok) {
@@ -430,7 +461,7 @@ export const deleteUser = async (userId: number | undefined) => {
     return false;
   }
   return true;
-}
+};
 
 // Change user email
 export const changeUserEmail = async (login: string | undefined, newEmail: string) => {
@@ -484,7 +515,11 @@ export const changeUserName = async (email: string | undefined, newName: string)
 };
 
 // Change user avatar
-export const updateUserAvatar = async (userId: number | undefined, base64ImageData: string, fileName: string | undefined) => {
+export const updateUserAvatar = async (
+  userId: number | undefined,
+  base64ImageData: string,
+  fileName: string | undefined
+) => {
   if (!userId || !base64ImageData || !fileName) return false;
 
   try {
@@ -513,11 +548,12 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
 
     const formData = new FormData();
     formData.append('file', {
-      uri: Platform.OS === 'android'
-        ? `data:${contentType};base64,${base64ImageData}`
-        : base64ImageData.includes('data:')
-          ? base64ImageData
-          : `data:${contentType};base64,${base64ImageData}`,
+      uri:
+        Platform.OS === 'android'
+          ? `data:${contentType};base64,${base64ImageData}`
+          : base64ImageData.includes('data:')
+            ? base64ImageData
+            : `data:${contentType};base64,${base64ImageData}`,
       name: fileName,
       type: contentType,
     } as any);
@@ -525,7 +561,7 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
     const response = await fetch(CHANGE_USER_AVATAR_URL, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: formData,
     });
@@ -545,4 +581,207 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
     console.error('Change avatar request failed:', error);
     return false;
   }
+};
+
+export interface Subject {
+  code: string;
+  name: string;
+  type: string;
+  credits: number;
+  studyType: string;
+  semester: string;
+  languages: string[];
+  completionType: string;
+  studentCount: number;
+  assesmentMethods: string;
+  learningOutcomes: string;
+  courseContents: string;
+  plannedActivities: string;
+  evaluationMethods: string;
+  a_score: string;
+  b_score: string;
+  c_score: string;
+  d_score: string;
+  e_score: string;
+  fx_score: string;
+}
+
+export const mockSubjectsResponse = {
+  subjects: [
+    {
+      code: 'WTECH_B',
+      name: 'Web Technologies',
+      type: 'Obligatory',
+      credits: 6,
+      studyType: 'Bachelor',
+      semester: 'ZS',
+      languages: 'sk,en',
+      completionType: 'Exam',
+      studentCount: 120,
+      assesmentMethods: 'Written exam',
+      learningOutcomes: 'Students understand frontend/backend communication.',
+      courseContents: 'HTTP, REST, JavaScript, Laravel',
+      plannedActivities: 'Lectures, labs, project',
+      evaluationMethods: 'Exam and project',
+      a_score: '25%',
+      b_score: '30%',
+      c_score: '20%',
+      d_score: '10%',
+      e_score: '10%',
+      fx_score: '5%',
+    },
+    {
+      code: 'SPAASM_B',
+      name: 'System Programming in Assembly',
+      type: 'Optional',
+      credits: 5,
+      studyType: 'Engineer',
+      semester: 'LS',
+      languages: 'sk',
+      completionType: 'Graded Credit',
+      studentCount: 60,
+      assesmentMethods: 'Project',
+      learningOutcomes: 'Students understand low-level programming.',
+      courseContents: 'x86, memory, system calls',
+      plannedActivities: 'Labs',
+      evaluationMethods: 'Final project',
+      a_score: '30%',
+      b_score: '25%',
+      c_score: '20%',
+      d_score: '10%',
+      e_score: '10%',
+      fx_score: '5%',
+    },
+  ],
+};
+
+export const fetchSubjects1 = async (): Promise<Subject[]> => {
+  const raw = mockSubjectsResponse.subjects;
+  return parseSubjects(raw);
+};
+
+export const mockSubjectDetails = {
+  code: 'SPAASM_B',
+  name: 'System Programming in Assembly',
+  type: 'Optional',
+  semester: 'ZS',
+  guarantor: 'Olexandr Dokaniev',
+  credits: 5,
+  description: 'This subject introduces students to low-level programming in Assembly.',
+  language: 'sk',
+  prerequisites: ['Introduction to Programming', 'Computer Architecture'],
+  objectives: 'Understand how Assembly works with memory and system calls.',
+  syllabus: ['Introduction', 'Registers', 'Memory Management', 'System Calls'],
+  instructors: [
+    { id: 1, name: 'Olexandr Dokaniev', role: 'Lecturer' },
+    { id: 2, name: 'John Novak', role: 'Lab Assistant' },
+  ],
+};
+
+export const fetchSubjectDetails1 = async (subjectId: string | number) => {
+  // в реальности можешь использовать subjectId, а пока заглушка
+  return Promise.resolve(mockSubjectDetails);
+};
+
+export const mockTeachersResponse = {
+  teachers: [
+    {
+      id: '1',
+      name: 'Doc. Ing. John Smith, PhD.',
+      email: 'john.smith@fiit.stuba.sk',
+      phone: '+421 123 456 789',
+      office: 'BC-302',
+      aisId: '123456',
+      subject_code: 'SPAASM_B',
+      roles: 'Lecturer,Supervisor',
+      rating: 4.5,
+      department: 'Computer Science',
+    },
+    {
+      id: '2',
+      name: 'Mgr. Anna Kovácsová',
+      email: 'anna.kovacsova@fiit.stuba.sk',
+      phone: '+421 987 654 321',
+      office: 'BC-112',
+      aisId: '654321',
+      subject_code: 'WTECH_B',
+      roles: 'Lecturer',
+      rating: 4.0,
+      department: 'Software Engineering',
+    },
+  ],
+};
+
+export const fetchTeachers1 = async () => {
+  // имитация задержки
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  return mockTeachersResponse.teachers;
+};
+
+export interface ParsedTeacher {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  aisId: string;
+  subjectCode: string;
+  roles: string[];
+  rating: number;
+  department: string;
+  consultationHours?: string;
+  bio?: string;
+}
+
+export interface Teacher {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  aisId: string;
+  subject_code: string;
+  roles: string;
+  rating: number;
+  department: string;
+  consultationHours?: string;
+  bio?: string;
+}
+
+export const parseTeachers = (raw: Teacher[]): ParsedTeacher[] => {
+  return raw.map((t) => ({
+    id: t.id,
+    name: t.name,
+    email: t.email,
+    phone: t.phone,
+    office: t.office,
+    aisId: t.aisId,
+    subjectCode: t.subject_code,
+    roles: t.roles.split(',').map((r) => r.trim()),
+    rating: t.rating,
+    department: t.department || 'Unknown',
+    consultationHours: t.consultationHours || 'Not specified',
+    bio: t.bio || 'No bio available',
+  }));
+};
+
+export const fetchTeacherDetails1 = async (teacherId: string | number) => {
+  return Promise.resolve({
+    id: teacherId.toString(),
+    name: 'Doc. Ing. John Smith, PhD.',
+    email: 'john.smith@fiit.stuba.sk',
+    phone: '+421 123 456 789',
+    office: 'BC-302',
+    aisId: '123456',
+    subjectCode: 'SPAASM_B',
+    roles: ['Lecturer', 'Supervisor'],
+    rating: 4.5,
+    department: 'Computer Science',
+    consultationHours: 'Monday 10:00-12:00',
+    bio: 'John Smith has over 20 years of teaching experience in system programming and algorithms.',
+    subjects: [
+      { id: 1, name: 'System Programming in Assembly', code: 'SPAASM_B' },
+      { id: 2, name: 'Operating Systems', code: 'OS_B' },
+    ],
+  });
 };

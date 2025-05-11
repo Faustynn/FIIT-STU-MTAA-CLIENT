@@ -1,7 +1,9 @@
-import { useTheme } from "./SettingsController";
-import { Adapt, Select, Sheet, YStack } from "tamagui";
-import React from "react";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from '@expo/vector-icons';
+import React from 'react';
+import { TouchableOpacity } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
+
+import { useTheme } from './SettingsController';
 
 type ComboBoxProps = {
   value: string;
@@ -11,71 +13,48 @@ type ComboBoxProps = {
   labelColor: string;
   textColor: string;
 };
-export const ComboBox = ({ value, onValueChange, items, placeholder, labelColor, textColor }: ComboBoxProps) => {
+
+export const ComboBox = ({
+  value,
+  onValueChange,
+  items,
+  placeholder,
+  labelColor,
+  textColor,
+}: ComboBoxProps) => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
   return (
-    <Select value={value} onValueChange={onValueChange} disablePreventBodyScroll>
-      <Select.Trigger icon={<MaterialIcons name="chevron-left" size={24} color="black" />} borderColor={labelColor} backgroundColor="transparent" padding="$2" borderRadius="$2" borderWidth={1}>
-        <Select.Value color={textColor} placeholder={placeholder} />
-      </Select.Trigger>
-
-      <Adapt when="sm" platform="touch">
-        <Sheet modal dismissOnSnapToBottom>
-          <Sheet.Frame>
-            <Sheet.ScrollView>
-              <Adapt.Contents />
-            </Sheet.ScrollView>
-          </Sheet.Frame>
-          <Sheet.Overlay />
-        </Sheet>
-      </Adapt>
-
+    <YStack space="$2">
+      <Text color={labelColor} fontSize={14}>
+        {placeholder}
+      </Text>
       <YStack
-        style={{
-          maxHeight: 0,
-          position: 'static',
-          top: '100%',
-          marginTop: 10,
-          backgroundColor: isDarkMode ? '#262A35' : '#FFFFFF',
-          borderColor: isDarkMode ? '#3A3F4B' : '#CCCCCC',
-          borderWidth: 1,
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}
-      >
-        <Select.Content>
-          <Select.ScrollUpButton alignItems="center" justifyContent="center" position="relative" width="100%" height="$3">
-            <YStack zIndex={10} />
-          </Select.ScrollUpButton>
-
-          <Select.Viewport minWidth={200}>
-            <Select.Group>
-              {items.map((item, i) => (
-                <Select.Item
-                  index={i}
-                  key={item.value}
-                  value={item.value}
-                  style={{
-                    backgroundColor: isDarkMode ? '#191c22' : '#FFFFFF',
-                    color: isDarkMode ? '#FFFFFF' : '#000000',
-                  }}
-                >
-                  <Select.ItemText color={textColor}>{item.label}</Select.ItemText>
-                  <Select.ItemIndicator marginLeft="auto">
-                    <MaterialIcons name="check" size={16} />
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
-            </Select.Group>
-          </Select.Viewport>
-
-          <Select.ScrollDownButton alignItems="center" justifyContent="center" position="relative" width="100%" height="$3">
-            <YStack zIndex={10} />
-          </Select.ScrollDownButton>
-        </Select.Content>
+        borderColor={labelColor}
+        borderWidth={1}
+        borderRadius="$2"
+        padding="$2"
+        backgroundColor={isDarkMode ? '#262A35' : '#FFFFFF'}
+        space="$1">
+        {items.map((item) => (
+          <TouchableOpacity
+            key={item.value}
+            onPress={() => onValueChange(item.value)}
+            style={{
+              backgroundColor:
+                item.value === value ? (isDarkMode ? '#3A3F4B' : '#E0E0E0') : 'transparent',
+              borderRadius: 4,
+              paddingVertical: 6,
+              paddingHorizontal: 8,
+            }}>
+            <XStack alignItems="center" justifyContent="space-between">
+              <Text color={textColor}>{item.label}</Text>
+              {item.value === value && <MaterialIcons name="check" size={16} color={textColor} />}
+            </XStack>
+          </TouchableOpacity>
+        ))}
       </YStack>
-    </Select>
+    </YStack>
   );
 };

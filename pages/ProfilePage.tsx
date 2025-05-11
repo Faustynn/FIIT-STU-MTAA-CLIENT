@@ -1,11 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationProp } from '@react-navigation/native';
+import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Asset } from 'expo-asset';
-import { Image, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import {
+  Image,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { YStack, H1, Theme, XStack, Text, View, Button, Input, Spinner } from 'tamagui';
 
@@ -20,8 +27,6 @@ import {
   deleteUser,
   updateUserAvatar,
 } from '../services/apiService';
-
-
 
 type AvatarSelectionModalProps = {
   isVisible: boolean;
@@ -46,13 +51,13 @@ const standardAvatars = [
 ];
 
 const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
-                                                                     isVisible,
-                                                                     onClose,
-                                                                     onSelectAvatar,
-                                                                     onTakePhoto,
-                                                                     onChooseFromGallery,
-                                                                     isDarkMode,
-                                                                   }) => {
+  isVisible,
+  onClose,
+  onSelectAvatar,
+  onTakePhoto,
+  onChooseFromGallery,
+  isDarkMode,
+}) => {
   const { t } = useTranslation();
   const [isPremium, setIsPremium] = useState(false);
   const [filteredAvatars, setFilteredAvatars] = useState<typeof standardAvatars>([]);
@@ -187,13 +192,6 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   );
 };
 
-
-
-
-
-
-
-
 type ProfilePageProps = {
   navigation: NavigationProp<any>;
 };
@@ -219,6 +217,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const [hasData, setHasData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   // Theme colors
   const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
@@ -404,7 +404,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
       const avatarAsset = standardAvatars.find((avatar) => avatar.id === avatarId)?.source;
 
       if (!avatarAsset || !user) {
-        throw new Error("Avatar or user not found");
+        throw new Error('Avatar or user not found');
       }
 
       const asset = Asset.fromModule(avatarAsset);
@@ -429,7 +429,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error("Error updating avatar:", err);
+      console.error('Error updating avatar:', err);
       setError(t('avatar_update_failed'));
     } finally {
       setIsLoading(false);
@@ -442,7 +442,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
       setIsLoading(true);
 
       if (!user) {
-        throw new Error("User not found");
+        throw new Error('User not found');
       }
 
       const fileInfo = await FileSystem.getInfoAsync(imageUri);
@@ -456,8 +456,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
           encoding: FileSystem.EncodingType.Base64,
         });
       } catch (err) {
-        console.error("Error reading file as base64:", err);
-        throw new Error("Could not read image file");
+        console.error('Error reading file as base64:', err);
+        throw new Error('Could not read image file');
       }
 
       const fileExtension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
@@ -479,7 +479,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error("Error processing and uploading image:", err);
+      console.error('Error processing and uploading image:', err);
       setError(t('avatar_update_failed'));
     } finally {
       setIsLoading(false);
@@ -508,7 +508,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         await processAndUploadImage(selectedImage.uri);
       }
     } catch (err) {
-      console.error("Error choosing from gallery:", err);
+      console.error('Error choosing from gallery:', err);
       setError(t('image_selection_failed'));
     }
   };
@@ -533,7 +533,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         await processAndUploadImage(takenPhoto.uri);
       }
     } catch (err) {
-      console.error("Error taking photo:", err);
+      console.error('Error taking photo:', err);
       setError(t('photo_capture_failed'));
     }
   };
@@ -560,189 +560,32 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
     color: isDarkMode ? '#FFFFFF' : '#000000',
   };
 
-
-
-
   return (
     <Theme name={isDarkMode ? 'dark' : 'light'}>
-      <YStack flex={1} backgroundColor={backgroundColor} padding="$0">
-        {/* Header */}
-        <XStack padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
-          <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
-            UNIMAP
-          </H1>
-          <XStack alignItems="center" space="$2">
-            <YStack alignItems="flex-end">
-              {hasData ? (
-                <>
-                  <Text color={subTextColor} fontSize={10}>
-                    @{user?.login}
-                  </Text>
-                  <Text color={headerTextColor} fontWeight="bold">
-                    {user?.getFullName()}
-                  </Text>
-                </>
-              ) : (
-                <Text color={subTextColor} fontSize={10}>
-                  @{t('guest')}
-                </Text>
-              )}
-            </YStack>
-            <View
-              width={40}
-              height={40}
-              borderRadius={20}
-              backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
-              alignItems="center"
-              justifyContent="center"
-              overflow="hidden">
-              {hasData && user?.getAvatarBase64() ? (
-                <Image
-                  source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
-                  style={{ width: 40, height: 40, borderRadius: 20 }}
-                />
-              ) : (
-                <Text>😏</Text>
-              )}
-            </View>
-          </XStack>
-        </XStack>
-
-        {!hasData && (
-          <YStack alignItems="center" justifyContent="center" flex={1}>
-            <Text color={subTextColor} fontSize={16}>
-              {t('no_data_found')}
-            </Text>
-          </YStack>
-        )}
-
-        {/* Username Change Modal */}
-        <ConfirmationModal
-          isVisible={isUsernameModalVisible}
-          onClose={() => setIsUsernameModalVisible(false)}
-          onConfirm={handleSaveUsername}
-          title={t('enter_new_username')}
-          confirmText={t('save')}
-          cancelText={t('cancel')}
-          confirmButtonColor={secondaryButtonColor}
-          isDarkMode={isDarkMode}>
-          <TextInput
-            style={inputStyle}
-            placeholder={t('new_username')}
-            placeholderTextColor={isDarkMode ? '#A0A7B7' : '#757575'}
-            value={newUsername}
-            onChangeText={setNewUsername}
-          />
-        </ConfirmationModal>
-
-        {/* Delete User Confirmation Modal */}
-        <ConfirmationModal
-          isVisible={isDeleteUserModalVisible}
-          onClose={() => setIsDeleteUserModalVisible(false)}
-          onConfirm={handleDeleteUser}
-          title={t('confirm_delete_user')}
-          message={t('delete_user_warning')}
-          confirmText={t('delete')}
-          cancelText={t('cancel')}
-          confirmButtonColor={dangerButtonColor}
-          isDarkMode={isDarkMode}
-        />
-
-        {/* Delete Comments Confirmation Modal */}
-        <ConfirmationModal
-          isVisible={isDeleteCommentsModalVisible}
-          onClose={() => setIsDeleteCommentsModalVisible(false)}
-          onConfirm={handleDeleteComments}
-          title={t('confirm_delete_comments')}
-          message={t('delete_comments_warning')}
-          confirmText={t('delete')}
-          cancelText={t('cancel')}
-          confirmButtonColor={dangerButtonColor}
-          isDarkMode={isDarkMode}
-        />
-
-        {/* Avatar Selection Modal */}
-        <AvatarSelectionModal
-          isVisible={isAvatarModalVisible}
-          onClose={() => setIsAvatarModalVisible(false)}
-          onSelectAvatar={handleSelectStandardAvatar}
-          onTakePhoto={handleTakePhoto}
-          onChooseFromGallery={handleChooseFromGallery}
-          isDarkMode={isDarkMode}
-        />
-
-        {/* Main Content */}
-        <YStack flex={1} paddingHorizontal="$4" space="$5">
-          {/* Error and Success Messages */}
-          {error && (
-            <Text color={dangerButtonColor} fontSize={14} textAlign="center">
-              {error}
-            </Text>
-          )}
-          {successMessage && (
-            <Text color={primaryButtonColor} fontSize={14} textAlign="center">
-              {successMessage}
-            </Text>
-          )}
-
-          {/* Profile Title */}
-          <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
-            {t('profile')}
-          </Text>
-
-          {/* Profile Info */}
-          <XStack space="$4" alignItems="flex-start">
-            <YStack alignItems="center" space="$2">
-              <View
-                width={100}
-                height={100}
-                borderRadius={50}
-                backgroundColor="#FFFFFF"
-                alignItems="center"
-                justifyContent="center"
-                overflow="hidden"
-                borderWidth={1}
-                borderColor="#DDDDDD">
-                {hasData && user?.getAvatarBase64() ? (
-                  <Image
-                    source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
-                    style={{ width: 100, height: 100, borderRadius: 50 }}
-                  />
-                ) : (
-                  <Text>😏</Text>
-                )}
-              </View>
-
-              {/* Change Pic Button */}
-              <Button
-                size="$2"
-                fontSize={12}
-                paddingHorizontal="$2"
-                backgroundColor="#3D4049"
-                color="#FFFFFF"
-                onPress={handlePicture}>
-                {t('change_pic')}
-              </Button>
-            </YStack>
-
-            {/* User Info */}
-            <YStack flex={1} space="$4">
-              <YStack>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: 24,
+          paddingBottom: 32,
+          paddingHorizontal: 16,
+          alignItems: 'center',
+        }}
+        style={{ flex: 1, backgroundColor }}>
+        <YStack width={isLandscape ? '85%' : '100%'}>
+          {/* Header */}
+          <XStack padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
+            <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
+              UNIMAP
+            </H1>
+            <XStack alignItems="center" space="$2">
+              <YStack alignItems="flex-end">
                 {hasData ? (
                   <>
-                    <XStack alignItems="center" space="$2">
-                      <Text color={headerTextColor} fontSize={22} fontWeight="bold">
-                        {user?.getFullName()}
-                      </Text>
-                      <Button
-                        onPress={() => setIsUsernameModalVisible(true)}
-                        backgroundColor="transparent"
-                        padding="$0">
-                        <Icon name="edit" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
-                      </Button>
-                    </XStack>
-                    <Text color={subTextColor} fontSize={14}>
+                    <Text color={subTextColor} fontSize={10}>
                       @{user?.login}
+                    </Text>
+                    <Text color={headerTextColor} fontWeight="bold">
+                      {user?.getFullName()}
                     </Text>
                   </>
                 ) : (
@@ -751,38 +594,219 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   </Text>
                 )}
               </YStack>
-
-              {/* Premium Button */}
-              {!isPremium && (
-                <Button
-                  backgroundColor={primaryButtonColor}
-                  color="#000000"
-                  fontWeight="bold"
-                  paddingVertical="$2"
-                  borderRadius="$4"
-                  onPress={handlePremium}>
-                  {t('b_premium')}
-                </Button>
-              )}
-            </YStack>
+              <View
+                width={40}
+                height={40}
+                borderRadius={20}
+                backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
+                alignItems="center"
+                justifyContent="center"
+                overflow="hidden">
+                {hasData && user?.getAvatarBase64() ? (
+                  <Image
+                    source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                    style={{ width: 40, height: 40, borderRadius: 20 }}
+                  />
+                ) : (
+                  <Text>😏</Text>
+                )}
+              </View>
+            </XStack>
           </XStack>
 
-          {/* Email Section */}
-          <YStack space="$2" marginTop="$2">
-            <Text color={subTextColor} fontSize={14}>
-              {t('email')}
+          {!hasData && (
+            <YStack alignItems="center" justifyContent="center" flex={1}>
+              <Text color={subTextColor} fontSize={16}>
+                {t('no_data_found')}
+              </Text>
+            </YStack>
+          )}
+
+          {/* Username Change Modal */}
+          <ConfirmationModal
+            isVisible={isUsernameModalVisible}
+            onClose={() => setIsUsernameModalVisible(false)}
+            onConfirm={handleSaveUsername}
+            title={t('enter_new_username')}
+            confirmText={t('save')}
+            cancelText={t('cancel')}
+            confirmButtonColor={secondaryButtonColor}
+            isDarkMode={isDarkMode}>
+            <TextInput
+              style={inputStyle}
+              placeholder={t('new_username')}
+              placeholderTextColor={isDarkMode ? '#A0A7B7' : '#757575'}
+              value={newUsername}
+              onChangeText={setNewUsername}
+            />
+          </ConfirmationModal>
+
+          {/* Delete User Confirmation Modal */}
+          <ConfirmationModal
+            isVisible={isDeleteUserModalVisible}
+            onClose={() => setIsDeleteUserModalVisible(false)}
+            onConfirm={handleDeleteUser}
+            title={t('confirm_delete_user')}
+            message={t('delete_user_warning')}
+            confirmText={t('delete')}
+            cancelText={t('cancel')}
+            confirmButtonColor={dangerButtonColor}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Delete Comments Confirmation Modal */}
+          <ConfirmationModal
+            isVisible={isDeleteCommentsModalVisible}
+            onClose={() => setIsDeleteCommentsModalVisible(false)}
+            onConfirm={handleDeleteComments}
+            title={t('confirm_delete_comments')}
+            message={t('delete_comments_warning')}
+            confirmText={t('delete')}
+            cancelText={t('cancel')}
+            confirmButtonColor={dangerButtonColor}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Avatar Selection Modal */}
+          <AvatarSelectionModal
+            isVisible={isAvatarModalVisible}
+            onClose={() => setIsAvatarModalVisible(false)}
+            onSelectAvatar={handleSelectStandardAvatar}
+            onTakePhoto={handleTakePhoto}
+            onChooseFromGallery={handleChooseFromGallery}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Main Content */}
+          <YStack flex={1} paddingHorizontal="$4" space="$5">
+            {/* Error and Success Messages */}
+            {error && (
+              <Text color={dangerButtonColor} fontSize={14} textAlign="center">
+                {error}
+              </Text>
+            )}
+            {successMessage && (
+              <Text color={primaryButtonColor} fontSize={14} textAlign="center">
+                {successMessage}
+              </Text>
+            )}
+
+            {/* Profile Title */}
+            <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
+              {t('profile')}
             </Text>
-            <XStack space="$2" alignItems="center">
-              <Input
-                flex={1}
-                value={email}
-                onChangeText={setEmail}
-                backgroundColor={inputBackgroundColor}
-                borderRadius={8}
-                padding="$3"
-                color={headerTextColor}
-                placeholder={user?.email || ''}
-              />
+
+            {/* Profile Info */}
+            <XStack space="$4" alignItems="flex-start">
+              <YStack alignItems="center" space="$2">
+                <View
+                  width={100}
+                  height={100}
+                  borderRadius={50}
+                  backgroundColor="#FFFFFF"
+                  alignItems="center"
+                  justifyContent="center"
+                  overflow="hidden"
+                  borderWidth={1}
+                  borderColor="#DDDDDD">
+                  {hasData && user?.getAvatarBase64() ? (
+                    <Image
+                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                      style={{ width: 100, height: 100, borderRadius: 50 }}
+                    />
+                  ) : (
+                    <Text>😏</Text>
+                  )}
+                </View>
+
+                {/* Change Pic Button */}
+                <Button
+                  size="$2"
+                  fontSize={12}
+                  paddingHorizontal="$2"
+                  backgroundColor="#3D4049"
+                  color="#FFFFFF"
+                  onPress={handlePicture}>
+                  {t('change_pic')}
+                </Button>
+              </YStack>
+
+              {/* User Info */}
+              <YStack flex={1} space="$4">
+                <YStack>
+                  {hasData ? (
+                    <>
+                      <XStack alignItems="center" space="$2">
+                        <Text color={headerTextColor} fontSize={22} fontWeight="bold">
+                          {user?.getFullName()}
+                        </Text>
+                        <Button
+                          onPress={() => setIsUsernameModalVisible(true)}
+                          backgroundColor="transparent"
+                          padding="$0">
+                          <Icon name="edit" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+                        </Button>
+                      </XStack>
+                      <Text color={subTextColor} fontSize={14}>
+                        @{user?.login}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text color={subTextColor} fontSize={10}>
+                      @{t('guest')}
+                    </Text>
+                  )}
+                </YStack>
+
+                {/* Premium Button */}
+                {!isPremium && (
+                  <Button
+                    backgroundColor={primaryButtonColor}
+                    color="#000000"
+                    fontWeight="bold"
+                    paddingVertical="$2"
+                    borderRadius="$4"
+                    onPress={handlePremium}>
+                    {t('b_premium')}
+                  </Button>
+                )}
+              </YStack>
+            </XStack>
+
+            {/* Email Section */}
+            <YStack space="$2" marginTop="$2">
+              <Text color={subTextColor} fontSize={14}>
+                {t('email')}
+              </Text>
+              <XStack space="$2" alignItems="center">
+                <Input
+                  flex={1}
+                  value={email}
+                  onChangeText={setEmail}
+                  backgroundColor={inputBackgroundColor}
+                  borderRadius={8}
+                  padding="$3"
+                  color={headerTextColor}
+                  placeholder={user?.email || ''}
+                />
+                <Button
+                  backgroundColor={secondaryButtonColor}
+                  color="#000000"
+                  fontWeight="bold"
+                  paddingVertical="$3"
+                  paddingHorizontal="$4"
+                  borderRadius="$2"
+                  onPress={handleEmailChange}>
+                  {t('change_btn')}
+                </Button>
+              </XStack>
+            </YStack>
+
+            {/* Password Section */}
+            <YStack space="$2">
+              <Text color={subTextColor} fontSize={14}>
+                {t('change_password')}
+              </Text>
               <Button
                 backgroundColor={secondaryButtonColor}
                 color="#000000"
@@ -790,71 +814,54 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 paddingVertical="$3"
                 paddingHorizontal="$4"
                 borderRadius="$2"
-                onPress={handleEmailChange}>
-                {t('change_btn')}
+                onPress={() => navigation.navigate('ForgotPasswordPage')}>
+                {t('change_pass_btn')}
               </Button>
-            </XStack>
-          </YStack>
+            </YStack>
 
-          {/* Password Section */}
-          <YStack space="$2">
-            <Text color={subTextColor} fontSize={14}>
-              {t('change_password')}
-            </Text>
+            {/* Privacy Section */}
+            <YStack space="$3" marginTop="$2">
+              <Text color={subTextColor} fontSize={14}>
+                {t('privacy')}
+              </Text>
+              <XStack space="$3">
+                <Button
+                  flex={1}
+                  backgroundColor={secondaryButtonColor}
+                  color="#000000"
+                  fontWeight="bold"
+                  paddingVertical="$3"
+                  borderRadius="$2"
+                  onPress={() => setIsDeleteUserModalVisible(true)}>
+                  {t('d_user')}
+                </Button>
+                <Button
+                  flex={1}
+                  backgroundColor={secondaryButtonColor}
+                  color="#000000"
+                  fontWeight="bold"
+                  paddingVertical="$3"
+                  borderRadius="$2"
+                  onPress={() => setIsDeleteCommentsModalVisible(true)}>
+                  {t('d_comm')}
+                </Button>
+              </XStack>
+            </YStack>
+
+            {/* Logout */}
             <Button
-              backgroundColor={secondaryButtonColor}
-              color="#000000"
+              backgroundColor={dangerButtonColor}
+              color="#FFFFFF"
               fontWeight="bold"
               paddingVertical="$3"
-              paddingHorizontal="$4"
               borderRadius="$2"
-              onPress={() => navigation.navigate('ForgotPasswordPage')}>
-              {t('change_pass_btn')}
+              onPress={handleLogout}
+              marginTop="$2">
+              {t('logout')}
             </Button>
           </YStack>
-
-          {/* Privacy Section */}
-          <YStack space="$3" marginTop="$2">
-            <Text color={subTextColor} fontSize={14}>
-              {t('privacy')}
-            </Text>
-            <XStack space="$3">
-              <Button
-                flex={1}
-                backgroundColor={secondaryButtonColor}
-                color="#000000"
-                fontWeight="bold"
-                paddingVertical="$3"
-                borderRadius="$2"
-                onPress={() => setIsDeleteUserModalVisible(true)}>
-                {t('d_user')}
-              </Button>
-              <Button
-                flex={1}
-                backgroundColor={secondaryButtonColor}
-                color="#000000"
-                fontWeight="bold"
-                paddingVertical="$3"
-                borderRadius="$2"
-                onPress={() => setIsDeleteCommentsModalVisible(true)}>
-                {t('d_comm')}
-              </Button>
-            </XStack>
-          </YStack>
-
-          {/* Logout */}
-          <Button
-            backgroundColor={dangerButtonColor}
-            color="#FFFFFF"
-            fontWeight="bold"
-            paddingVertical="$3"
-            borderRadius="$2"
-            onPress={handleLogout}
-            marginTop="$2">
-            {t('logout')}
-          </Button>
         </YStack>
-      </YStack>
+      </ScrollView>
     </Theme>
   );
 };
