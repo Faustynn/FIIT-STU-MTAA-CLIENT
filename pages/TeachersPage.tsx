@@ -57,15 +57,15 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
       const loadTeachers = async () => {
         try {
           setLoading(true);
-          const data = await fetchTeachers();
+          const data = await fetchTeachers(); // ⚙️ функция уже ретраится сама
           const parsed = parseTeachers(data);
           setTeachers(parsed);
           setError(null);
+          setLoading(false); // ✅ только если успех
         } catch (err) {
           setError(t('no_data_found'));
           console.error('Error fetching teachers:', err);
-        } finally {
-          setLoading(false);
+          // ❌ не ставим setLoading(false), чтобы спиннер продолжал крутиться
         }
       };
 

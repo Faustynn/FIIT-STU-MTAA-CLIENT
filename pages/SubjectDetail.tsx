@@ -73,11 +73,11 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
           const data = await fetchSubjectDetails(subjectId);
           setSubject(data as SubjectDetails);
           setError(null);
+          setLoading(false); // ✅ Ставим тут, только если успех
         } catch (err) {
           setError('Failed to load subject details. Please try again later.');
           console.error('Error fetching subject details:', err);
-        } finally {
-          setLoading(false);
+          // ❌ Не ставим setLoading(false), пусть спиннер остаётся, пока retry
         }
       };
 

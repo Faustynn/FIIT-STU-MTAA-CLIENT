@@ -389,95 +389,169 @@ export const parseSubjects = (raw: any[]): Subject[] => {
 };
 
 export const fetchSubjectDetails = async (subjectId: string | number): Promise<Subject> => {
-  try {
-    console.log('🔍 Fetching subject from list by ID/code:', subjectId);
-
-    const allSubjects = await fetchSubjects(); // получаем весь список
-    const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
-
-    if (!found) throw new Error('Subject not found by code: ' + subjectId);
-
-    return found;
-  } catch (error) {
-    console.error('Error fetching subject details from list:', error);
-    throw error;
+  let attempt = 0;
+  while (true) {
+    try {
+      const allSubjects = await fetchSubjects();
+      const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
+      if (!found) throw new Error('Subject not found by code: ' + subjectId);
+      return found;
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchSubjectDetails failed (attempt ${attempt}), retrying in 15s...`, err);
+      await new Promise((res) => setTimeout(res, 15000));
+    }
   }
 };
+
+// func
+// export const fetchSubjectDetails = async (subjectId: string | number): Promise<Subject> => {
+//   try {
+
+//     const allSubjects = await fetchSubjects(); // получаем весь список
+//     const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
+
+//     if (!found) throw new Error('Subject not found by code: ' + subjectId);
+
+//     return found;
+//   } catch (error) {
+//     console.error('Error fetching subject details from list:', error);
+//     throw error;
+//   }
+// };
 
 export const fetchTeachers = async () => {
-  try {
-    const token = await AsyncStorage.getItem('ACCESS_TOKEN');
-    if (!token) throw new Error('No access token available');
+  let attempt = 0;
+  while (true) {
+    try {
+      const token = await AsyncStorage.getItem('ACCESS_TOKEN');
+      if (!token) throw new Error('No access token available');
 
-    const response = await fetch(TEACHERS_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+      const response = await fetch(TEACHERS_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    if (!response.ok) throw new Error('Failed to fetch teachers');
+      if (!response.ok) throw new Error(`Failed to fetch teachers: ${response.status}`);
 
-    const json = await response.json();
-    console.log('Fetched teachers:', json);
-    return json.teachers || [];
-  } catch (error) {
-    console.error('Error fetching teachers:', error);
-    throw error;
-  }
-};
-// Fetch concrete teacher from local storage
-export const fetchTeacherDetails = async (teacherId: string | number) => {
-  try {
-    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
-
-    const response = await fetch(`${TEACHERS_URL}/${teacherId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch teacher details');
+      const json = await response.json();
+      return json.teachers || [];
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchTeachers failed (attempt ${attempt}), retrying in 15s...`, err);
+      await new Promise((res) => setTimeout(res, 15000));
     }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching teacher details:', error);
-    throw error;
   }
 };
 
-// Buy premium
-export const buyPremium = async (userId: string) => {
+// func
+// export const fetchTeachers = async () => {
+//   try {
+//     const token = await AsyncStorage.getItem('ACCESS_TOKEN');
+//     if (!token) throw new Error('No access token available');
+
+//     const response = await fetch(TEACHERS_URL, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//         'Content-Type': 'application/json',
+//       },
+//     });
+
+//     if (!response.ok) throw new Error('Failed to fetch teachers');
+
+//     const json = await response.json();
+//     console.log('Fetched teachers:', json);
+//     return json.teachers || [];
+//   } catch (error) {
+//     console.error('Error fetching teachers:', error);
+//     throw error;
+//   }
+// };
+
+export const fetchTeacherDetails = async (teacherId: string | number) => {
+  let attempt = 0;
+  while (true) {
+    try {
+      console.log('🔍 Fetching teacher from list by ID:', teacherId);
+
+      const allTeachers = await fetchTeachers();
+      const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
+
+      if (!found) throw new Error('Teacher not found by ID: ' + teacherId);
+
+      return found;
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchTeacherDetails failed (attempt ${attempt}), retrying in 15s...`, err);
+      await new Promise((res) => setTimeout(res, 15000));
+    }
+  }
+};
+
+export const buyPremium = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
 
-  try {
-    const response = await fetch(`${PREMIUM_URL}${userId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
-      },
-    });
+  while (true) {
+    try {
+      const token = await AsyncStorage.getItem('ACCESS_TOKEN');
+      if (!token) throw new Error('No access token available');
 
-    if (response.ok) {
+      const response = await fetch(`${PREMIUM_URL}${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`❌ Failed (status ${response.status}): ${text}`);
+      }
+
       const json = await response.json();
       const user = json.user;
-
-      console.log(user);
       await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
       return true;
-    } else {
-      console.error(`Buying Premium failed with status code: ${response.status}`);
-      return false;
+    } catch (error) {
+      console.error(`❌ buyPremium failed, retrying in 15s...`, error);
+      await new Promise((res) => setTimeout(res, 15000));
     }
-  } catch (error) {
-    console.error('Premium buying request failed:', error);
-    return false;
   }
-  return true;
 };
+
+// func
+// export const buyPremium = async (userId: string) => {
+//   if (!userId) return false;
+
+//   try {
+//     const response = await fetch(`${PREMIUM_URL}${userId}`, {
+//       method: 'PUT',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+//       },
+//     });
+
+//     if (response.ok) {
+//       const json = await response.json();
+//       const user = json.user;
+
+//       console.log(user);
+//       await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
+//       return true;
+//     } else {
+//       console.error(`Buying Premium failed with status code: ${response.status}`);
+//       return false;
+//     }
+//   } catch (error) {
+//     console.error('Premium buying request failed:', error);
+//     return false;
+//   }
+//   return true;
+// };
 
 // Delete all user comments
 export const deleteComments = async (userId: number | undefined) => {
@@ -814,26 +888,26 @@ export const parseTeachers = (raw: Teacher[]): ParsedTeacher[] => {
   }));
 };
 
-export const fetchTeacherDetails1 = async (teacherId: string | number) => {
-  return Promise.resolve({
-    id: teacherId.toString(),
-    name: 'Doc. Ing. John Smith, PhD.',
-    email: 'john.smith@fiit.stuba.sk',
-    phone: '+421 123 456 789',
-    office: 'BC-302',
-    aisId: '123456',
-    subjectCode: 'SPAASM_B',
-    roles: ['Lecturer', 'Supervisor'],
-    rating: 4.5,
-    department: 'Computer Science',
-    consultationHours: 'Monday 10:00-12:00',
-    bio: 'John Smith has over 20 years of teaching experience in system programming and algorithms.',
-    subjects: [
-      { id: 1, name: 'System Programming in Assembly', code: 'SPAASM_B' },
-      { id: 2, name: 'Operating Systems', code: 'OS_B' },
-    ],
-  });
-};
+// export const fetchTeacherDetails1 = async (teacherId: string | number) => {
+//   return Promise.resolve({
+//     id: teacherId.toString(),
+//     name: 'Doc. Ing. John Smith, PhD.',
+//     email: 'john.smith@fiit.stuba.sk',
+//     phone: '+421 123 456 789',
+//     office: 'BC-302',
+//     aisId: '123456',
+//     subjectCode: 'SPAASM_B',
+//     roles: ['Lecturer', 'Supervisor'],
+//     rating: 4.5,
+//     department: 'Computer Science',
+//     consultationHours: 'Monday 10:00-12:00',
+//     bio: 'John Smith has over 20 years of teaching experience in system programming and algorithms.',
+//     subjects: [
+//       { id: 1, name: 'System Programming in Assembly', code: 'SPAASM_B' },
+//       { id: 2, name: 'Operating Systems', code: 'OS_B' },
+//     ],
+//   });
+// };
 
 export interface ParsedTeacher1 {
   id: string;
@@ -851,56 +925,57 @@ export interface ParsedTeacher1 {
   subjects?: { id: string | number; name: string; code: string }[];
 }
 
-export const fetchTeacherDetails2 = async (
-  teacherId: string | number
-): Promise<ParsedTeacher1 | null> => {
-  try {
-    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+// func
+// export const fetchTeacherDetails2 = async (
+//   teacherId: string | number
+// ): Promise<ParsedTeacher1 | null> => {
+//   try {
+//     const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
 
-    const response = await fetch(TEACHERS_URL, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+//     const response = await fetch(TEACHERS_URL, {
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`,
+//         'Content-Type': 'application/json',
+//       },
+//     });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch teachers');
-    }
+//     if (!response.ok) {
+//       throw new Error('Failed to fetch teachers');
+//     }
 
-    const json = await response.json();
-    const allTeachers = json.teachers;
+//     const json = await response.json();
+//     const allTeachers = json.teachers;
 
-    const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
+//     const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
 
-    if (!found) {
-      console.warn('Teacher not found for ID:', teacherId);
-      return null;
-    }
+//     if (!found) {
+//       console.warn('Teacher not found for ID:', teacherId);
+//       return null;
+//     }
 
-    return {
-      id: found.id,
-      name: found.name,
-      email: found.email,
-      phone: found.phone,
-      office: found.office,
-      aisId: found.aisId || '',
-      roles: found.roles ? found.roles.split(',').map((r: string) => r.trim()) : [],
-      department: found.department || 'Unknown',
-      consultationHours: found.consultationHours || '',
-      bio: found.bio || '',
-      subjectCode: found.subject_code || '',
-      rating: found.rating || 0,
-      subjects: Array.isArray(found.subjects)
-        ? found.subjects.map((s: any) => ({
-            id: s.id || s.code || s.name,
-            name: s.name || 'Unknown',
-            code: s.code || '---',
-          }))
-        : [],
-    };
-  } catch (error) {
-    console.error('Error fetching teacher details:', error);
-    return null;
-  }
-};
+//     return {
+//       id: found.id,
+//       name: found.name,
+//       email: found.email,
+//       phone: found.phone,
+//       office: found.office,
+//       aisId: found.aisId || '',
+//       roles: found.roles ? found.roles.split(',').map((r: string) => r.trim()) : [],
+//       department: found.department || 'Unknown',
+//       consultationHours: found.consultationHours || '',
+//       bio: found.bio || '',
+//       subjectCode: found.subject_code || '',
+//       rating: found.rating || 0,
+//       subjects: Array.isArray(found.subjects)
+//         ? found.subjects.map((s: any) => ({
+//             id: s.id || s.code || s.name,
+//             name: s.name || 'Unknown',
+//             code: s.code || '---',
+//           }))
+//         : [],
+//     };
+//   } catch (error) {
+//     console.error('Error fetching teacher details:', error);
+//     return null;
+//   }
+// };

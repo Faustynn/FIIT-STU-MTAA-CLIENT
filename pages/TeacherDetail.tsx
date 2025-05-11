@@ -6,7 +6,7 @@ import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } fr
 
 import { useTheme } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { fetchTeacherDetails2 } from '../services/apiService';
+import { fetchTeacherDetails } from '../services/apiService';
 
 type TeacherDetailProps = {
   route: RouteProp<AppStackParamList, 'TeacherSubPage'>;
@@ -48,17 +48,20 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
   useEffect(() => {
     if (teacherId) {
       const loadTeacherDetails = async () => {
-        try {
-          setLoading(true);
-          const data = await fetchTeacherDetails2(teacherId);
-          console.log('Fetched teacher:', data);
-          setTeacher(data as ParsedTeacher);
-          setError(null);
-        } catch (err) {
-          setError('Failed to load teacher details. Please try again later.');
-          console.error('Error fetching teacher details:', err);
-        } finally {
-          setLoading(false);
+        while (true) {
+          try {
+            setLoading(true);
+            const data = await fetchTeacherDetails(teacherId);
+            console.log('Fetched teacher:', data);
+            setTeacher(data as ParsedTeacher);
+            setError(null);
+            setLoading(false); // ✅ только если всё ок — выходим
+            break;
+          } catch (err) {
+            console.error('Error fetching teacher details:', err);
+            setError('Failed to load teacher details. Retrying...');
+            await new Promise((res) => setTimeout(res, 15000)); // 🔁 подождать 15 сек
+          }
         }
       };
 
