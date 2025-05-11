@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Switch, useWindowDimensions, Image } from 'react-native';
 import { H1, XStack, YStack, Text, View, Spinner, Theme, ScrollView, ZStack } from 'tamagui';
 
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import '../utils/i18n';
 import { ComboBox } from '../components/ComboBox';
@@ -22,11 +22,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
     toggleGestureNavigation,
     gestureMode,
     setGestureMode,
+    fontSize,
+    setFontSize,
   } = useTheme();
   const isDarkMode = theme === 'dark';
   const { t, i18n } = useTranslation();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
+  const textSize = getFontSizeValue(fontSize);
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +37,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [language, setLanguage] = useState(i18n.language || 'en');
-  const [fontSize, setFontSize] = useState('12');
   const [contrast, setContrast] = useState('0');
   const [swipeLocked, setSwipeLocked] = useState(false);
 
@@ -134,13 +136,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
         <YStack flex={isLandscape ? 1 : undefined} marginRight={isLandscape ? '$4' : 0}>
           {isLandscape ? (
             <YStack alignItems="flex-start">
-              <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
+              <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
                 UNIMAP
               </H1>
               <YStack alignItems="center" marginTop="$4">
                 {hasData ? (
                   <>
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 4}>
                       @{user?.login}
                     </Text>
                     <Text color={headerTextColor} fontWeight="bold">
@@ -148,7 +150,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                     </Text>
                   </>
                 ) : (
-                  <Text color={subTextColor} fontSize={10}>
+                  <Text color={subTextColor} fontSize={textSize - 4}>
                     @guest
                   </Text>
                 )}
@@ -173,14 +175,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
             </YStack>
           ) : (
             <XStack justifyContent="space-between" alignItems="center">
-              <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
+              <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
                 UNIMAP
               </H1>
               <XStack alignItems="center" space="$2">
                 <YStack alignItems="flex-end">
                   {hasData ? (
                     <>
-                      <Text color={subTextColor} fontSize={10}>
+                      <Text color={subTextColor} fontSize={textSize - 4}>
                         @{user?.login}
                       </Text>
                       <Text color={headerTextColor} fontWeight="bold">
@@ -188,7 +190,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                       </Text>
                     </>
                   ) : (
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 4}>
                       @guest
                     </Text>
                   )}
@@ -221,9 +223,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
             <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { color: textColor }]}>{t('appearance')}</Text>
+              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
+                {t('appearance')}
+              </Text>
               <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: textColor }]}>{t('d_mod')}</Text>
+                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('d_mod')}</Text>
                 <Switch
                   value={isDarkMode}
                   onValueChange={toggleTheme}
@@ -234,11 +238,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
             </View>
 
             <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { color: textColor }]}>
+              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
                 {t('gestureNavigation')}
               </Text>
               <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: textColor }]}>
+                <Text style={[{ fontSize: textSize, color: textColor }]}>
                   {t('enableGestureNav')}
                 </Text>
                 <Switch
@@ -251,7 +255,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
 
               {gestureNavigationEnabled && (
                 <YStack space="$2" marginTop="$2">
-                  <Text color={labelColor} fontSize={16}>
+                  <Text color={labelColor} fontSize={textSize}>
                     {t('gestureMode')}
                   </Text>
                   <ComboBox
@@ -262,7 +266,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                     labelColor={labelColor}
                     textColor={textColor}
                   />
-                  <Text style={[styles.settingNote, { color: subTextColor }]}>
+                  <Text
+                    style={[styles.settingNote, { fontSize: textSize - 2, color: subTextColor }]}>
                     {gestureMode === 'shake'
                       ? t('shake_note')
                       : gestureMode === 'tilt'
@@ -273,7 +278,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
               )}
 
               <View style={[styles.settingRow, { marginTop: 12 }]}>
-                <Text style={[styles.settingLabel, { color: textColor }]}>{t('disableSwipe')}</Text>
+                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('disableSwipe')}</Text>
                 <Switch
                   value={swipeLocked}
                   onValueChange={handleSwipeLockChange}
@@ -284,9 +289,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
             </View>
 
             <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { color: textColor }]}>{t('notification')}</Text>
+              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
+                {t('notification')}
+              </Text>
               <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: textColor }]}>{t('en_not')}</Text>
+                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('en_not')}</Text>
                 <Switch
                   value={notifications}
                   onValueChange={setNotifications}
@@ -295,7 +302,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                 />
               </View>
               <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: textColor }]}>{t('s_not')}</Text>
+                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('s_not')}</Text>
                 <Switch
                   value={soundEnabled}
                   onValueChange={setSoundEnabled}
@@ -306,7 +313,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
             </View>
 
             <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { color: textColor }]}>{t('language')}</Text>
+              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
+                {t('language')}
+              </Text>
               <YStack space="$2">
                 <ComboBox
                   value={language}
@@ -320,10 +329,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
             </View>
 
             <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { color: textColor }]}>{t('displ_sett')}</Text>
+              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
+                {t('displ_sett')}
+              </Text>
               <YStack space="$4">
                 <YStack space="$2">
-                  <Text color={labelColor} fontSize={16}>
+                  <Text color={labelColor} fontSize={textSize}>
                     {t('font_s')}
                   </Text>
                   <ComboBox
@@ -336,7 +347,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                   />
                 </YStack>
                 <YStack space="$2">
-                  <Text color={labelColor} fontSize={16}>
+                  <Text color={labelColor} fontSize={textSize}>
                     {t('contrast')}
                   </Text>
                   <ComboBox
@@ -370,7 +381,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   settingTitle: {
-    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
   },
@@ -380,11 +390,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
-  settingLabel: {
-    fontSize: 16,
-  },
   settingNote: {
-    fontSize: 12,
     fontStyle: 'italic',
     marginTop: 4,
   },

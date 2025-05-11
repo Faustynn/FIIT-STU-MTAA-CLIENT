@@ -268,8 +268,9 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
   if (!accessToken) throw new Error('No access token');
 
   let attempt = 0;
+  const maxAttempts = 10;
 
-  while (true) {
+  while (attempt < maxAttempts) {
     try {
       const response = await fetch(SUBJECTS_URL, {
         method: 'GET',
@@ -288,10 +289,14 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
       return parseSubjects(json.subjects || []);
     } catch (err) {
       attempt++;
-      console.error(`❌ fetchSubjects failed (attempt ${attempt}), retrying in 15s...`);
+      console.error(
+        `❌ fetchSubjects failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`
+      );
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
+
+  throw new Error(`❌ fetchSubjects failed after ${maxAttempts} attempts`);
 };
 
 // func

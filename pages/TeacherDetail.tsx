@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } from 'tamagui';
 
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
 import { fetchTeacherDetails } from '../services/apiService';
 
@@ -29,7 +29,8 @@ export interface ParsedTeacher {
 }
 
 const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
+  const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
   const teacherId = route.params.teacherId;
   const { width, height } = useWindowDimensions();
@@ -89,7 +90,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
               backgroundColor="transparent"
               color={headerTextColor}
             />
-            <H1 fontSize={24} fontWeight="bold" color={headerTextColor} flex={1}>
+            <H1 fontSize={textSize + 5} fontWeight="bold" color={headerTextColor} flex={1}>
               Teacher Details
             </H1>
           </XStack>
@@ -104,7 +105,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
             </YStack>
           ) : error ? (
             <YStack justifyContent="center" alignItems="center" flex={1}>
-              <Text color="$red10" fontSize={16}>
+              <Text color="$red10" fontSize={textSize}>
                 {error}
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">
@@ -121,7 +122,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                   padding="$4"
                   space="$3"
                   marginTop="$2">
-                  <Text fontSize={28} fontWeight="bold" color={headerTextColor}>
+                  <Text fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
                     {teacher.name}
                   </Text>
                   <XStack space="$2">
@@ -145,7 +146,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                     )}
                   </XStack>
                   <XStack justifyContent="space-between" alignItems="center">
-                    <Text color={subTextColor} fontSize={14}>
+                    <Text color={subTextColor} fontSize={textSize - 1}>
                       AIS ID: {teacher.aisId}
                     </Text>
                     <View
@@ -160,7 +161,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
 
                 {/* Contact Information */}
                 <YStack space="$2">
-                  <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                  <Text fontSize={textSize + 1} fontWeight="bold" color={headerTextColor}>
                     Contact Information
                   </Text>
                   <YStack
@@ -170,40 +171,40 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                     space="$2">
                     {teacher.email && (
                       <XStack space="$2">
-                        <Text color={subTextColor} fontSize={14} width={80}>
+                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
                           Email:
                         </Text>
-                        <Text color={headerTextColor} fontSize={14} flex={1}>
+                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.email}
                         </Text>
                       </XStack>
                     )}
                     {teacher.phone && (
                       <XStack space="$2">
-                        <Text color={subTextColor} fontSize={14} width={80}>
+                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
                           Phone:
                         </Text>
-                        <Text color={headerTextColor} fontSize={14} flex={1}>
+                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.phone}
                         </Text>
                       </XStack>
                     )}
                     {teacher.office && (
                       <XStack space="$2">
-                        <Text color={subTextColor} fontSize={14} width={80}>
+                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
                           Office:
                         </Text>
-                        <Text color={headerTextColor} fontSize={14} flex={1}>
+                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.office}
                         </Text>
                       </XStack>
                     )}
                     {teacher.consultationHours && (
                       <XStack space="$2" alignItems="flex-start">
-                        <Text color={subTextColor} fontSize={14} width={80}>
+                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
                           Consultation:
                         </Text>
-                        <Text color={headerTextColor} fontSize={14} flex={1}>
+                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.consultationHours}
                         </Text>
                       </XStack>
@@ -214,11 +215,11 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                 {/* Bio/About */}
                 {teacher.bio && (
                   <YStack space="$2">
-                    <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                    <Text fontSize={textSize + 1} fontWeight="bold" color={headerTextColor}>
                       About
                     </Text>
                     <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3">
-                      <Text color={headerTextColor} fontSize={14}>
+                      <Text color={headerTextColor} fontSize={textSize - 1}>
                         {teacher.bio}
                       </Text>
                     </YStack>
@@ -228,7 +229,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                 {/* Subjects Taught */}
                 {teacher.subjects && teacher.subjects.length > 0 && (
                   <YStack space="$2">
-                    <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                    <Text fontSize={textSize + 1} fontWeight="bold" color={headerTextColor}>
                       Subjects Taught
                     </Text>
                     <YStack space="$2">
@@ -241,10 +242,10 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                           onPress={() => navigateToSubject(subject.id)}
                           pressStyle={{ opacity: 0.8 }}>
                           <XStack justifyContent="space-between">
-                            <Text color={headerTextColor} fontSize={16}>
+                            <Text color={headerTextColor} fontSize={textSize}>
                               {subject.name}
                             </Text>
-                            <Text color={subTextColor} fontSize={12}>
+                            <Text color={subTextColor} fontSize={textSize - 2}>
                               {subject.code}
                             </Text>
                           </XStack>
@@ -257,7 +258,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
             </ScrollView>
           ) : (
             <YStack justifyContent="center" alignItems="center" flex={1}>
-              <Text color={subTextColor} fontSize={16}>
+              <Text color={subTextColor} fontSize={textSize}>
                 Teacher not found
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">

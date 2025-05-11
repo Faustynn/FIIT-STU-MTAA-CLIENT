@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { YStack, H1, Theme, XStack, Text, View, Button, Input, Spinner } from 'tamagui';
 
 import ConfirmationModal from '../components/ConfirmationModal';
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import {
   buyPremium,
@@ -35,6 +35,7 @@ type AvatarSelectionModalProps = {
   onTakePhoto: () => void;
   onChooseFromGallery: () => void;
   isDarkMode: boolean;
+  textSize: number;
 };
 
 const standardAvatars = [
@@ -57,6 +58,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   onTakePhoto,
   onChooseFromGallery,
   isDarkMode,
+  textSize,
 }) => {
   const { t } = useTranslation();
   const [isPremium, setIsPremium] = useState(false);
@@ -110,7 +112,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
       isDarkMode={isDarkMode}
       hideConfirmButton>
       <YStack space="$4" width="100%">
-        <Text color={headerTextColor} textAlign="center" fontSize={16} fontWeight="600">
+        <Text color={headerTextColor} textAlign="center" fontSize={textSize} fontWeight="600">
           {t('standard_avatars')}
         </Text>
 
@@ -149,7 +151,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
         <Text
           color={headerTextColor}
           textAlign="center"
-          fontSize={16}
+          fontSize={textSize}
           fontWeight="600"
           marginTop="$2">
           {t('custom_avatar')}
@@ -160,6 +162,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
             flex={1}
             backgroundColor={secondaryButtonColor}
             color={buttonTextColor}
+            fontSize={textSize}
             fontWeight="bold"
             paddingVertical="$3"
             paddingHorizontal="$2"
@@ -167,7 +170,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
             onPress={onChooseFromGallery}>
             <Icon
               name="photo-library"
-              size={18}
+              size={textSize}
               color={buttonTextColor}
               style={{ marginRight: 8 }}
             />
@@ -178,12 +181,18 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
             flex={1}
             backgroundColor={secondaryButtonColor}
             color={buttonTextColor}
+            fontSize={textSize}
             fontWeight="bold"
             paddingVertical="$3"
             paddingHorizontal="$2"
             borderRadius="$2"
             onPress={onTakePhoto}>
-            <Icon name="camera-alt" size={18} color={buttonTextColor} style={{ marginRight: 8 }} />
+            <Icon
+              name="camera-alt"
+              size={textSize}
+              color={buttonTextColor}
+              style={{ marginRight: 8 }}
+            />
             {t('take_photo')}
           </Button>
         </XStack>
@@ -198,7 +207,8 @@ type ProfilePageProps = {
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
+  const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
 
   // Modal visibility states
@@ -574,14 +584,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         <YStack width={isLandscape ? '85%' : '100%'}>
           {/* Header */}
           <XStack padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
-            <H1 fontSize={24} fontWeight="bold" color={headerTextColor}>
+            <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
               UNIMAP
             </H1>
             <XStack alignItems="center" space="$2">
               <YStack alignItems="flex-end">
                 {hasData ? (
                   <>
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 4}>
                       @{user?.login}
                     </Text>
                     <Text color={headerTextColor} fontWeight="bold">
@@ -589,7 +599,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                     </Text>
                   </>
                 ) : (
-                  <Text color={subTextColor} fontSize={10}>
+                  <Text color={subTextColor} fontSize={textSize - 4}>
                     @{t('guest')}
                   </Text>
                 )}
@@ -616,7 +626,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
           {!hasData && (
             <YStack alignItems="center" justifyContent="center" flex={1}>
-              <Text color={subTextColor} fontSize={16}>
+              <Text color={subTextColor} fontSize={textSize}>
                 {t('no_data_found')}
               </Text>
             </YStack>
@@ -635,6 +645,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
             <TextInput
               style={inputStyle}
               placeholder={t('new_username')}
+              maxFontSizeMultiplier={textSize}
               placeholderTextColor={isDarkMode ? '#A0A7B7' : '#757575'}
               value={newUsername}
               onChangeText={setNewUsername}
@@ -675,24 +686,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
             onTakePhoto={handleTakePhoto}
             onChooseFromGallery={handleChooseFromGallery}
             isDarkMode={isDarkMode}
+            textSize={textSize}
           />
 
           {/* Main Content */}
           <YStack flex={1} paddingHorizontal="$4" space="$5">
             {/* Error and Success Messages */}
             {error && (
-              <Text color={dangerButtonColor} fontSize={14} textAlign="center">
+              <Text color={dangerButtonColor} fontSize={textSize} textAlign="center">
                 {error}
               </Text>
             )}
             {successMessage && (
-              <Text color={primaryButtonColor} fontSize={14} textAlign="center">
+              <Text color={primaryButtonColor} fontSize={textSize} textAlign="center">
                 {successMessage}
               </Text>
             )}
 
             {/* Profile Title */}
-            <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
+            <Text fontSize={textSize + 12} fontWeight="bold" color={headerTextColor}>
               {t('profile')}
             </Text>
 
@@ -722,7 +734,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 {/* Change Pic Button */}
                 <Button
                   size="$2"
-                  fontSize={12}
+                  fontSize={textSize - 2}
                   paddingHorizontal="$2"
                   backgroundColor="#3D4049"
                   color="#FFFFFF"
@@ -737,22 +749,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   {hasData ? (
                     <>
                       <XStack alignItems="center" space="$2">
-                        <Text color={headerTextColor} fontSize={22} fontWeight="bold">
+                        <Text color={headerTextColor} fontSize={textSize + 8} fontWeight="bold">
                           {user?.getFullName()}
                         </Text>
                         <Button
                           onPress={() => setIsUsernameModalVisible(true)}
                           backgroundColor="transparent"
                           padding="$0">
-                          <Icon name="edit" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+                          <Icon
+                            name="edit"
+                            size={textSize}
+                            color={isDarkMode ? '#FFFFFF' : '#000000'}
+                          />
                         </Button>
                       </XStack>
-                      <Text color={subTextColor} fontSize={14}>
+                      <Text color={subTextColor} fontSize={textSize - 4}>
                         @{user?.login}
                       </Text>
                     </>
                   ) : (
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 4}>
                       @{t('guest')}
                     </Text>
                   )}
@@ -762,6 +778,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 {!isPremium && (
                   <Button
                     backgroundColor={primaryButtonColor}
+                    fontSize={textSize}
                     color="#000000"
                     fontWeight="bold"
                     paddingVertical="$2"
@@ -775,13 +792,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
             {/* Email Section */}
             <YStack space="$2" marginTop="$2">
-              <Text color={subTextColor} fontSize={14}>
+              <Text color={subTextColor} fontSize={textSize}>
                 {t('email')}
               </Text>
               <XStack space="$2" alignItems="center">
                 <Input
                   flex={1}
                   value={email}
+                  maxFontSizeMultiplier={textSize}
                   onChangeText={setEmail}
                   backgroundColor={inputBackgroundColor}
                   borderRadius={8}
@@ -792,6 +810,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 <Button
                   backgroundColor={secondaryButtonColor}
                   color="#000000"
+                  fontSize={textSize}
                   fontWeight="bold"
                   paddingVertical="$3"
                   paddingHorizontal="$4"
@@ -804,12 +823,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
             {/* Password Section */}
             <YStack space="$2">
-              <Text color={subTextColor} fontSize={14}>
+              <Text color={subTextColor} fontSize={textSize}>
                 {t('change_password')}
               </Text>
               <Button
                 backgroundColor={secondaryButtonColor}
                 color="#000000"
+                fontSize={textSize}
                 fontWeight="bold"
                 paddingVertical="$3"
                 paddingHorizontal="$4"
@@ -821,7 +841,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
             {/* Privacy Section */}
             <YStack space="$3" marginTop="$2">
-              <Text color={subTextColor} fontSize={14}>
+              <Text color={subTextColor} fontSize={textSize}>
                 {t('privacy')}
               </Text>
               <XStack space="$3">
@@ -829,6 +849,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   flex={1}
                   backgroundColor={secondaryButtonColor}
                   color="#000000"
+                  fontSize={textSize}
                   fontWeight="bold"
                   paddingVertical="$3"
                   borderRadius="$2"
@@ -839,6 +860,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   flex={1}
                   backgroundColor={secondaryButtonColor}
                   color="#000000"
+                  fontSize={textSize}
                   fontWeight="bold"
                   paddingVertical="$3"
                   borderRadius="$2"
@@ -852,6 +874,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
             <Button
               backgroundColor={dangerButtonColor}
               color="#FFFFFF"
+              fontSize={textSize}
               fontWeight="bold"
               paddingVertical="$3"
               borderRadius="$2"

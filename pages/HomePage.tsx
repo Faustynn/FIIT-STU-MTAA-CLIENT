@@ -5,9 +5,8 @@ import { Linking, Image, useWindowDimensions } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner } from 'tamagui';
 
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
-
 import '../utils/i18n';
 
 export interface News {
@@ -26,7 +25,9 @@ const openWebLink = (url: string) => {
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
+  const textSize = getFontSizeValue(fontSize);
+
   const isDarkMode = theme === 'dark';
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
@@ -91,16 +92,16 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             alignItems={isLandscape ? 'flex-start' : 'center'}
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
-            <H1 fontSize={isLandscape ? 32 : 24} fontWeight="bold" color={headerTextColor}>
+            <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
               UNIMAP
             </H1>
             {hasData ? (
               isLandscape ? (
                 <YStack alignItems="flex-start">
-                  <Text color={subTextColor} fontSize={10}>
+                  <Text color={subTextColor} fontSize={textSize - 2}>
                     @{user?.login}
                   </Text>
-                  <Text color={headerTextColor} fontWeight="bold">
+                  <Text color={headerTextColor} fontWeight="bold" fontSize={textSize}>
                     {user?.getFullName()}
                   </Text>
                   <View
@@ -120,10 +121,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               ) : (
                 <XStack alignItems="center" space="$2">
                   <YStack alignItems="flex-end">
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 2}>
                       @{user?.login}
                     </Text>
-                    <Text color={headerTextColor} fontWeight="bold">
+                    <Text color={headerTextColor} fontWeight="bold" fontSize={textSize}>
                       {user?.getFullName()}
                     </Text>
                   </YStack>
@@ -142,7 +143,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 </XStack>
               )
             ) : (
-              <Text color={subTextColor} fontSize={10}>
+              <Text color={subTextColor} fontSize={textSize - 2}>
                 @guest
               </Text>
             )}
@@ -150,7 +151,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
           {!hasData && (
             <YStack alignItems="center" justifyContent="center" flex={1}>
-              <Text color={subTextColor} fontSize={16}>
+              <Text color={subTextColor} fontSize={textSize}>
                 No data found. Showing default content.
               </Text>
             </YStack>
@@ -173,7 +174,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 color={subTextColor}
                 style={{ marginRight: 8 }}
               />
-              <Text fontSize={18} color={subTextColor}>
+              <Text fontSize={textSize + 2} color={subTextColor}>
                 {t('news_upd')}
               </Text>
             </XStack>
@@ -184,10 +185,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               padding="$4"
               marginBottom="$3"
               width="100%">
-              <Text fontSize={20} fontWeight="bold" color={headerTextColor} marginBottom="$2">
+              <Text
+                fontSize={textSize + 4}
+                fontWeight="bold"
+                color={headerTextColor}
+                marginBottom="$2">
                 {t('fiit_dis')}
               </Text>
-              <Text fontSize={16} color={subTextColor} lineHeight={22}>
+              <Text fontSize={textSize} color={subTextColor} lineHeight={textSize + 6}>
                 {t('fiit_dis_desc')}
               </Text>
             </YStack>
@@ -199,7 +204,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 color={subTextColor}
                 style={{ marginRight: 8 }}
               />
-              <Text fontSize={18} color={subTextColor}>
+              <Text fontSize={textSize + 2} color={subTextColor}>
                 {t('utils')}
               </Text>
             </XStack>
@@ -230,10 +235,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 marginBottom="$3"
                 width="100%"
                 onPress={() => openWebLink(url)}>
-                <Text fontSize={20} fontWeight="bold" color={linkTextColor} marginBottom="$2">
+                <Text
+                  fontSize={textSize + 4}
+                  fontWeight="bold"
+                  color={linkTextColor}
+                  marginBottom="$2">
                   {title}
                 </Text>
-                <Text fontSize={16} color={subTextColor}>
+                <Text fontSize={textSize} color={subTextColor}>
                   {desc}
                 </Text>
               </YStack>

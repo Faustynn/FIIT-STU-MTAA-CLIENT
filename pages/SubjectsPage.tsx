@@ -5,12 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { Image, useWindowDimensions } from 'react-native';
 import { YStack, XStack, H1, Text, Theme, View, Input, ScrollView, Spinner, Button } from 'tamagui';
 
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import { fetchSubjects, Subject } from '../services/apiService';
 
 const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
+  const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
   const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
@@ -126,7 +127,10 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
             alignItems={isLandscape ? 'flex-start' : 'center'}
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
-            <H1 fontSize={isLandscape ? 32 : 24} fontWeight="bold" color={headerTextColor}>
+            <H1
+              fontSize={isLandscape ? textSize + 12 : textSize + 10}
+              fontWeight="bold"
+              color={headerTextColor}>
               UNIMAP
             </H1>
             {!isLandscape && (
@@ -134,7 +138,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                 <YStack alignItems="flex-end">
                   {hasData ? (
                     <>
-                      <Text color={subTextColor} fontSize={10}>
+                      <Text color={subTextColor} fontSize={textSize - 4}>
                         @{user?.login}
                       </Text>
                       <Text color={headerTextColor} fontWeight="bold">
@@ -142,7 +146,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                       </Text>
                     </>
                   ) : (
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 4}>
                       @guest
                     </Text>
                   )}
@@ -181,7 +185,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
             />
 
             <YStack space="$2">
-              <Text color={subTextColor} fontSize={14}>
+              <Text color={subTextColor} fontSize={textSize}>
                 {t('filters')}
               </Text>
               {isLandscape ? (
@@ -224,7 +228,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     </XStack>
                   </ScrollView>
                   <Button onPress={handleClearFilters} alignSelf="flex-start" marginTop="$2">
-                    {t('reset_filters')}
+                    {t('reset')}
                   </Button>
                 </>
               ) : (
@@ -263,7 +267,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     textColor={headerTextColor}
                   />
                   <Button onPress={handleClearFilters} marginLeft="$2">
-                    {t('reset_filters')}
+                    {t('reset')}
                   </Button>
                 </XStack>
               )}
@@ -281,7 +285,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
               paddingLeft: isLandscape ? 19 : 0,
             }}>
             <YStack space="$2">
-              <Text color={subTextColor} fontSize={14}>
+              <Text color={subTextColor} fontSize={textSize}>
                 {t('result')}
               </Text>
               {loading ? (
@@ -293,7 +297,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                 </YStack>
               ) : error ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                  <Text color="$red10" fontSize={16}>
+                  <Text color="$red10" fontSize={textSize}>
                     {error}
                   </Text>
                   <Text color={subTextColor} marginTop="$2">
@@ -302,7 +306,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                 </YStack>
               ) : filteredSubjects.length === 0 ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                  <Text color={subTextColor} fontSize={16}>
+                  <Text color={subTextColor} fontSize={textSize}>
                     {t('no_subjects_found')}
                   </Text>
                   {searchQuery && (
@@ -324,14 +328,14 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         navigation.navigate('SubjectSubPage', { subjectId: subject.code })
                       }>
                       <XStack justifyContent="space-between">
-                        <Text color={headerTextColor} fontSize={18} fontWeight="bold">
+                        <Text color={headerTextColor} fontSize={textSize + 2} fontWeight="bold">
                           {subject.name}
                         </Text>
-                        <Text color={subTextColor} fontSize={14}>
+                        <Text color={subTextColor} fontSize={textSize - 2}>
                           {subject.code}
                         </Text>
                       </XStack>
-                      <Text color={subTextColor} fontSize={14}>
+                      <Text color={subTextColor} fontSize={textSize - 3}>
                         {subject.type}, {subject.semester}
                       </Text>
                     </YStack>

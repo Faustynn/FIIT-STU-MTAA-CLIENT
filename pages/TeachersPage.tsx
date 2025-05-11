@@ -5,7 +5,7 @@ import { Image, useWindowDimensions } from 'react-native';
 import { YStack, H1, Theme, XStack, Text, View, Input, ScrollView, Spinner, Button } from 'tamagui';
 
 import { ComboBox } from '../components/ComboBox';
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import { fetchTeachers, parseTeachers } from '../services/apiService';
 
@@ -28,7 +28,8 @@ type TeachersPageProps = {
 };
 
 const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers }) => {
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
+  const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
   const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
@@ -118,7 +119,10 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
             alignItems={isLandscape ? 'flex-start' : 'center'}
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
-            <H1 fontSize={isLandscape ? 32 : 24} fontWeight="bold" color={headerTextColor}>
+            <H1
+              fontSize={isLandscape ? textSize + 15 : textSize + 10}
+              fontWeight="bold"
+              color={headerTextColor}>
               UNIMAP
             </H1>
             {!isLandscape && (
@@ -126,7 +130,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                 <YStack alignItems="flex-end">
                   {hasData ? (
                     <>
-                      <Text color={subTextColor} fontSize={10}>
+                      <Text color={subTextColor} fontSize={textSize - 4}>
                         @{user?.login}
                       </Text>
                       <Text color={headerTextColor} fontWeight="bold">
@@ -134,7 +138,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                       </Text>
                     </>
                   ) : (
-                    <Text color={subTextColor} fontSize={10}>
+                    <Text color={subTextColor} fontSize={textSize - 4}>
                       @guest
                     </Text>
                   )}
@@ -161,7 +165,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
 
           {/* Filters and Search */}
           <YStack marginTop="$4" space="$4" marginBottom={isLandscape ? 48 : 8}>
-            <Text fontSize={32} fontWeight="bold" color={headerTextColor}>
+            <Text fontSize={textSize + 15} fontWeight="bold" color={headerTextColor}>
               {t('teachers')}
             </Text>
             <Input
@@ -201,18 +205,18 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
               paddingLeft: isLandscape ? 19 : 0,
             }}>
             <YStack space="$2">
-              <Text color={subTextColor} fontSize={14}>
+              <Text color={subTextColor} fontSize={textSize - 1}>
                 {t('result')}
               </Text>
               {error ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                  <Text color="$red10" fontSize={16}>
+                  <Text color="$red10" fontSize={textSize}>
                     {error}
                   </Text>
                 </YStack>
               ) : filteredTeachers.length === 0 ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                  <Text color={subTextColor} fontSize={16}>
+                  <Text color={subTextColor} fontSize={textSize}>
                     {t('no_teachers_found')}
                   </Text>
                 </YStack>
@@ -228,19 +232,19 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                       onPress={() =>
                         navigation.navigate('TeacherSubPage', { teacherId: teacher.id })
                       }>
-                      <Text color={headerTextColor} fontSize={18} fontWeight="bold">
+                      <Text color={headerTextColor} fontSize={textSize + 1} fontWeight="bold">
                         {teacher.name}
                       </Text>
                       <XStack justifyContent="space-between">
-                        <Text color={subTextColor} fontSize={14}>
+                        <Text color={subTextColor} fontSize={textSize - 1}>
                           {t('ais_id')}: {teacher.aisId}
                         </Text>
-                        <Text color={subTextColor} fontSize={14}>
+                        <Text color={subTextColor} fontSize={textSize - 1}>
                           {teacher.rating}
                         </Text>
                       </XStack>
                       {teacher.department && (
-                        <Text color={subTextColor} fontSize={14}>
+                        <Text color={subTextColor} fontSize={textSize - 1}>
                           {t('department')}: {teacher.department}
                         </Text>
                       )}

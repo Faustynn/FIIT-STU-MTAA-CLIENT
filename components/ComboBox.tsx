@@ -3,7 +3,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 
-import { useTheme } from './SettingsController';
+import { useTheme, getFontSizeValue } from './SettingsController';
 
 type ComboBoxProps = {
   value: string;
@@ -22,12 +22,13 @@ export const ComboBox = ({
   labelColor,
   textColor,
 }: ComboBoxProps) => {
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
   const isDarkMode = theme === 'dark';
+  const textSize = getFontSizeValue(fontSize);
 
   return (
     <YStack space="$2">
-      <Text color={labelColor} fontSize={14}>
+      <Text color={labelColor} fontSize={textSize - 2}>
         {placeholder}
       </Text>
       <YStack
@@ -49,8 +50,12 @@ export const ComboBox = ({
               paddingHorizontal: 8,
             }}>
             <XStack alignItems="center" justifyContent="space-between">
-              <Text color={textColor}>{item.label}</Text>
-              {item.value === value && <MaterialIcons name="check" size={16} color={textColor} />}
+              <Text fontSize={textSize - 1} color={textColor}>
+                {item.label}
+              </Text>
+              {item.value === value && (
+                <MaterialIcons name="check" size={textSize} color={textColor} />
+              )}
             </XStack>
           </TouchableOpacity>
         ))}

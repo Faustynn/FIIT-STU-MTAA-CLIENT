@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } from 'tamagui';
 
-import { useTheme } from '../components/SettingsController';
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
 import { fetchSubjectDetails } from '../services/apiService';
 
@@ -47,8 +47,11 @@ export interface SubjectDetails {
   syllabus: string[];
   instructors: Instructor[];
 }
+
 const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
-  const { theme } = useTheme();
+  const { theme, fontSize } = useTheme();
+  const textSize = getFontSizeValue(fontSize);
+
   const isDarkMode = theme === 'dark';
   const subjectId = route.params.subjectId;
   const { width, height } = useWindowDimensions();
@@ -73,14 +76,12 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
           const data = await fetchSubjectDetails(subjectId);
           setSubject(data as SubjectDetails);
           setError(null);
-          setLoading(false); // ✅ Ставим тут, только если успех
+          setLoading(false);
         } catch (err) {
           setError('Failed to load subject details. Please try again later.');
           console.error('Error fetching subject details:', err);
-          // ❌ Не ставим setLoading(false), пусть спиннер остаётся, пока retry
         }
       };
-
       loadSubjectDetails();
     }
   }, [subjectId]);
@@ -105,7 +106,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
               backgroundColor="transparent"
               color={headerTextColor}
             />
-            <H1 fontSize={24} fontWeight="bold" color={headerTextColor} flex={1}>
+            <H1 fontSize={textSize + 6} fontWeight="bold" color={headerTextColor} flex={1}>
               Subject Details
             </H1>
           </XStack>
@@ -114,13 +115,13 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
           {loading ? (
             <YStack justifyContent="center" alignItems="center" flex={1}>
               <Spinner size="large" color={headerTextColor} />
-              <Text color={subTextColor} marginTop="$2">
+              <Text color={subTextColor} marginTop="$2" fontSize={textSize}>
                 Loading subject details...
               </Text>
             </YStack>
           ) : error ? (
             <YStack justifyContent="center" alignItems="center" flex={1}>
-              <Text color="$red10" fontSize={16}>
+              <Text color="$red10" fontSize={textSize}>
                 {error}
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">
@@ -139,18 +140,21 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                   padding="$4"
                   space="$3"
                   marginTop="$2">
-                  <Text fontSize={28} fontWeight="bold" color={headerTextColor}>
+                  <Text fontSize={textSize + 6} fontWeight="bold" color={headerTextColor}>
                     {subject.name}
                   </Text>
                   <XStack space="$2">
-                    <Text color={headerTextColor}>{subject.code}</Text>
-                    <Text color={headerTextColor}>{subject.type}</Text>
-                    <Text color={headerTextColor}>{subject.semester}</Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      {subject.code}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      {subject.type}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      {subject.semester}
+                    </Text>
                   </XStack>
-                  {/* <Text color={subTextColor} fontSize={14}>
-                    Guarantor: {subject.guarantor}
-                  </Text> */}
-                  <Text color={accentColor} fontSize={16} fontWeight="bold">
+                  <Text color={accentColor} fontSize={textSize + 2} fontWeight="bold">
                     {subject.credits} credits
                   </Text>
                 </YStack>
@@ -158,18 +162,20 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                 {/* Description */}
                 {subject.description && (
                   <YStack space="$2">
-                    <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
                       Description
                     </Text>
                     <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3">
-                      <Text color={headerTextColor}>{subject.description}</Text>
+                      <Text color={headerTextColor} fontSize={textSize}>
+                        {subject.description}
+                      </Text>
                     </YStack>
                   </YStack>
                 )}
 
-                {/* Subject Information */}
+                {/* Subject Info */}
                 <YStack space="$2">
-                  <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                  <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
                     Subject Information
                   </Text>
                   <YStack
@@ -177,31 +183,47 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                     borderRadius={8}
                     padding="$3"
                     space="$2">
-                    <Text color={headerTextColor}>Study Type: {subject.studyType}</Text>
-                    <Text color={headerTextColor}>Completion Type: {subject.completionType}</Text>
-                    <Text color={headerTextColor}>Student Count: {subject.studentCount}</Text>
-                    <Text color={headerTextColor}>Assessment: {subject.assesmentMethods}</Text>
-                    <Text color={headerTextColor}>Evaluation: {subject.evaluationMethods}</Text>
-                    <Text color={headerTextColor}>Course Contents: {subject.courseContents}</Text>
-                    <Text color={headerTextColor}>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      Study Type: {subject.studyType}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      Completion Type: {subject.completionType}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      Student Count: {subject.studentCount}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      Assessment: {subject.assesmentMethods}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      Evaluation: {subject.evaluationMethods}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      Course Contents: {subject.courseContents}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
                       Planned Activities: {subject.plannedActivities}
                     </Text>
-                    <Text color={headerTextColor}>
+                    <Text color={headerTextColor} fontSize={textSize}>
                       Learning Outcomes: {subject.learningOutcomes}
                     </Text>
-                    <Text color={headerTextColor}>
+                    <Text color={headerTextColor} fontSize={textSize}>
                       Grades: A {subject.a_score || '—'}, B {subject.b_score || '—'}, C{' '}
                       {subject.c_score || '—'}, D {subject.d_score || '—'}, E{' '}
                       {subject.e_score || '—'}, Fx {subject.fx_score || '—'}
                     </Text>
                     {subject.languages?.length > 0 && (
-                      <Text color={headerTextColor}>Languages: {subject.languages.join(', ')}</Text>
+                      <Text color={headerTextColor} fontSize={textSize}>
+                        Languages: {subject.languages.join(', ')}
+                      </Text>
                     )}
                     {subject.prerequisites?.length > 0 && (
                       <YStack>
-                        <Text color={headerTextColor}>Prerequisites:</Text>
+                        <Text color={headerTextColor} fontSize={textSize}>
+                          Prerequisites:
+                        </Text>
                         {subject.prerequisites.map((p, i) => (
-                          <Text key={i} color={headerTextColor}>
+                          <Text key={i} color={headerTextColor} fontSize={textSize}>
                             • {p}
                           </Text>
                         ))}
@@ -213,11 +235,13 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                 {/* Objectives */}
                 {subject.objectives && (
                   <YStack space="$2">
-                    <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
                       Objectives
                     </Text>
                     <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3">
-                      <Text color={headerTextColor}>{subject.objectives}</Text>
+                      <Text color={headerTextColor} fontSize={textSize}>
+                        {subject.objectives}
+                      </Text>
                     </YStack>
                   </YStack>
                 )}
@@ -225,7 +249,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                 {/* Syllabus */}
                 {subject.syllabus?.length > 0 && (
                   <YStack space="$2">
-                    <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
                       Syllabus
                     </Text>
                     <YStack
@@ -234,7 +258,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                       padding="$3"
                       space="$2">
                       {subject.syllabus.map((s, i) => (
-                        <Text key={i} color={headerTextColor}>
+                        <Text key={i} color={headerTextColor} fontSize={textSize}>
                           {i + 1}. {s}
                         </Text>
                       ))}
@@ -245,7 +269,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                 {/* Instructors */}
                 {subject.instructors?.length > 0 && (
                   <YStack space="$2">
-                    <Text fontSize={18} fontWeight="bold" color={headerTextColor}>
+                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
                       Instructors
                     </Text>
                     <YStack space="$2">
@@ -258,8 +282,14 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                           onPress={() => navigateToTeacher(instructor.id)}
                           pressStyle={{ opacity: 0.8 }}>
                           <XStack justifyContent="space-between">
-                            <Text color={headerTextColor}>{instructor.name}</Text>
-                            {instructor.role && <Text color={subTextColor}>{instructor.role}</Text>}
+                            <Text color={headerTextColor} fontSize={textSize}>
+                              {instructor.name}
+                            </Text>
+                            {instructor.role && (
+                              <Text color={subTextColor} fontSize={textSize - 2}>
+                                {instructor.role}
+                              </Text>
+                            )}
                           </XStack>
                         </YStack>
                       ))}
@@ -270,7 +300,9 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
             </ScrollView>
           ) : (
             <YStack justifyContent="center" alignItems="center" flex={1}>
-              <Text color={subTextColor}>Subject not found</Text>
+              <Text color={subTextColor} fontSize={textSize}>
+                Subject not found
+              </Text>
               <Button onPress={handleGoBack} marginTop="$4">
                 Go Back
               </Button>

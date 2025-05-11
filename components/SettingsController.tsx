@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Accelerometer } from 'expo-sensors';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 type ThemeContextType = {
   theme: 'light' | 'dark';
@@ -10,6 +10,8 @@ type ThemeContextType = {
   currentTiltDirection: number | null;
   gestureMode: 'shake' | 'tilt' | 'both';
   setGestureMode: (mode: 'shake' | 'tilt' | 'both') => void;
+  fontSize: string;
+  setFontSize: (size: string) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -18,20 +20,19 @@ const GESTURE_NAVIGATION_KEY = '@app_gesture_navigation_enabled';
 const THEME_STORAGE_KEY = '@app_theme';
 const GESTURE_MODE_KEY = '@app_gesture_mode';
 
-type TiltNavigationEventType = { direction: number | null; };
+type TiltNavigationEventType = { direction: number | null };
 export const TiltNavigationEvent = {
   listeners: new Set<(event: TiltNavigationEventType) => void>(),
 
   emit(event: TiltNavigationEventType) {
-    this.listeners.forEach(listener => listener(event));
+    this.listeners.forEach((listener) => listener(event));
   },
 
   addListener(listener: (event: TiltNavigationEventType) => void) {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
-  }
+  },
 };
-
 
 export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ children }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -61,14 +62,16 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
         }
 
         const storedGestureMode = await AsyncStorage.getItem(GESTURE_MODE_KEY);
-        if (storedGestureMode !== null &&
+        if (
+          storedGestureMode !== null &&
           (storedGestureMode === 'shake' ||
             storedGestureMode === 'tilt' ||
-            storedGestureMode === 'both')) {
+            storedGestureMode === 'both')
+        ) {
           setGestureMode(storedGestureMode as 'shake' | 'tilt' | 'both');
         }
       } catch (error) {
-        console.error("Error loading settings:", error);
+        console.error('Error loading settings:', error);
       }
     };
 
@@ -81,7 +84,7 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
       try {
         await AsyncStorage.setItem(THEME_STORAGE_KEY, theme);
       } catch (error) {
-        console.error("Error saving theme setting:", error);
+        console.error('Error saving theme setting:', error);
       }
     };
 
@@ -94,7 +97,7 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
       try {
         await AsyncStorage.setItem(GESTURE_NAVIGATION_KEY, gestureNavigationEnabled.toString());
       } catch (error) {
-        console.error("Error saving gesture navigation setting:", error);
+        console.error('Error saving gesture navigation setting:', error);
       }
     };
 
@@ -107,7 +110,7 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
       try {
         await AsyncStorage.setItem(GESTURE_MODE_KEY, gestureMode);
       } catch (error) {
-        console.error("Error saving gesture mode setting:", error);
+        console.error('Error saving gesture mode setting:', error);
       }
     };
 
@@ -153,7 +156,13 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
 
       const timeDifference = now - lastShakeTime.current;
 
-      if (timeDifference > SHAKE_TIMEOUT && deltaY > SHAKE_THRESHOLD && deltaX < SHAKE_THRESHOLD && deltaZ < SHAKE_THRESHOLD) { // check shake in y axis
+      if (
+        timeDifference > SHAKE_TIMEOUT &&
+        deltaY > SHAKE_THRESHOLD &&
+        deltaX < SHAKE_THRESHOLD &&
+        deltaZ < SHAKE_THRESHOLD
+      ) {
+        // check shake in y axis
         toggleTheme();
         lastShakeTime.current = now;
       }
@@ -192,10 +201,43 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
   };
 
   const toggleGestureNavigation = () => {
-    setGestureNavigationEnabled(prev => !prev);
+    setGestureNavigationEnabled((prev) => !prev);
   };
 
-  return (<ThemeContext.Provider value={{ theme, toggleTheme, gestureNavigationEnabled, toggleGestureNavigation, currentTiltDirection, gestureMode, setGestureMode }}>{children}</ThemeContext.Provider>);
+  const [fontSize, setFontSizeState] = useState<string>('12');
+
+  useEffect(() => {
+    const loadFontSize = async () => {
+      const storedSize = await AsyncStorage.getItem('@app_font_size');
+      if (storedSize) setFontSizeState(storedSize);
+    };
+    loadFontSize();
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem('@app_font_size', fontSize);
+  }, [fontSize]);
+
+  const setFontSize = (size: string) => {
+    setFontSizeState(size);
+  };
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme,
+        toggleTheme,
+        gestureNavigationEnabled,
+        toggleGestureNavigation,
+        currentTiltDirection,
+        gestureMode,
+        setGestureMode,
+        fontSize,
+        setFontSize,
+      }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export const useTheme = () => {
@@ -204,4 +246,14 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
+};
+
+export const getFontSizeValue = (size: string, options?: { min?: number; max?: number }) => {
+  const parsed = parseInt(size || '12', 10);
+  const clamp = (val: number) => {
+    if (options?.min && val < options.min) return options.min;
+    if (options?.max && val > options.max) return options.max;
+    return val;
+  };
+  return clamp(parsed);
 };
