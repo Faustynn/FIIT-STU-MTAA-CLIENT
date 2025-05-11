@@ -1,21 +1,9 @@
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { API_URL } from "./apiService";
+import NotificationService, { NewsModel, ConnectionStatus } from './NotificationService';
 
+// Ensure the URL has no double slashes in path segments
 const SSE_SUBSCRIBE_URL = `${API_URL}sse/subscribe`;
-
-export interface NewsModel {
-  id: number | string;
-  title: string;
-  content: string;
-  date_of_creation: string;
-}
-
-export enum ConnectionStatus {
-  CONNECTED = 'CONNECTED',
-  DISCONNECTED = 'DISCONNECTED',
-  CONNECTING = 'CONNECTING',
-  ERROR = 'ERROR'
-}
 
 export class SseService {
   private static instance: SseService;
@@ -27,11 +15,12 @@ export class SseService {
   private newsListeners: ((newsList: NewsModel[]) => void)[] = [];
   private connectionListeners: ((status: ConnectionStatus) => void)[] = [];
   private newsList: NewsModel[] = [];
+  private lastCheckedNewsList: NewsModel[] = []; // для отслеживания изменений в списке новостей
 
   private readonly RECONNECT_DELAY_SECONDS = 5;
   private readonly MAX_RECONNECT_DELAY_SECONDS = 60;
 
-  // instance pattern
+  // Singleton pattern
   public static getInstance(): SseService {
     if (!SseService.instance) {
       SseService.instance = new SseService();
@@ -39,6 +28,15 @@ export class SseService {
     return SseService.instance;
   }
 
+  private constructor() {
+    this.registerWithNotificationService();
+  }
+
+
+  private registerWithNotificationService(): void {
+    NotificationService.addConnectionStatusHandler(status => {
+    });
+  }
 
   // getters and setters
   public addNewsListener(listener: (newsList: NewsModel[]) => void): void {
@@ -47,6 +45,7 @@ export class SseService {
       listener([...this.newsList]);
     }
   }
+
   public removeNewsListener(listener: (newsList: NewsModel[]) => void): void {
     const index = this.newsListeners.indexOf(listener);
     if (index !== -1) {
@@ -57,6 +56,7 @@ export class SseService {
   public addConnectionListener(listener: (status: ConnectionStatus) => void): void {
     this.connectionListeners.push(listener);
   }
+
   public removeConnectionListener(listener: (status: ConnectionStatus) => void): void {
     const index = this.connectionListeners.indexOf(listener);
     if (index !== -1) {
@@ -86,7 +86,7 @@ export class SseService {
       this.eventSource = new EventSourcePolyfill(SSE_SUBSCRIBE_URL, {
         headers,
         heartbeatTimeout: 60000,
-        withCredentials: false,
+        withCredentials: true,
       });
 
       this.eventSource.onopen = (event: unknown) => this.handleOpen(event as Event);
@@ -97,7 +97,7 @@ export class SseService {
         this.handleNewsListEvent(event as MessageEvent)
       );
 
-      console.log('Connecting to SSE server...');
+      console.log('Connecting to SSE server:', SSE_SUBSCRIBE_URL);
     } catch (error) {
       console.error('Error connecting to SSE server:', error);
       this.notifyConnectionStatus(ConnectionStatus.ERROR);
@@ -143,20 +143,62 @@ export class SseService {
 
       const updatedNews: NewsModel[] = JSON.parse(event.data);
 
+      // we have new news?
+      const hasUpdates = this.checkForNewsUpdates(updatedNews);
+
+      // save state
+      this.lastCheckedNewsList = [...updatedNews];
       this.newsList = updatedNews;
 
-      this.newsListeners.forEach(listener => {
-        try {
-          listener([...this.newsList]);
-        } catch (e) {
-          console.error('Error notifying news listener:', e);
-        }
-      });
+      // Notify local listeners
+      this.notifyNewsUpdate(updatedNews);
+
+      // Notify if we have updates
+      if (hasUpdates) {
+        console.log('Notifying about news updates');
+        NotificationService.notifyNewsUpdate(updatedNews);
+      }
 
       console.log('News list updated, total news:', this.newsList.length);
     } catch (e) {
       console.error('Error parsing news list:', e);
     }
+  }
+
+  private checkForNewsUpdates(newsList: NewsModel[]): boolean {
+    if (this.lastCheckedNewsList.length === 0) {
+      return newsList.length > 0;
+    }
+    if (newsList.length !== this.lastCheckedNewsList.length) {
+      return true;
+    }
+
+    const existingNewsMap = new Map<string, NewsModel>();
+    this.lastCheckedNewsList.forEach(news => {
+      existingNewsMap.set(news.id, news);
+    });
+
+    for (const news of newsList) {
+      const existingNews = existingNewsMap.get(news.id);
+
+      if (!existingNews ||
+        existingNews.title !== news.title ||
+        existingNews.content !== news.content ||
+        existingNews.date_of_creation !== news.date_of_creation) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private notifyNewsUpdate(newsList: NewsModel[]): void {
+    this.newsListeners.forEach(listener => {
+      try {
+        listener([...newsList]);
+      } catch (e) {
+        console.error('Error notifying news listener:', e);
+      }
+    });
   }
 
   private handleError(event: Event): void {
@@ -175,11 +217,10 @@ export class SseService {
       clearTimeout(this.reconnectTimeout);
     }
 
-    // Exponential backoff with a cap
     const delay = Math.min(
       this.RECONNECT_DELAY_SECONDS * Math.pow(2, Math.min(this.reconnectAttempt, 4)),
       this.MAX_RECONNECT_DELAY_SECONDS
-    ) * 1000; // Convert to milliseconds
+    ) * 1000;
 
     this.reconnectAttempt++;
     console.log(`Reconnecting to SSE server in ${delay / 1000} seconds (attempt ${this.reconnectAttempt})`);
@@ -190,6 +231,7 @@ export class SseService {
   }
 
   private notifyConnectionStatus(status: ConnectionStatus): void {
+    // Notify local listeners
     this.connectionListeners.forEach(listener => {
       try {
         listener(status);
@@ -197,6 +239,9 @@ export class SseService {
         console.error('Error notifying connection listener:', e);
       }
     });
+
+    // Notify notification service
+    NotificationService.updateConnectionStatus(status);
   }
 
   public shutdown(): void {

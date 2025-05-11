@@ -3,7 +3,6 @@
     "name": "UniMap",
     "slug": "UniMap",
     "version": "1.0.0",
-
     "web": {
       "favicon": "./assets/favicon.png",
       "s_icon_0": "./assets/avatars/0.png",
@@ -17,31 +16,49 @@
       "s_icon_8": "./assets/avatars/8.png",
       "s_icon_9": "./assets/avatars/9.png"
     },
-
     "experiments": {
       "tsconfigPaths": true
     },
-
-    "plugins": [],
-
+    "plugins": [
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/favicon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification.mp3"]
+        }
+      ]
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-
     "userInterfaceStyle": "light",
-
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.faustyyn.UniMap",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.faustyyn.UniMap"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b6ab8df0-3ae5-485b-b569-8bc15d9a39c6"
       }
     }
   }

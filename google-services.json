@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "133862542784",
+    "project_id": "unimap-4ce25",
+    "storage_bucket": "unimap-4ce25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:133862542784:android:79eae91b5a06b4763fcc25",
+        "android_client_info": {
+          "package_name": "com.faustyyn.UniMap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATgEGIrxZ0HxzOXNVY7zb30KMGGH22c4c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

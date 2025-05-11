@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {startTokenRefreshTask} from '../components/TokenRefresher';
 import {User} from '../components/User'
 import { Platform } from 'react-native';
 
@@ -13,7 +12,6 @@ const REGISTR_URL = `${API_URL}register`;
 const FIND_USER_BY_EMAIL_URL = `${API_URL}user/email/`;
 const CONFIRM_CODE_TO_EMAIL = `${API_URL}user/email/code`;
 const CHANGE_PASSWORD = `${API_URL}user/email/password`;
-const REFRESH_TOKENS_URL = `${API_URL}refresh`;
 const SUBJECTS_URL = `${API_URL}resources/subjects`;
 const TEACHERS_URL = `${API_URL}resources/teachers`;
 const LOG_URL = `${API_URL}log`;
@@ -22,6 +20,7 @@ const PREMIUM_URL = `${API_URL}premium/`;
 const CHANGE_USERNAME_URL = `${API_URL}change_username`;
 const CHANGE_USER_EMAIL_URL = `${API_URL}change_email`;
 const CHANGE_USER_AVATAR_URL = `${API_URL}change_avatar?fileName=`;
+const REFRESH_TOKENS_URL = `${API_URL}refresh`;
 
 // Comment API endpoints
 const ALL_TEACHERS_URL = `${API_URL}comments/teacher/`;
@@ -33,6 +32,20 @@ const DELETE_SUBJECTS_COMMENT_URL = `${API_URL}comments/subject/`;
 const DELETE_USER_URL = `${API_URL}user/delete/all/`;
 const DELETE_COMMENTS_USER_URL = `${API_URL}user/delete/comments/`;
 
+let intervalId: NodeJS.Timeout | null = null;
+export const startTokenRefreshTask = () => {
+  stopTokenRefreshTask();
+  intervalId = setInterval(async () => {
+    await refreshAccessToken();
+  }, 60 * 1000); // 1 min interval
+};
+export const stopTokenRefreshTask = () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+};
+
 // Extract refresh token from response
 const extractRefreshToken = (response: Response) => {
   const setCookieHeader = response.headers.get('set-cookie');
@@ -42,18 +55,6 @@ const extractRefreshToken = (response: Response) => {
   const refreshToken = cookies.find((cookie: string) => cookie.trim().startsWith('refreshToken='));
   return refreshToken ? refreshToken.split('=')[1] : null;
 };
-
-// Check connection
-export const checkConnection = async () => {
-  try {
-    const response = await fetch(CHECK_CONNECTION_URL);
-    return response.ok;
-  } catch (error) {
-    console.error('Connection check failed:', error);
-    return false;
-  }
-};
-
 
 // Refresh access token
 export const refreshAccessToken = async () => {
@@ -93,6 +94,63 @@ export const refreshAccessToken = async () => {
   }
 };
 
+// Check connection
+export const checkConnection = async () => {
+  try {
+    const response = await fetch(CHECK_CONNECTION_URL);
+    return response.ok;
+  } catch (error) {
+    console.error('Connection check failed:', error);
+    return false;
+  }
+};
+
+export const checkAuthOnStartup = async () => {
+  try {
+    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+    const refreshToken = await AsyncStorage.getItem('REFRESH_TOKEN');
+
+    if (!accessToken || !refreshToken) {
+      console.log('No access or refresh token found');
+      return false;
+    }
+
+    refreshAccessToken();
+
+    console.log('User is authenticated');
+    return true;
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    return false;
+  }
+}
+
+export const sendFCMTokenToServer = async (token: string) => {
+  try {
+    const platform = Platform.OS === 'android' ? 'android' : 'ios';
+
+    const response = await fetch('http://192.168.0.119:8080/api/notifications/register-device', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        deviceId: 'unique-device-id',
+        fcmToken: token,
+        platform,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to send FCM token: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('FCM token sent successfully:', data);
+  } catch (error) {
+    console.error('Error sending FCM token to server:', error);
+  }
+};
 
 // Send authentication request
 export const sendAuthenticationRequest = async (email: string, password: string) => {

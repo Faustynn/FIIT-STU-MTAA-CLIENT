@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export class User {
   id: number;
   username: string;
@@ -21,7 +23,6 @@ export class User {
 
   static async fromStorage(): Promise<User | null> {
     try {
-      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
       const userData = await AsyncStorage.getItem('USER_DATA');
 
       if (userData) {
@@ -37,7 +38,6 @@ export class User {
 
   async saveToStorage(): Promise<boolean> {
     try {
-      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
       const userData = {
         id: this.id,
         username: this.username,

@@ -1,13 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner } from "tamagui";
+import React, { useEffect, useState, useRef } from 'react';
+import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner, Button } from "tamagui";
 import { useTheme } from '../components/SettingsController';
 import { NavigationProp, useFocusEffect } from "@react-navigation/native";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { Linking, Image } from 'react-native';
+import { Linking, Image, AppState, AppStateStatus } from 'react-native';
 import User from '../components/User';
 import { useTranslation } from "react-i18next";
 import '../utils/i18n';
-import sseService, { ConnectionStatus, NewsModel } from '../services/sseService';
+import sseService from '../services/sseService';
+import notificationService, { NewsModel } from '../services/NotificationService';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
+enum ConnectionStatus {
+  CONNECTED = 'CONNECTED',
+  CONNECTING = 'CONNECTING',
+  DISCONNECTED = 'DISCONNECTED',
+  ERROR = 'ERROR',
+}
+
 
 type HomePageProps = {
   navigation: NavigationProp<any>;
@@ -28,10 +39,146 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [news, setNews] = useState<NewsModel[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
+  const [badgeCount, setBadgeCount] = useState<number>(0);
+  const [pushToken, setPushToken] = useState<string | null>(null);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
+
+  // ask for notification permissions
+  useEffect(() => {
+    const requestNotificationPermissions = async () => {
+      try {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync({
+            ios: {
+              allowAlert: true,
+              allowBadge: true,
+              allowSound: true,
+              allowDisplayInCarPlay: true,
+              allowCriticalAlerts: true,
+              provideAppNotificationSettings: true,
+              allowProvisional: true,
+            },
+          });
+          finalStatus = status;
+        }
+
+        if (finalStatus !== 'granted') {
+          console.log('Error getting permission for notifications');
+          return;
+        }
+
+        console.log('Permissions for notif. granted');
+      } catch (error) {
+        console.error('Err while requesting notification permissions:', error);
+      }
+    };
+
+    requestNotificationPermissions();
+  }, []);
+
+  // notification service and listener
+  useEffect(() => {
+    const initNotifications = async () => {
+      // Configure notification handling
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+
+      await notificationService.initialize();
+
+      const count = await notificationService.getBadgeCountAsync();
+      setBadgeCount(count);
+
+      notificationListener.current = notificationService.addNotificationReceivedListener(
+        notification => {
+          const newsId = notification.request.content.data?.newsId;
+          console.log(`Received notification for news ID: ${newsId}`);
+        }
+      );
+
+      responseListener.current = notificationService.addNotificationResponseReceivedListener(
+        response => {
+          const newsId = response.notification.request.content.data?.newsId;
+          console.log(`User tapped on notification for news ID: ${newsId}`);
+        }
+      );
+
+      // debug
+      try {
+        let token = null;
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+
+        if (projectId) {
+          token = await Notifications.getExpoPushTokenAsync({
+            projectId: projectId,
+          });
+        } else {
+          token = await Notifications.getExpoPushTokenAsync();
+        }
+
+        if (token) {
+          setPushToken(token.data);
+          console.log('Push token for this device:', token.data);
+        }
+      } catch (error) {
+        console.error('Error getting push token:', error);
+      }
+    };
+
+    initNotifications();
+
+    // Listen for app state changes
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      // Clean up listeners
+      if (notificationListener.current) {
+        notificationService.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        notificationService.removeNotificationSubscription(responseListener.current);
+      }
+      subscription.remove();
+    };
+  }, []);
 
 
-  //
-  useEffect(() => {const fetchAndParseUser = async () => {
+  const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    if (
+      appState.current.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      console.log('App has come to the foreground');
+      await notificationService.resetBadgeCount();
+      setBadgeCount(0);
+
+      // Reconnect to SSE if disconnected
+      if (connectionStatus !== ConnectionStatus.CONNECTED) {
+        sseService.connectToSSEServer();
+      }
+    } else if (
+      appState.current === 'active' &&
+      nextAppState.match(/inactive|background/)
+    ) {
+      console.log('App has gone to the background');
+    }
+
+    appState.current = nextAppState;
+  };
+
+  useEffect(() => {
+    const fetchAndParseUser = async () => {
       try {
         const storedUser = await User.fromStorage();
         if (storedUser) {
@@ -53,29 +200,40 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     fetchAndParseUser();
   }, []);
 
-
   // Connect to SSE when we load screen
-  useFocusEffect(React.useCallback(() => {
-
+  useFocusEffect(
+    React.useCallback(() => {
       const newsListener = (newsList: NewsModel[]) => {
         setNews(newsList);
       };
+
       const connectionListener = (status: ConnectionStatus) => {
         setConnectionStatus(status);
       };
 
       sseService.addNewsListener(newsListener);
       sseService.addConnectionListener(connectionListener);
+      notificationService.addNewsUpdateHandler(newsListener);
+      notificationService.addConnectionStatusHandler(connectionListener);
+
+      // Connect to SSE server
       sseService.connectToSSEServer();
 
       // Clean if we leave screen
       return () => {
         sseService.removeNewsListener(newsListener);
         sseService.removeConnectionListener(connectionListener);
-        sseService.closeConnection();
+        notificationService.removeNewsUpdateHandler(newsListener);
+        notificationService.removeConnectionStatusHandler(connectionListener);
       };
     }, [])
   );
+
+  // clear badge count
+  const handleClearBadges = async () => {
+    await notificationService.resetBadgeCount();
+    setBadgeCount(0);
+  };
 
   const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
   const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
@@ -123,7 +281,26 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
               alignItems="center"
               justifyContent="center"
+              position="relative"
             >
+              {badgeCount > 0 && (
+                <View
+                  position="absolute"
+                  top={-5}
+                  right={-5}
+                  width={18}
+                  height={18}
+                  borderRadius={9}
+                  backgroundColor="#FF4136"
+                  alignItems="center"
+                  justifyContent="center"
+                  zIndex={1}
+                >
+                  <Text color="white" fontSize={10} fontWeight="bold">
+                    {badgeCount > 9 ? '9+' : badgeCount}
+                  </Text>
+                </View>
+              )}
               {hasData && user?.getAvatarBase64() ? (
                 <Image
                   source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
@@ -149,6 +326,32 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           padding="$4"
           contentContainerStyle={{ paddingBottom: 20 }}
         >
+          {/* status for admins */}
+          {isAdmin && (
+            <YStack marginBottom="$3">
+              <XStack space="$2" alignItems="center" justifyContent="space-between" marginBottom="$2">
+                <Text color={subTextColor}>Status: </Text>
+                <Text color={statusColors[connectionStatus]}>
+                  {connectionStatus === ConnectionStatus.CONNECTED ? t('connected') :
+                    connectionStatus === ConnectionStatus.CONNECTING ? t('connecting') :
+                      connectionStatus === ConnectionStatus.DISCONNECTED ? t('disconnected') :
+                        t('connection_error')}
+                </Text>
+              </XStack>
+
+              {badgeCount > 0 && (
+                <Button
+                  backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
+                  color={headerTextColor}
+                  onPress={handleClearBadges}
+                  marginBottom="$2"
+                >
+                  {t('clear_badges')} ({badgeCount})
+                </Button>
+              )}
+            </YStack>
+          )}
+
           {/* News Section */}
           <XStack alignItems="center" marginBottom="$3" justifyContent="space-between">
             <XStack alignItems="center">
@@ -200,8 +403,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             </YStack>
           )}
 
-          {/* News Cards from SSE */}
-          {connectionStatus === ConnectionStatus.CONNECTED && news.length === 0 ? (
+          {/* News Cards */}
+          {news.length === 0 ? (
             <YStack
               backgroundColor={cardBackgroundColor}
               borderRadius="$2"
@@ -212,10 +415,12 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             >
               <MaterialIcons name="info-outline" size={24} color={subTextColor} style={{ marginBottom: 8 }} />
               <Text fontSize={16} color={subTextColor} textAlign="center">
-                {t('no_news_found')}
+                {connectionStatus === ConnectionStatus.CONNECTED
+                  ? t('no_news_found')
+                  : t('offline_mode')}
               </Text>
             </YStack>
-          ) : connectionStatus === ConnectionStatus.CONNECTED && news.length > 0 ? (
+          ) : (
             news.map((newsItem) => (
               <YStack key={newsItem.id} backgroundColor={cardBackgroundColor} borderRadius="$2" padding="$4" marginBottom="$3" width="100%">
                 <Text fontSize={20} fontWeight="bold" color={headerTextColor} marginBottom="$2">
@@ -230,17 +435,6 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <MaterialIcons name="location-on" size={20} color={subTextColor} style={{ marginTop: 8, alignSelf: 'flex-end' }} />
               </YStack>
             ))
-          ) : (
-            // if no connection print error message
-            <YStack backgroundColor={cardBackgroundColor} borderRadius="$2" padding="$4" marginBottom="$3" width="100%" alignItems="center">
-              <MaterialIcons name="error-outline" size={24} color={statusColors[ConnectionStatus.ERROR]} style={{ marginBottom: 8 }} />
-              <Text fontSize={20} fontWeight="bold" color={statusColors[ConnectionStatus.ERROR]} marginBottom="$2">
-                {t('connection_error')}
-              </Text>
-              <Text fontSize={16} color={subTextColor} lineHeight={22} textAlign="center">
-                {t('connection_error_desc')}
-              </Text>
-            </YStack>
           )}
 
           {/* Utilities Section */}
