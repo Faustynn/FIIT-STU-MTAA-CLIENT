@@ -139,7 +139,7 @@ export class SseService {
 
   private handleNewsListEvent(event: MessageEvent): void {
     try {
-      console.log('News list event received:', event);
+      console.log('News list:', event);
 
       const updatedNews: NewsModel[] = JSON.parse(event.data);
 

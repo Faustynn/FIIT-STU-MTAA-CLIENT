@@ -11,6 +11,10 @@ export interface NewsModel {
   id: string;
   title: string;
   content: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   date_of_creation: string;
 }
 

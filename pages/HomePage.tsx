@@ -3,7 +3,7 @@ import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner, Button } fr
 import { useTheme } from '../components/SettingsController';
 import { NavigationProp, useFocusEffect } from "@react-navigation/native";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { Linking, Image, AppState, AppStateStatus } from 'react-native';
+import { Linking, Image, AppState, AppStateStatus, Platform, Alert } from 'react-native';
 import User from '../components/User';
 import { useTranslation } from "react-i18next";
 import '../utils/i18n';
@@ -11,6 +11,7 @@ import sseService from '../services/sseService';
 import notificationService, { NewsModel } from '../services/NotificationService';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import * as Location from 'expo-location';
 
 enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -19,13 +20,45 @@ enum ConnectionStatus {
   ERROR = 'ERROR',
 }
 
-
 type HomePageProps = {
   navigation: NavigationProp<any>;
 };
 
 const openWebLink = (url: string) => {
   Linking.openURL(url).catch((err) => console.error("Failed to open URL:", err));
+};
+
+// Function to open maps with directions
+const openMapsWithDirections = (destLatitude: number, destLongitude: number, userLatitude?: number, userLongitude?: number) => {
+  let url = '';
+
+  // If we have user's current location, include it as the starting point
+  if (userLatitude !== undefined && userLongitude !== undefined) {
+    if (Platform.OS === 'ios') {
+      url = `maps://app?saddr=${userLatitude},${userLongitude}&daddr=${destLatitude},${destLongitude}`;
+    } else {
+      url = `google.navigation:q=${destLatitude},${destLongitude}&origin=${userLatitude},${userLongitude}`;
+    }
+  } else {
+    // Otherwise just navigate to destination
+    if (Platform.OS === 'ios') {
+      url = `maps://app?daddr=${destLatitude},${destLongitude}`;
+    } else {
+      url = `google.navigation:q=${destLatitude},${destLongitude}`;
+    }
+  }
+
+  Linking.canOpenURL(url)
+    .then(supported => {
+      if (supported) {
+        return Linking.openURL(url);
+      } else {
+        // Fallback to generic maps URL which should work on both platforms
+        const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLatitude},${destLongitude}`;
+        return Linking.openURL(fallbackUrl);
+      }
+    })
+    .catch(err => console.error('An error occurred', err));
 };
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
@@ -41,6 +74,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   const [badgeCount, setBadgeCount] = useState<number>(0);
   const [pushToken, setPushToken] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
+  const [locationPermissionStatus, setLocationPermissionStatus] = useState<string | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
@@ -79,6 +114,30 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     };
 
     requestNotificationPermissions();
+  }, []);
+
+  // Request location permissions and get user location
+  useEffect(() => {
+    const requestLocationPermissions = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationPermissionStatus(status);
+
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          setUserLocation(location);
+          console.log('User location acquired:', location.coords);
+        } else {
+          console.log('Location permission denied');
+        }
+      } catch (error) {
+        console.error('Error requesting location permissions:', error);
+      }
+    };
+
+    requestLocationPermissions();
   }, []);
 
   // notification service and listener
@@ -153,7 +212,6 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     };
   }, []);
 
-
   const handleAppStateChange = async (nextAppState: AppStateStatus) => {
     if (
       appState.current.match(/inactive|background/) &&
@@ -162,6 +220,18 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
       console.log('App has come to the foreground');
       await notificationService.resetBadgeCount();
       setBadgeCount(0);
+
+      // Update user location when app comes to foreground
+      if (locationPermissionStatus === 'granted') {
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          setUserLocation(location);
+        } catch (error) {
+          console.error('Error updating user location:', error);
+        }
+      }
 
       // Reconnect to SSE if disconnected
       if (connectionStatus !== ConnectionStatus.CONNECTED) {
@@ -233,6 +303,39 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const handleClearBadges = async () => {
     await notificationService.resetBadgeCount();
     setBadgeCount(0);
+  };
+
+  // Handler for location icon press
+  const handleLocationPress = async (newsItem: NewsModel) => {
+    if (!newsItem.coordinates) {
+      Alert.alert(
+        t('no_location'),
+        t('no_location_message'),
+        [{ text: t('ok'), style: 'default' }]
+      );
+      return;
+    }
+
+    // Check if we need to request location permission again
+    if (locationPermissionStatus !== 'granted') {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setLocationPermissionStatus(status);
+
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation(location);
+      }
+    }
+
+    // Open maps with directions
+    openMapsWithDirections(
+      newsItem.coordinates.latitude,
+      newsItem.coordinates.longitude,
+      userLocation?.coords.latitude,
+      userLocation?.coords.longitude
+    );
   };
 
   const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
@@ -318,6 +421,17 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               No data found. Showing default content.
             </Text>
           </YStack>
+        )}
+
+        {/* Location Permission Status (for admins) */}
+        {isAdmin && (
+          <XStack justifyContent="flex-end" paddingHorizontal="$4" marginBottom="$2">
+            <Text fontSize={12} color={locationPermissionStatus === 'granted' ? '#4CAF50' : '#F44336'}>
+              {locationPermissionStatus === 'granted'
+                ? t('location_enabled')
+                : t('location_disabled')}
+            </Text>
+          </XStack>
         )}
 
         {/* Main Content */}
@@ -432,7 +546,20 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <Text fontSize={12} color={subTextColor} position="absolute" top={8} right={8}>
                   {new Date(newsItem.date_of_creation).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })}
                 </Text>
-                <MaterialIcons name="location-on" size={20} color={subTextColor} style={{ marginTop: 8, alignSelf: 'flex-end' }} />
+                {/* Location icon with press handler */}
+                <MaterialIcons
+                  name="location-on"
+                  size={24}
+                  color={newsItem.coordinates ? (isDarkMode ? '#79E3A5' : '#3366BB') : subTextColor}
+                  style={{ marginTop: 8, alignSelf: 'flex-end' }}
+                  onPress={() => handleLocationPress(newsItem)}
+                />
+                {/* Show small indicator for available directions */}
+                {newsItem.coordinates && (
+                  <Text fontSize={10} color={isDarkMode ? '#79E3A5' : '#3366BB'} style={{ alignSelf: 'flex-end', marginTop: 2 }}>
+                    {t('get_directions')}
+                  </Text>
+                )}
               </YStack>
             ))
           )}
