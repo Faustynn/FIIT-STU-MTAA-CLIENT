@@ -6,7 +6,7 @@ import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } fr
 
 import { useTheme } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { fetchTeacherDetails1 } from '../services/apiService';
+import { fetchTeacherDetails2 } from '../services/apiService';
 
 type TeacherDetailProps = {
   route: RouteProp<AppStackParamList, 'TeacherSubPage'>;
@@ -50,7 +50,8 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
       const loadTeacherDetails = async () => {
         try {
           setLoading(true);
-          const data = await fetchTeacherDetails1(teacherId);
+          const data = await fetchTeacherDetails2(teacherId);
+          console.log('Fetched teacher:', data);
           setTeacher(data as ParsedTeacher);
           setError(null);
         } catch (err) {
@@ -228,9 +229,9 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                       Subjects Taught
                     </Text>
                     <YStack space="$2">
-                      {teacher.subjects.map((subject) => (
+                      {teacher.subjects.map((subject, index) => (
                         <YStack
-                          key={subject.id}
+                          key={`${subject.id}-${index}`}
                           backgroundColor={sectionBackgroundColor}
                           borderRadius={8}
                           padding="$3"

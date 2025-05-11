@@ -7,7 +7,7 @@ import { YStack, H1, Theme, XStack, Text, View, Input, ScrollView, Spinner, Butt
 import { ComboBox } from '../components/ComboBox';
 import { useTheme } from '../components/SettingsController';
 import User from '../components/User';
-import { fetchTeachers1, parseTeachers } from '../services/apiService';
+import { fetchTeachers, parseTeachers } from '../services/apiService';
 
 export interface ParsedTeacher {
   id: string;
@@ -57,7 +57,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
       const loadTeachers = async () => {
         try {
           setLoading(true);
-          const data = await fetchTeachers1();
+          const data = await fetchTeachers();
           const parsed = parseTeachers(data);
           setTeachers(parsed);
           setError(null);

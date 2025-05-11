@@ -1,8 +1,47 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SubjectDetails } from 'pages/SubjectDetail';
 import { Platform } from 'react-native';
 
 import { startTokenRefreshTask } from '../components/TokenRefresher';
 import { User } from '../components/User';
+
+// // Fetch subjects from local storage
+// export const fetchSubjects = async () => {
+//   return [
+//     {
+//       id: 1,
+//       name: 'Web Technologies',
+//       code: 'WTECH_B',
+//       guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
+//       type: 'Obligatory',
+//       semester: 'Winter Semester',
+//     },
+//     {
+//       id: 2,
+//       name: 'System Programming in Assembly',
+//       code: 'SPAASM_B',
+//       guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
+//       type: 'Optional',
+//       semester: 'Summer Semester',
+//     },
+//     {
+//       id: 3,
+//       name: 'Probability and Statistics',
+//       code: 'PAS_B',
+//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
+//       type: 'Optional',
+//       semester: 'Winter Semester',
+//     },
+//     {
+//       id: 4,
+//       name: 'Programming in Rust Language',
+//       code: 'RUST_B',
+//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
+//       type: 'Optional',
+//       semester: 'Summer Semester',
+//     },
+//   ];
+// };
 
 // API URLs
 const API_URL = 'http://172.20.10.4:8080/api/unimap_pc/';
@@ -224,135 +263,168 @@ export const sendNewPasswordRequest = async (email: string, password: string) =>
   }
 };
 
-// // Fetch subjects from local storage
+export const fetchSubjects = async (): Promise<Subject[]> => {
+  const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+  if (!accessToken) throw new Error('No access token');
+
+  let attempt = 0;
+
+  while (true) {
+    try {
+      const response = await fetch(SUBJECTS_URL, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`❌ Failed (status ${response.status}): ${text}`);
+      }
+
+      const json = await response.json();
+      return parseSubjects(json.subjects || []);
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchSubjects failed (attempt ${attempt}), retrying in 15s...`);
+      await new Promise((res) => setTimeout(res, 15000));
+    }
+  }
+};
+
+// func
 // export const fetchSubjects = async () => {
-//   return [
-//     {
-//       id: 1,
-//       name: 'Web Technologies',
-//       code: 'WTECH_B',
-//       guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
-//       type: 'Obligatory',
-//       semester: 'Winter Semester',
-//     },
-//     {
-//       id: 2,
-//       name: 'System Programming in Assembly',
-//       code: 'SPAASM_B',
-//       guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-//       type: 'Optional',
-//       semester: 'Summer Semester',
-//     },
-//     {
-//       id: 3,
-//       name: 'Probability and Statistics',
-//       code: 'PAS_B',
-//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-//       type: 'Optional',
-//       semester: 'Winter Semester',
-//     },
-//     {
-//       id: 4,
-//       name: 'Programming in Rust Language',
-//       code: 'RUST_B',
-//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-//       type: 'Optional',
-//       semester: 'Summer Semester',
-//     },
-//   ];
+//   try {
+//     const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+//     if (!accessToken) throw new Error('No access token');
+
+//     const response = await fetch(SUBJECTS_URL, {
+//       method: 'GET',
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`,
+//         'Content-Type': 'application/json',
+//       },
+//     });
+
+//     if (!response.ok) {
+//       const text = await response.text();
+//       console.error('Server responded with:', text);
+//       throw new Error(`Failed to fetch subjects (status ${response.status})`);
+//     }
+
+//     const json = await response.json();
+//     return parseSubjects(json.subjects || []);
+//   } catch (error) {
+//     console.error('Error in fetchSubjects:', error);
+//     throw error;
+//   }
 // };
 
-export const fetchSubjects = async (): Promise<Subject[]> => {
-  const token = await AsyncStorage.getItem('accessToken');
+export interface Subject {
+  code: string;
+  name: string;
+  type: string;
+  credits: number;
+  studyType: string;
+  semester: string;
+  languages: string[];
+  completionType: string;
+  studentCount: number;
+  assesmentMethods: string;
+  learningOutcomes: string;
+  courseContents: string;
+  plannedActivities: string;
+  evaluationMethods: string;
+  guarantor: string;
+  a_score: string;
+  b_score: string;
+  c_score: string;
+  d_score: string;
+  e_score: string;
+  fx_score: string;
+  description: string;
+  objectives: string;
+  prerequisites: string[];
+  syllabus: string[];
+  instructors: Instructor[];
+}
 
-  const response = await fetch(SUBJECTS_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) throw new Error('Ошибка при получении предметов');
-
-  const json = await response.json();
-
-  return parseSubjects(json.subjects || []);
-};
+export interface Instructor {
+  id: number | string;
+  name: string;
+  role?: string;
+}
 
 export const parseSubjects = (raw: any[]): Subject[] => {
   return raw.map((s) => ({
-    ...s,
-    languages: s.languages?.split(',') ?? [],
+    code: s.code ?? '',
+    name: s.name ?? '',
+    type: s.type ?? '',
+    credits: Number(s.credits ?? 0),
+    studyType: s.studyType ?? s.study_type ?? '',
+    semester: s.semester ?? '',
+    languages: Array.isArray(s.languages) ? s.languages.map((l: string) => l.trim()) : [],
+    completionType: s.completionType ?? s.completion_type ?? '',
+    studentCount: Number(s.studentCount ?? s.student_count ?? 0),
+    assesmentMethods: s.assesmentMethods ?? s.assessment_methods ?? '',
+    learningOutcomes: s.learningOutcomes ?? s.learning_outcomes ?? '',
+    courseContents: s.courseContents ?? s.course_contents ?? '',
+    plannedActivities: s.plannedActivities ?? s.planned_activities ?? '',
+    evaluationMethods: s.evaluationMethods ?? '',
+    guarantor: s.guarantor ?? '',
+    a_score: s.a_score ?? s.ascore ?? '',
+    b_score: s.b_score ?? s.bscore ?? '',
+    c_score: s.c_score ?? s.cscore ?? '',
+    d_score: s.d_score ?? s.dscore ?? '',
+    e_score: s.e_score ?? s.escore ?? '',
+    fx_score: s.fx_score ?? '',
+    description: s.description ?? '',
+    objectives: s.objectives ?? '',
+    prerequisites: [],
+    syllabus: [],
+    instructors: [],
   }));
 };
 
-// Fetch concrete subject from local storage
-export const fetchSubjectDetails = async (subjectId: string | number) => {
+export const fetchSubjectDetails = async (subjectId: string | number): Promise<Subject> => {
   try {
-    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+    console.log('🔍 Fetching subject from list by ID/code:', subjectId);
 
-    const response = await fetch(`${SUBJECTS_URL}/${subjectId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const allSubjects = await fetchSubjects(); // получаем весь список
+    const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch subject details');
-    }
+    if (!found) throw new Error('Subject not found by code: ' + subjectId);
 
-    return await response.json();
+    return found;
   } catch (error) {
-    console.error('Error fetching subject details:', error);
+    console.error('Error fetching subject details from list:', error);
     throw error;
   }
 };
 
-// Fetch teachers from local storage
 export const fetchTeachers = async () => {
-  // For demo purposes, return test data if API fails
-  return [
-    {
-      id: 1,
-      name: 'Prof. Doc. Yaroslav Marochok, PhD',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Professor',
-      department: 'Computer Science',
-    },
-    {
-      id: 2,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Associate Professor',
-      department: 'Software Engineering',
-    },
-    {
-      id: 3,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Associate Professor',
-      department: 'Mathematics',
-    },
-    {
-      id: 4,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Assistant Professor',
-      department: 'Information Systems',
-    },
-    {
-      id: 5,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Professor',
-      department: 'Artificial Intelligence',
-    },
-  ];
+  try {
+    const token = await AsyncStorage.getItem('ACCESS_TOKEN');
+    if (!token) throw new Error('No access token available');
+
+    const response = await fetch(TEACHERS_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch teachers');
+
+    const json = await response.json();
+    console.log('Fetched teachers:', json);
+    return json.teachers || [];
+  } catch (error) {
+    console.error('Error fetching teachers:', error);
+    throw error;
+  }
 };
 // Fetch concrete teacher from local storage
 export const fetchTeacherDetails = async (teacherId: string | number) => {
@@ -583,29 +655,6 @@ export const updateUserAvatar = async (
   }
 };
 
-export interface Subject {
-  code: string;
-  name: string;
-  type: string;
-  credits: number;
-  studyType: string;
-  semester: string;
-  languages: string[];
-  completionType: string;
-  studentCount: number;
-  assesmentMethods: string;
-  learningOutcomes: string;
-  courseContents: string;
-  plannedActivities: string;
-  evaluationMethods: string;
-  a_score: string;
-  b_score: string;
-  c_score: string;
-  d_score: string;
-  e_score: string;
-  fx_score: string;
-}
-
 export const mockSubjectsResponse = {
   subjects: [
     {
@@ -757,7 +806,7 @@ export const parseTeachers = (raw: Teacher[]): ParsedTeacher[] => {
     office: t.office,
     aisId: t.aisId,
     subjectCode: t.subject_code,
-    roles: t.roles.split(',').map((r) => r.trim()),
+    roles: t.roles ? t.roles.split(',').map((r) => r.trim()) : [],
     rating: t.rating,
     department: t.department || 'Unknown',
     consultationHours: t.consultationHours || 'Not specified',
@@ -784,4 +833,74 @@ export const fetchTeacherDetails1 = async (teacherId: string | number) => {
       { id: 2, name: 'Operating Systems', code: 'OS_B' },
     ],
   });
+};
+
+export interface ParsedTeacher1 {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  aisId?: string;
+  subjectCode?: string;
+  roles?: string[];
+  rating?: number;
+  department?: string;
+  consultationHours?: string;
+  bio?: string;
+  subjects?: { id: string | number; name: string; code: string }[];
+}
+
+export const fetchTeacherDetails2 = async (
+  teacherId: string | number
+): Promise<ParsedTeacher1 | null> => {
+  try {
+    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+
+    const response = await fetch(TEACHERS_URL, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch teachers');
+    }
+
+    const json = await response.json();
+    const allTeachers = json.teachers;
+
+    const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
+
+    if (!found) {
+      console.warn('Teacher not found for ID:', teacherId);
+      return null;
+    }
+
+    return {
+      id: found.id,
+      name: found.name,
+      email: found.email,
+      phone: found.phone,
+      office: found.office,
+      aisId: found.aisId || '',
+      roles: found.roles ? found.roles.split(',').map((r: string) => r.trim()) : [],
+      department: found.department || 'Unknown',
+      consultationHours: found.consultationHours || '',
+      bio: found.bio || '',
+      subjectCode: found.subject_code || '',
+      rating: found.rating || 0,
+      subjects: Array.isArray(found.subjects)
+        ? found.subjects.map((s: any) => ({
+            id: s.id || s.code || s.name,
+            name: s.name || 'Unknown',
+            code: s.code || '---',
+          }))
+        : [],
+    };
+  } catch (error) {
+    console.error('Error fetching teacher details:', error);
+    return null;
+  }
 };

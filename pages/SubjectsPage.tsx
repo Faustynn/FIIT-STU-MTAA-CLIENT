@@ -7,7 +7,7 @@ import { YStack, XStack, H1, Text, Theme, View, Input, ScrollView, Spinner, Butt
 
 import { useTheme } from '../components/SettingsController';
 import User from '../components/User';
-import { mockSubjectsResponse, parseSubjects, Subject } from '../services/apiService';
+import { fetchSubjects, Subject } from '../services/apiService';
 
 const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -34,39 +34,45 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
   const itemBackgroundColor = isDarkMode ? '#2A2F3B' : '#F5F5F5';
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAndParseUser = async () => {
       try {
         const storedUser = await User.fromStorage();
-        if (storedUser) {
-          setUser(storedUser);
-          setHasData(true);
-        } else {
-          setHasData(false);
+        if (isMounted) {
+          setUser(storedUser ?? null);
+          setHasData(!!storedUser);
         }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        setHasData(false);
+      } catch {
+        if (isMounted) setHasData(false);
       }
     };
 
     const loadSubjects = async () => {
       setLoading(true);
-      try {
-        const raw = mockSubjectsResponse.subjects;
-        const data = parseSubjects(raw);
-        setSubjects(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching subjects:', err);
-        setError(t('no_data_found'));
-      } finally {
-        setLoading(false);
+
+      while (isMounted) {
+        try {
+          const data = await fetchSubjects();
+          if (isMounted) {
+            setSubjects(data);
+            setLoading(false);
+            break; // ⬅️ Важно: прерываем цикл, если всё ок
+          }
+        } catch (err) {
+          console.error('❌ fetchSubjects failed, retrying in 15s...');
+          await new Promise((res) => setTimeout(res, 15000)); // подождать 15 секунд
+        }
       }
     };
 
     fetchAndParseUser();
     loadSubjects();
-  }, [t]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const filtered = subjects.filter((subject) => {
