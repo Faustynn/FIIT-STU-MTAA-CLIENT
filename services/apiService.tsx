@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { SubjectDetails } from 'pages/SubjectDetail';
-import {User} from '../components/User'
 import { Platform } from 'react-native';
-
-import { startTokenRefreshTask } from '../components/TokenRefresher';
 import { User } from '../components/User';
 
 // API URLs

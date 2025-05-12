@@ -285,18 +285,5 @@ const styles = StyleSheet.create({
   },
 });
 
-const AppNavigator = () => {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={LoginPage} />
-      <Stack.Screen name="ForgotPasswordPage" component={ForgotPasswordPage} />
-      <Stack.Screen name="RegistratePage" component={RegistratePage} />
-      <Stack.Screen name="Main" component={MainTabNavigator} />
-      <Stack.Screen name="TeacherSubPage" component={TeacherDetail} />
-      <Stack.Screen name="SubjectSubPage" component={SubjectDetail} />
-    </Stack.Navigator>
-  );
-};
-
 export default AppNavigator;
 export { MainTabNavigator };

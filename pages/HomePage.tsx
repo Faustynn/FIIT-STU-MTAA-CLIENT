@@ -74,7 +74,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User>(null as any);
   const [isLoading, setIsLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
