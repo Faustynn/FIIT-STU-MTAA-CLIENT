@@ -28,19 +28,18 @@ const openWebLink = (url: string) => {
   Linking.openURL(url).catch((err) => console.error("Failed to open URL:", err));
 };
 
-// Function to open maps with directions
+//open maps with directions
 const openMapsWithDirections = (destLatitude: number, destLongitude: number, userLatitude?: number, userLongitude?: number) => {
   let url = '';
 
-  // If we have user's current location, include it as the starting point
+  // user share location
   if (userLatitude !== undefined && userLongitude !== undefined) {
     if (Platform.OS === 'ios') {
       url = `maps://app?saddr=${userLatitude},${userLongitude}&daddr=${destLatitude},${destLongitude}`;
     } else {
       url = `google.navigation:q=${destLatitude},${destLongitude}&origin=${userLatitude},${userLongitude}`;
     }
-  } else {
-    // Otherwise just navigate to destination
+  } else { // user dont share location make only navigation to dest
     if (Platform.OS === 'ios') {
       url = `maps://app?daddr=${destLatitude},${destLongitude}`;
     } else {
@@ -53,12 +52,16 @@ const openMapsWithDirections = (destLatitude: number, destLongitude: number, use
       if (supported) {
         return Linking.openURL(url);
       } else {
-        // Fallback to generic maps URL which should work on both platforms
         const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLatitude},${destLongitude}`;
         return Linking.openURL(fallbackUrl);
       }
     })
     .catch(err => console.error('An error occurred', err));
+};
+
+const hasValidCoordinates = (newsItem: NewsModel) => {
+  // check coords
+  return newsItem.coordinates !== undefined && newsItem.coordinates !== null && newsItem.coordinates.latitude !== undefined && newsItem.coordinates.longitude !== undefined && newsItem.coordinates.latitude !== 0 && newsItem.coordinates.longitude !== 0;
 };
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
@@ -307,35 +310,52 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
   // Handler for location icon press
   const handleLocationPress = async (newsItem: NewsModel) => {
-    if (!newsItem.coordinates) {
-      Alert.alert(
-        t('no_location'),
-        t('no_location_message'),
-        [{ text: t('ok'), style: 'default' }]
-      );
+    // Check if news have valid coords
+    if (!hasValidCoordinates(newsItem)) {
+      Alert.alert(t('no_location'), t('no_location_message'), [{ text: t('ok'), style: 'default' }]);
       return;
     }
 
-    // Check if we need to request location permission again
-    if (locationPermissionStatus !== 'granted') {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermissionStatus(status);
+    try {
+      let currentLocation = userLocation; // take coords
 
-      if (status === 'granted') {
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        setUserLocation(location);
+      if (locationPermissionStatus !== 'granted') {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationPermissionStatus(status);
+
+        if (status !== 'granted') {
+          if (newsItem.coordinates) {
+            openMapsWithDirections(newsItem.coordinates.latitude, newsItem.coordinates.longitude);
+          }
+          return;
+        }
+      }
+
+      // Get curr. location
+      currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      setUserLocation(currentLocation);
+
+      // Open maps with directions
+      if (newsItem.coordinates) {
+        openMapsWithDirections(
+          newsItem.coordinates.latitude,
+          newsItem.coordinates.longitude,
+          currentLocation.coords.latitude,
+          currentLocation.coords.longitude
+        );
+      }
+    } catch (error) {
+      console.error('Error handling location press:', error);
+
+      if (hasValidCoordinates(newsItem) && newsItem.coordinates) {
+        openMapsWithDirections(
+          newsItem.coordinates.latitude,
+          newsItem.coordinates.longitude
+        );
       }
     }
-
-    // Open maps with directions
-    openMapsWithDirections(
-      newsItem.coordinates.latitude,
-      newsItem.coordinates.longitude,
-      userLocation?.coords.latitude,
-      userLocation?.coords.longitude
-    );
   };
 
   const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
@@ -546,19 +566,20 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <Text fontSize={12} color={subTextColor} position="absolute" top={8} right={8}>
                   {new Date(newsItem.date_of_creation).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })}
                 </Text>
-                {/* Location icon with press handler */}
-                <MaterialIcons
-                  name="location-on"
-                  size={24}
-                  color={newsItem.coordinates ? (isDarkMode ? '#79E3A5' : '#3366BB') : subTextColor}
-                  style={{ marginTop: 8, alignSelf: 'flex-end' }}
-                  onPress={() => handleLocationPress(newsItem)}
-                />
-                {/* Show small indicator for available directions */}
-                {newsItem.coordinates && (
-                  <Text fontSize={10} color={isDarkMode ? '#79E3A5' : '#3366BB'} style={{ alignSelf: 'flex-end', marginTop: 2 }}>
-                    {t('get_directions')}
-                  </Text>
+
+                {/* show icon if we have valid coords */}
+                {hasValidCoordinates(newsItem) && (
+                  <XStack alignItems="center" justifyContent="flex-end" marginTop={8}>
+                    <MaterialIcons
+                      name="location-on"
+                      size={24}
+                      color={isDarkMode ? '#79E3A5' : '#3366BB'}
+                      onPress={() => handleLocationPress(newsItem)}
+                    />
+                    <Text fontSize={10} color={isDarkMode ? '#79E3A5' : '#3366BB'} marginLeft={2}>
+                      {t('get_directions')}
+                    </Text>
+                  </XStack>
                 )}
               </YStack>
             ))

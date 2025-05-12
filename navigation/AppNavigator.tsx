@@ -33,9 +33,21 @@ const Stack = createStackNavigator<AppStackParamList>();
 
 type TabContentProps = {
   navigation: NavigationProp<AppStackParamList>;
+  setIsAuthenticated?: React.Dispatch<React.SetStateAction<boolean | null>>;
 };
 
-const TabContent = ({ navigation }: TabContentProps) => {
+export type AuthContextType = {
+  logout: () => Promise<void>;
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean | null>>;
+};
+
+// Auto login
+export const AuthContext = React.createContext<AuthContextType>({
+  logout: async () => {},
+  setIsAuthenticated: () => {},
+});
+
+const TabContent = ({ navigation, setIsAuthenticated }: TabContentProps) => {
   const [activeTab, setActiveTab] = useState(0);
   const [swipingDisabled, setSwipingDisabled] = useState(false);
   const { theme, gestureNavigationEnabled, gestureMode } = useTheme();
@@ -158,11 +170,50 @@ const TabContent = ({ navigation }: TabContentProps) => {
   );
 };
 
-const MainTabNavigator = () => {
+type MainTabNavigatorProps = {
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean | null>>;
+};
+
+const MainTabNavigator = ({ setIsAuthenticated }: MainTabNavigatorProps) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Main" component={TabContent} />
+      <Stack.Screen name="Main">
+        {(props) => <TabContent {...props} setIsAuthenticated={setIsAuthenticated} />}
+      </Stack.Screen>
     </Stack.Navigator>
+  );
+};
+
+type AppNavigatorProps = {
+  initialRoute: 'Login' | 'Main';
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean | null>>;
+};
+
+const AppNavigator = ({ initialRoute, setIsAuthenticated }: AppNavigatorProps) => {
+  // Authentication context value
+  const authContextValue = React.useMemo(() => ({
+    logout: async () => {
+      // Clear auth token
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+      await AsyncStorage.removeItem('AUTH_TOKEN');
+      setIsAuthenticated(false);
+    },
+    setIsAuthenticated
+  }), [setIsAuthenticated]);
+
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginPage} />
+        <Stack.Screen name="ForgotPasswordPage" component={ForgotPasswordPage} />
+        <Stack.Screen name="RegistratePage" component={RegistratePage} />
+        <Stack.Screen name="Main">
+          {() => <MainTabNavigator setIsAuthenticated={setIsAuthenticated} />}
+        </Stack.Screen>
+        <Stack.Screen name="TeacherSubPage" component={TeacherDetail} />
+        <Stack.Screen name="SubjectSubPage" component={SubjectDetail} />
+      </Stack.Navigator>
+    </AuthContext.Provider>
   );
 };
 
@@ -195,20 +246,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-
-const AppNavigator = () => {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={LoginPage} />
-      <Stack.Screen name="ForgotPasswordPage" component={ForgotPasswordPage} />
-      <Stack.Screen name="RegistratePage" component={RegistratePage} />
-
-      <Stack.Screen name="Main" component={MainTabNavigator} />
-      <Stack.Screen name="TeacherSubPage" component={TeacherDetail} />
-      <Stack.Screen name="SubjectSubPage" component={SubjectDetail} />
-    </Stack.Navigator>
-  );
-};
 
 export default AppNavigator;
 export { MainTabNavigator };

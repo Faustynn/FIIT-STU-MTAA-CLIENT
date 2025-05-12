@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {User} from '../components/User'
 import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 // API URLs
 export const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
@@ -125,7 +126,7 @@ export const checkAuthOnStartup = async () => {
   }
 }
 
-export const sendFCMTokenToServer = async (token: string) => {
+export const sendPushTokenToServer = async (token: string) => {
   try {
     const platform = Platform.OS === 'android' ? 'android' : 'ios';
 

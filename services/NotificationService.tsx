@@ -1,10 +1,8 @@
 import * as Device from 'expo-device';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getMessaging, getToken, onMessage, requestPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
-import { getApp } from '@react-native-firebase/app';
-import uuid from 'react-native-uuid';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import uuid from 'react-native-uuid';
 
 // News model
 export interface NewsModel {
@@ -29,23 +27,25 @@ export enum ConnectionStatus {
 class NotificationService {
   private static instance: NotificationService;
   private isInitialized: boolean = false;
-  private fcmToken: string | null = null;
+  private pushToken: string | null = null;
   private deviceId: string | null = null;
   private badgeCount: number = 0;
   private newsUpdateHandlers: ((news: NewsModel[]) => void)[] = [];
   private connectionStatusHandlers: ((status: ConnectionStatus) => void)[] = [];
-  private lastReceivedNewsIds: Set<string> = new Set(); // Хранит ID последних полученных новостей
+  private lastReceivedNewsIds: Set<string> = new Set(); // Stores IDs of recently received news
 
   // Storage keys
-  private readonly FCM_TOKEN_KEY = 'FCM_TOKEN';
+  private readonly PUSH_TOKEN_KEY = 'PUSH_TOKEN';
   private readonly DEVICE_ID_KEY = 'DEVICE_ID';
   private readonly BADGE_COUNT_KEY = 'BADGE_COUNT';
   private readonly LAST_NEWS_DATE_KEY = 'LAST_NEWS_DATE';
 
   // API endpoints
   private readonly REGISTER_DEVICE_ENDPOINT = `http://192.168.0.119:8080/api/notifications/register-device`;
-  private readonly TEST_NOTIFICATION_ENDPOINT = `http://192.168.0.119:8080/api/notifications/test`;
 
+  // Subscriptions
+  private notificationReceivedSubscription?: Notifications.Subscription;
+  private notificationResponseSubscription?: Notifications.Subscription;
 
   // Singleton pattern
   public static getInstance(): NotificationService {
@@ -61,37 +61,27 @@ class NotificationService {
     }
 
     try {
-      try {
-        getApp();
-        console.log('Firebase already initialized');
-      } catch (error) {
-        console.error('Firebase not available or not properly initialized:', error);
-      }
+      // Configure notif. handler
+      this.setupNotificationHandlers();
 
-      // Configure background notific.
-      this.setupBackgroundNotificationHandler();
-
-      // Load or generate device ID
+      // Load/generate device ID
       await this.setupDeviceId();
 
-      // Load saved FCM token
-      await this.loadFcmToken();
+      // Load saved push token
+      await this.loadPushToken();
 
       // Load badge count
       await this.loadBadgeCount();
 
-      // Request FCM permissions and register for push notific.
-      const hasPermission = await this.requestFcmPermission();
+      // Configure notif. settings
+      await this.configureNotifications();
+
+      // Request permissions
+      const hasPermission = await this.requestNotificationPermission();
       if (!hasPermission) {
-        console.log('FCM permission denied');
+        console.log('Notification permission denied');
         return false;
       }
-
-      // token refresh listener
-      this.setupTokenRefreshListener();
-
-      //notification handlers
-      this.setupNotificationHandlers();
 
       this.isInitialized = true;
       console.log('Notification service initialized successfully');
@@ -102,39 +92,16 @@ class NotificationService {
     }
   }
 
-
-  // background notification handler
-  private setupBackgroundNotificationHandler(): void {
-    try {
-      const messaging = getMessaging();
-      messaging.setBackgroundMessageHandler(async (remoteMessage) => {
-        console.log('Message handled in the background!', remoteMessage);
-        await this.incrementBadgeCount();
-
-        const newsId = remoteMessage.data?.newsId;
-        if (typeof newsId === 'string') {
-          this.lastReceivedNewsIds.add(newsId);
-          await AsyncStorage.setItem('LAST_RECEIVED_NEWS_ID', newsId);
-        } else {
-          console.error('Invalid newsId type:', newsId);
-        }
-
-        // send local notification
-        if (remoteMessage.notification) {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: remoteMessage.notification?.title || 'New notification',
-              body: remoteMessage.notification?.body || 'You have new message!',
-              data: remoteMessage.data || {},
-              badge: this.badgeCount,
-            },
-            trigger: null,
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Error setting up background handler:', error);
-    }
+  private async configureNotifications(): Promise<void> {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
   }
 
   private async setupDeviceId(): Promise<void> {
@@ -154,15 +121,15 @@ class NotificationService {
     }
   }
 
-  private async loadFcmToken(): Promise<void> {
+  private async loadPushToken(): Promise<void> {
     try {
-      const token = await AsyncStorage.getItem(this.FCM_TOKEN_KEY);
+      const token = await AsyncStorage.getItem(this.PUSH_TOKEN_KEY);
       if (token) {
-        this.fcmToken = token;
-        console.log('Loaded saved FCM token');
+        this.pushToken = token;
+        console.log('Loaded saved push token');
       }
     } catch (error) {
-      console.error('Failed to load FCM token:', error);
+      console.error('Failed to load push token:', error);
     }
   }
 
@@ -179,120 +146,109 @@ class NotificationService {
     }
   }
 
-  private async saveFcmToken(token: string): Promise<void> {
+  private async savePushToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(this.FCM_TOKEN_KEY, token);
-      this.fcmToken = token;
-      console.log('Saved FCM token');
+      await AsyncStorage.setItem(this.PUSH_TOKEN_KEY, token);
+      this.pushToken = token;
+      console.log('Saved push token');
     } catch (error) {
-      console.error('Failed to save FCM token:', error);
+      console.error('Failed to save push token:', error);
     }
   }
 
-  private async requestFcmPermission(): Promise<boolean> {
+  private async requestNotificationPermission(): Promise<boolean> {
     if (!Device.isDevice) {
       console.log('Push notifications are not available in the simulator');
       return false;
     }
 
     try {
-      const messaging = getMessaging();
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-      // ask for permission for notifi.
-      const authStatus = await requestPermission(messaging, {
-        alert: true,
-        provisional: false,
-        sound: true,
-        badge: true,
-      });
-
-      const enabled =
-        authStatus === AuthorizationStatus.AUTHORIZED ||
-        authStatus === AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
-        console.log('FCM permission granted');
-
-        const token = await getToken(messaging);
-        if (token) {
-          await this.saveFcmToken(token);
-          console.log('FCM token obtained');
-
-          // Register with backend
-          await this.registerDeviceWithServer();
-          return true;
-        }
+      // If permission dont disagree before, ask again
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync({
+          ios: {
+            allowAlert: true,
+            allowBadge: true,
+            allowSound: true,
+            allowDisplayInCarPlay: false,
+            allowCriticalAlerts: false,
+            provideAppNotificationSettings: true,
+            allowProvisional: true,
+          },
+        });
+        finalStatus = status;
       }
 
-      return false;
-    } catch (error) {
-      console.error('Error requesting FCM permissions:', error);
-      return false;
-    }
-  }
+      if (finalStatus !== 'granted') {
+        console.log('Permission not granted for notifications');
+        return false;
+      }
 
-  // Set up token refresh handler
-  private setupTokenRefreshListener(): void {
-    try {
-      const messaging = getMessaging();
-      messaging.onTokenRefresh(async (token) => {
-        console.log('FCM token refreshed');
-        await this.saveFcmToken(token);
-        await this.registerDeviceWithServer();
+      console.log('Notification permission granted');
+
+      // Get Expo push token
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: process.env.EXPO_PROJECT_ID,
       });
+
+      const token = tokenData.data;
+      console.log('Expo push token:', token);
+
+      await this.savePushToken(token);
+
+      // Register with backend
+      await this.registerDeviceWithServer();
+      return true;
     } catch (error) {
-      console.error('Error setting up token refresh listener:', error);
+      console.error('Error requesting notification permissions:', error);
+      return false;
     }
   }
 
-  // Set up notification handlers for foreground and background
+  // Set up notif. handlers
   private setupNotificationHandlers(): void {
-    try {
-      // Foreground handler using non-deprecated approach
-      const messaging = getMessaging();
-      const unsubscribe = onMessage(messaging, async remoteMessage => {
-        console.log('Received foreground notification:', remoteMessage);
+    if (this.notificationReceivedSubscription) {
+      this.notificationReceivedSubscription.remove();
+    }
+    if (this.notificationResponseSubscription) {
+      this.notificationResponseSubscription.remove();
+    }
 
-        // Increment badge count
+    this.notificationReceivedSubscription = Notifications.addNotificationReceivedListener(
+      async (notification) => {
+        console.log('Notification received in foreground:', notification);
         await this.incrementBadgeCount();
 
-        // Extract news ID
-        const newsId = remoteMessage.data?.newsId;
+        // Extract news ID from notif. data
+        const newsId = notification.request.content.data?.newsId as string;
         if (typeof newsId === 'string') {
           console.log(`Received news notification with ID: ${newsId}`);
           this.lastReceivedNewsIds.add(newsId);
-        } else {
-          console.error('Invalid newsId type2:', newsId);
+          await AsyncStorage.setItem('LAST_RECEIVED_NEWS_ID', newsId);
         }
+      }
+    );
 
-        // Show local notification when app in foreground
-        if (remoteMessage.notification) {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: remoteMessage.notification?.title || 'New notification',
-              body: remoteMessage.notification?.body || 'You have new message!',
-              data: remoteMessage.data || {},
-              badge: this.badgeCount,
-            },
-            trigger: null,
-          });
+    // Handler when user taps on a notif.
+    this.notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        console.log('Notification response received:', response);
+        const newsId = response.notification.request.content.data?.newsId as string;
+        if (newsId) {
+          console.log(`User tapped notification for news ID: ${newsId}`);
+          // TODO: future news detail page
         }
-      });
-
-      // Save unsubscribe function for later cleanup
-      this.unsubscribe = unsubscribe;
-    } catch (error) {
-      console.error('Error setting up notification handlers:', error);
-      this.unsubscribe = () => {};
-    }
+      }
+    );
   }
-
-  private unsubscribe: () => void = () => {};
 
   // Register device with server
   private async registerDeviceWithServer(): Promise<boolean> {
-    if (!this.fcmToken || !this.deviceId) {
-      console.error('Cannot register device: missing FCM token or device ID');
+    if (!this.pushToken || !this.deviceId) {
+      console.error('Cannot register device: missing push token or device ID');
       return false;
     }
 
@@ -307,8 +263,9 @@ class NotificationService {
         },
         body: JSON.stringify({
           deviceId: this.deviceId,
-          fcmToken: this.fcmToken,
-          platform: Platform.OS
+          pushToken: this.pushToken,
+          platform: Platform.OS,
+          type: 'expo'
         })
       });
 
@@ -326,8 +283,7 @@ class NotificationService {
     }
   }
 
-
-  // check and send info about new news
+  // Check and send info about new news
   public checkForNewNews(newsList: NewsModel[]): void {
     if (!newsList || newsList.length === 0) return;
 
@@ -369,6 +325,7 @@ class NotificationService {
       return null;
     }
   }
+
   private async saveLastNewsDate(date: Date): Promise<void> {
     try {
       await AsyncStorage.setItem(this.LAST_NEWS_DATE_KEY, date.toISOString());
@@ -386,6 +343,7 @@ class NotificationService {
       return currentDate > latestDate ? current : latest;
     }, newsList[0]);
   }
+
   private async sendLocalNotification(news: NewsModel): Promise<void> {
     try {
       await this.incrementBadgeCount();
@@ -397,7 +355,7 @@ class NotificationService {
           data: { newsId: news.id },
           badge: this.badgeCount,
         },
-        trigger: null,
+        trigger: null,  // Send now
       });
 
       console.log(`Local notification sent for news: ${news.id}`);
@@ -406,11 +364,9 @@ class NotificationService {
     }
   }
 
-
-
-  // Get the current FCM token
-  public getFcmToken(): string | null {
-    return this.fcmToken;
+  // Get the current push token
+  public getPushToken(): string | null {
+    return this.pushToken;
   }
 
   // Get the device ID
@@ -453,7 +409,6 @@ class NotificationService {
     await this.saveBadgeCount();
   }
 
-  // Expo notifications handling
   public addNotificationReceivedListener(
     listener: (notification: Notifications.Notification) => void
   ): Notifications.Subscription {
@@ -495,6 +450,16 @@ class NotificationService {
 
   public updateConnectionStatus(status: ConnectionStatus): void {
     this.connectionStatusHandlers.forEach(handler => handler(status));
+  }
+
+  // Clean up / remove all subscriptions when component unmounts
+  public cleanup(): void {
+    if (this.notificationReceivedSubscription) {
+      this.notificationReceivedSubscription.remove();
+    }
+    if (this.notificationResponseSubscription) {
+      this.notificationResponseSubscription.remove();
+    }
   }
 }
 

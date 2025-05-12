@@ -26,8 +26,75 @@ const animations = createAnimations({
 });
 
 const headingFont = createInterFont();
-
 const bodyFont = createInterFont();
+
+// Custom colors for light and dark themes
+const customColors = {
+  light: {
+    background: '#F5F5F5',
+    foreground: '#000000',
+    primary: '#3B82F6',  // blue600
+    secondary: '#79E3A5', // green for accent
+    gray50: '#FAFAFA',
+    gray100: '#F5F5F5',
+    gray200: '#E5E5E5',
+    gray300: '#D4D4D4',
+    gray400: '#A3A3A3',
+    gray500: '#737373',
+    gray600: '#525252',
+    gray700: '#404040',
+    gray800: '#262626',
+    gray900: '#171717',
+    blue500: '#3B82F6',
+    blue600: '#2563EB',
+    blue800: '#1E40AF',
+    green500: '#79E3A5',
+    green600: '#66D294',
+  },
+  dark: {
+    background: '#191C22',
+    foreground: '#FFFFFF',
+    primary: '#79E3A5',
+    secondary: '#2563EB',
+    gray50: '#FAFAFA',
+    gray100: '#262A35',
+    gray200: '#2a2f3b',
+    gray300: '#3A3F4C',
+    gray400: '#4D5364',
+    gray500: '#646B81',
+    gray600: '#777E96',
+    gray700: '#A0A7B7',
+    gray800: '#BBC0CC',
+    gray900: '#DCDFE6',
+    blue500: '#3B82F6',
+    blue600: '#2563EB',
+    blue800: '#1E40AF',
+    green500: '#79E3A5',
+    green600: '#66D294',
+  }
+};
+
+// Custom theme tokens
+const customTokens = {
+  ...tokens,
+  color: {
+    ...tokens.color,
+    ...customColors.light,
+  }
+};
+
+// Custom themes
+const customThemes = {
+  ...themes,
+  light: {
+    ...themes.light,
+    ...customColors.light,
+  },
+  dark: {
+    ...themes.dark,
+    ...customColors.dark,
+  }
+};
 
 export const Container = styled(YStack, {
   flex: 1,
@@ -61,7 +128,7 @@ export const Button = styled(ButtonTamagui, {
   },
   maxWidth: 500,
 
-  // Shaddows
+  // Shadows
   shadowColor: '#000',
   shadowOffset: {
     height: 2,
@@ -72,17 +139,11 @@ export const Button = styled(ButtonTamagui, {
 
   // Button text
   color: '#FFFFFF',
-  fontWeight: '600', // Is not passed down to the text. Probably a bug in Tamagui: https://github.com/tamagui/tamagui/issues/1156#issuecomment-1802594930
+  fontWeight: '600',
   fontSize: 16,
 });
 
 const config = createTamagui({
-  light: {
-    color: {
-      background: 'gray',
-      text: 'black',
-    },
-  },
   defaultFont: 'body',
   animations,
   shouldAddPrefersColorThemes: true,
@@ -92,8 +153,8 @@ const config = createTamagui({
     body: bodyFont,
     heading: headingFont,
   },
-  themes,
-  tokens,
+  themes: customThemes,
+  tokens: customTokens,
   media: createMedia({
     xs: { maxWidth: 660 },
     sm: { maxWidth: 800 },
@@ -113,9 +174,6 @@ const config = createTamagui({
 });
 
 type AppConfig = typeof config;
-
-// Enable auto-completion of props shorthand (ex: jc="center") for Tamagui templates.
-// Docs: https://tamagui.dev/docs/core/configuration
 
 declare module 'tamagui' {
   interface TamaguiCustomConfig extends AppConfig {}

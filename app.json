@@ -24,7 +24,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/favicon.png",
+          "icon": "./assets/icon.png",
           "color": "#ffffff",
           "sounds": ["./assets/notification.mp3"]
         }
@@ -34,7 +34,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -43,6 +43,7 @@
     ],
     "ios": {
       "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.faustyyn.UniMap",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -58,7 +59,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "b6ab8df0-3ae5-485b-b569-8bc15d9a39c6"
+        "projectId": "0299bc91-3bbc-48c8-be5d-4eae4ee7e6dd"
       }
     }
   }
