@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { Platform } from 'react-native';
+
 import { User } from '../components/User';
 
 // API URLs
-export const API_URL = 'http://172.20.10.14:8080/api/unimap_pc/';
+export const API_URL = 'http://172.20.10.4:8080/api/unimap_pc/';
 
 const oAuth_LOGIN_URL = `${API_URL}oauth2/login`;
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
@@ -58,7 +58,6 @@ const extractRefreshToken = (response: Response) => {
   return refreshToken ? refreshToken.split('=')[1] : null;
 };
 
-
 // Refresh access token
 export const refreshAccessToken = async () => {
   try {
@@ -97,7 +96,6 @@ export const refreshAccessToken = async () => {
   }
 };
 
-
 // Check connection
 export const checkConnection = async () => {
   try {
@@ -127,7 +125,7 @@ export const checkAuthOnStartup = async () => {
     console.error('Error checking authentication:', error);
     return false;
   }
-}
+};
 
 export const sendPushTokenToServer = async (token: string) => {
   try {
@@ -245,7 +243,6 @@ export const oAuth2sendAuthenticationRequest = async (token: string, provider: s
     return false;
   }
 };
-
 
 // Send registration request
 export const sendRegistrationRequest = async (
@@ -458,16 +455,13 @@ export const fetchTeachers = async () => {
     try {
       const token = await AsyncStorage.getItem('ACCESS_TOKEN');
       if (!token) throw new Error('No access token available');
-
       const response = await fetch(TEACHERS_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-
       if (!response.ok) throw new Error(`Failed to fetch teachers: ${response.status}`);
-
       const json = await response.json();
       return json.teachers || [];
     } catch (err) {
@@ -706,65 +700,75 @@ export const updateUserAvatar = async (
   }
 };
 
-export interface ParsedTeacher {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  office: string;
-  aisId: string;
-  subjectCode: string;
+interface TeacherSubject {
+  subjectName: string;
   roles: string[];
-  rating: number;
-  department: string;
-  consultationHours?: string;
-  bio?: string;
 }
 
-export interface Teacher {
+interface ParsedTeacher {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  office: string;
-  aisId: string;
-  subject_code: string;
-  roles: string;
-  rating: number;
-  department: string;
-  consultationHours?: string;
-  bio?: string;
+  email: string | null;
+  phone: string | null;
+  office: string | null;
+  subjects: TeacherSubject[];
 }
 
-export const parseTeachers = (raw: Teacher[]): ParsedTeacher[] => {
-  return raw.map((t) => ({
-    id: t.id,
-    name: t.name,
-    email: t.email,
-    phone: t.phone,
-    office: t.office,
-    aisId: t.aisId,
-    subjectCode: t.subject_code,
-    roles: t.roles ? t.roles.split(',').map((r) => r.trim()) : [],
-    rating: t.rating,
-    department: t.department || 'Unknown',
-    consultationHours: t.consultationHours || 'Not specified',
-    bio: t.bio || 'No bio available',
-  }));
+interface TeacherSubject {
+  subjectName: string;
+  roles: string[];
+}
+
+interface ParsedTeacher {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  office: string | null;
+  subjects: TeacherSubject[];
+}
+
+export const parseTeachers = (raw: any[]): ParsedTeacher[] => {
+  if (!Array.isArray(raw)) return [];
+
+  const teacherMap = new Map<string, ParsedTeacher>();
+
+  raw.forEach((t) => {
+    const id = String(t.id ?? '');
+    const name = t.name ?? '';
+    const email = t.email ?? null;
+    const phone = t.phone ?? null;
+    const office = t.office ?? null;
+
+    const parsedSubjects: TeacherSubject[] = Array.isArray(t.subjects)
+      ? t.subjects.map((s: any) => ({
+          subjectName: s.subjectName ?? '',
+          roles: Array.isArray(s.roles)
+            ? s.roles.flatMap((r: string) =>
+                r
+                  .replace(/[{}]/g, '')
+                  .replace(/^"|"$/g, '')
+                  .split(',')
+                  .map((x) => x.trim())
+                  .filter(Boolean)
+              )
+            : [],
+        }))
+      : [];
+
+    if (teacherMap.has(id)) {
+      teacherMap.get(id)!.subjects.push(...parsedSubjects);
+    } else {
+      teacherMap.set(id, {
+        id,
+        name,
+        email,
+        phone,
+        office,
+        subjects: parsedSubjects,
+      });
+    }
+  });
+
+  return Array.from(teacherMap.values());
 };
-
-export interface ParsedTeacher1 {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  office: string;
-  aisId?: string;
-  subjectCode?: string;
-  roles?: string[];
-  rating?: number;
-  department?: string;
-  consultationHours?: string;
-  bio?: string;
-  subjects?: { id: string | number; name: string; code: string }[];
-}

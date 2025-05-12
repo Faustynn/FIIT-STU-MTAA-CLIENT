@@ -9,17 +9,18 @@ import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import { fetchTeachers, parseTeachers } from '../services/apiService';
 
+export interface TeacherSubject {
+  subjectName: string;
+  roles: string[];
+}
+
 export interface ParsedTeacher {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  office: string;
-  aisId: string;
-  subjectCode: string;
-  roles: string[];
-  rating: number;
-  department: string;
+  email: string | null;
+  phone: string | null;
+  office: string | null;
+  subjects: TeacherSubject[];
 }
 
 type TeachersPageProps = {
@@ -85,7 +86,8 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
       teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       teacher.id.includes(searchQuery);
 
-    const matchesRole = !selectedRole || teacher.roles.includes(selectedRole);
+    const matchesRole =
+      !selectedRole || teacher.subjects.some((subject) => subject.roles.includes(selectedRole));
 
     return matchesSearch && matchesRole;
   });
@@ -113,7 +115,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
         paddingRight={isLandscape ? 24 : '$4'}
         flexDirection={isLandscape ? 'row' : 'column'}>
         {/* Header */}
-        <YStack flex={1}>
+        <YStack flex={0}>
           <XStack
             justifyContent="space-between"
             alignItems={isLandscape ? 'flex-start' : 'center'}
@@ -182,10 +184,13 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
               <ComboBox
                 value={selectedRole}
                 onValueChange={setSelectedRole}
-                items={Array.from(new Set(teachers.flatMap((t) => t.roles))).map((role) => ({
-                  label: role,
-                  value: role,
-                }))}
+                items={[
+                  { label: 'Practitioners', value: 'cvičiaci' },
+                  { label: 'Lecturer', value: 'prednášajúci' },
+                  { label: 'Examiner', value: 'skúšajúci' },
+                  { label: 'Guarantor', value: 'zodpovedný za predmet' },
+                  { label: 'Tutor', value: 'tútor' },
+                ]}
                 placeholder={t('role')}
                 labelColor={subTextColor}
                 textColor={headerTextColor}
@@ -239,15 +244,15 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                         <Text color={subTextColor} fontSize={textSize - 1}>
                           {t('ais_id')}: {teacher.id}
                         </Text>
-                        <Text color={subTextColor} fontSize={textSize - 1}>
+                        {/* <Text color={subTextColor} fontSize={textSize - 1}>
                           {teacher.rating}
-                        </Text>
+                        </Text> */}
                       </XStack>
-                      {teacher.department && (
+                      {/* {teacher.department && (
                         <Text color={subTextColor} fontSize={textSize - 1}>
                           {t('department')}: {teacher.department}
                         </Text>
-                      )}
+                      )} */}
                     </YStack>
                   ))}
                 </YStack>
