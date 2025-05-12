@@ -5,44 +5,6 @@ import { Platform } from 'react-native';
 import { startTokenRefreshTask } from '../components/TokenRefresher';
 import { User } from '../components/User';
 
-// // Fetch subjects from local storage
-// export const fetchSubjects = async () => {
-//   return [
-//     {
-//       id: 1,
-//       name: 'Web Technologies',
-//       code: 'WTECH_B',
-//       guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
-//       type: 'Obligatory',
-//       semester: 'Winter Semester',
-//     },
-//     {
-//       id: 2,
-//       name: 'System Programming in Assembly',
-//       code: 'SPAASM_B',
-//       guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-//       type: 'Optional',
-//       semester: 'Summer Semester',
-//     },
-//     {
-//       id: 3,
-//       name: 'Probability and Statistics',
-//       code: 'PAS_B',
-//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-//       type: 'Optional',
-//       semester: 'Winter Semester',
-//     },
-//     {
-//       id: 4,
-//       name: 'Programming in Rust Language',
-//       code: 'RUST_B',
-//       guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-//       type: 'Optional',
-//       semester: 'Summer Semester',
-//     },
-//   ];
-// };
-
 // API URLs
 const API_URL = 'http://172.20.10.4:8080/api/unimap_pc/';
 
@@ -299,34 +261,6 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
   throw new Error(`❌ fetchSubjects failed after ${maxAttempts} attempts`);
 };
 
-// func
-// export const fetchSubjects = async () => {
-//   try {
-//     const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
-//     if (!accessToken) throw new Error('No access token');
-
-//     const response = await fetch(SUBJECTS_URL, {
-//       method: 'GET',
-//       headers: {
-//         Authorization: `Bearer ${accessToken}`,
-//         'Content-Type': 'application/json',
-//       },
-//     });
-
-//     if (!response.ok) {
-//       const text = await response.text();
-//       console.error('Server responded with:', text);
-//       throw new Error(`Failed to fetch subjects (status ${response.status})`);
-//     }
-
-//     const json = await response.json();
-//     return parseSubjects(json.subjects || []);
-//   } catch (error) {
-//     console.error('Error in fetchSubjects:', error);
-//     throw error;
-//   }
-// };
-
 export interface Subject {
   code: string;
   name: string;
@@ -409,22 +343,6 @@ export const fetchSubjectDetails = async (subjectId: string | number): Promise<S
   }
 };
 
-// func
-// export const fetchSubjectDetails = async (subjectId: string | number): Promise<Subject> => {
-//   try {
-
-//     const allSubjects = await fetchSubjects(); // получаем весь список
-//     const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
-
-//     if (!found) throw new Error('Subject not found by code: ' + subjectId);
-
-//     return found;
-//   } catch (error) {
-//     console.error('Error fetching subject details from list:', error);
-//     throw error;
-//   }
-// };
-
 export const fetchTeachers = async () => {
   let attempt = 0;
   while (true) {
@@ -450,30 +368,6 @@ export const fetchTeachers = async () => {
     }
   }
 };
-
-// func
-// export const fetchTeachers = async () => {
-//   try {
-//     const token = await AsyncStorage.getItem('ACCESS_TOKEN');
-//     if (!token) throw new Error('No access token available');
-
-//     const response = await fetch(TEACHERS_URL, {
-//       headers: {
-//         Authorization: `Bearer ${token}`,
-//         'Content-Type': 'application/json',
-//       },
-//     });
-
-//     if (!response.ok) throw new Error('Failed to fetch teachers');
-
-//     const json = await response.json();
-//     console.log('Fetched teachers:', json);
-//     return json.teachers || [];
-//   } catch (error) {
-//     console.error('Error fetching teachers:', error);
-//     throw error;
-//   }
-// };
 
 export const fetchTeacherDetails = async (teacherId: string | number) => {
   let attempt = 0;
@@ -526,37 +420,6 @@ export const buyPremium = async (userId: string): Promise<boolean> => {
     }
   }
 };
-
-// func
-// export const buyPremium = async (userId: string) => {
-//   if (!userId) return false;
-
-//   try {
-//     const response = await fetch(`${PREMIUM_URL}${userId}`, {
-//       method: 'PUT',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
-//       },
-//     });
-
-//     if (response.ok) {
-//       const json = await response.json();
-//       const user = json.user;
-
-//       console.log(user);
-//       await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
-//       return true;
-//     } else {
-//       console.error(`Buying Premium failed with status code: ${response.status}`);
-//       return false;
-//     }
-//   } catch (error) {
-//     console.error('Premium buying request failed:', error);
-//     return false;
-//   }
-//   return true;
-// };
 
 // Delete all user comments
 export const deleteComments = async (userId: number | undefined) => {
@@ -734,118 +597,6 @@ export const updateUserAvatar = async (
   }
 };
 
-export const mockSubjectsResponse = {
-  subjects: [
-    {
-      code: 'WTECH_B',
-      name: 'Web Technologies',
-      type: 'Obligatory',
-      credits: 6,
-      studyType: 'Bachelor',
-      semester: 'ZS',
-      languages: 'sk,en',
-      completionType: 'Exam',
-      studentCount: 120,
-      assesmentMethods: 'Written exam',
-      learningOutcomes: 'Students understand frontend/backend communication.',
-      courseContents: 'HTTP, REST, JavaScript, Laravel',
-      plannedActivities: 'Lectures, labs, project',
-      evaluationMethods: 'Exam and project',
-      a_score: '25%',
-      b_score: '30%',
-      c_score: '20%',
-      d_score: '10%',
-      e_score: '10%',
-      fx_score: '5%',
-    },
-    {
-      code: 'SPAASM_B',
-      name: 'System Programming in Assembly',
-      type: 'Optional',
-      credits: 5,
-      studyType: 'Engineer',
-      semester: 'LS',
-      languages: 'sk',
-      completionType: 'Graded Credit',
-      studentCount: 60,
-      assesmentMethods: 'Project',
-      learningOutcomes: 'Students understand low-level programming.',
-      courseContents: 'x86, memory, system calls',
-      plannedActivities: 'Labs',
-      evaluationMethods: 'Final project',
-      a_score: '30%',
-      b_score: '25%',
-      c_score: '20%',
-      d_score: '10%',
-      e_score: '10%',
-      fx_score: '5%',
-    },
-  ],
-};
-
-export const fetchSubjects1 = async (): Promise<Subject[]> => {
-  const raw = mockSubjectsResponse.subjects;
-  return parseSubjects(raw);
-};
-
-export const mockSubjectDetails = {
-  code: 'SPAASM_B',
-  name: 'System Programming in Assembly',
-  type: 'Optional',
-  semester: 'ZS',
-  guarantor: 'Olexandr Dokaniev',
-  credits: 5,
-  description: 'This subject introduces students to low-level programming in Assembly.',
-  language: 'sk',
-  prerequisites: ['Introduction to Programming', 'Computer Architecture'],
-  objectives: 'Understand how Assembly works with memory and system calls.',
-  syllabus: ['Introduction', 'Registers', 'Memory Management', 'System Calls'],
-  instructors: [
-    { id: 1, name: 'Olexandr Dokaniev', role: 'Lecturer' },
-    { id: 2, name: 'John Novak', role: 'Lab Assistant' },
-  ],
-};
-
-export const fetchSubjectDetails1 = async (subjectId: string | number) => {
-  // в реальности можешь использовать subjectId, а пока заглушка
-  return Promise.resolve(mockSubjectDetails);
-};
-
-export const mockTeachersResponse = {
-  teachers: [
-    {
-      id: '1',
-      name: 'Doc. Ing. John Smith, PhD.',
-      email: 'john.smith@fiit.stuba.sk',
-      phone: '+421 123 456 789',
-      office: 'BC-302',
-      aisId: '123456',
-      subject_code: 'SPAASM_B',
-      roles: 'Lecturer,Supervisor',
-      rating: 4.5,
-      department: 'Computer Science',
-    },
-    {
-      id: '2',
-      name: 'Mgr. Anna Kovácsová',
-      email: 'anna.kovacsova@fiit.stuba.sk',
-      phone: '+421 987 654 321',
-      office: 'BC-112',
-      aisId: '654321',
-      subject_code: 'WTECH_B',
-      roles: 'Lecturer',
-      rating: 4.0,
-      department: 'Software Engineering',
-    },
-  ],
-};
-
-export const fetchTeachers1 = async () => {
-  // имитация задержки
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  return mockTeachersResponse.teachers;
-};
-
 export interface ParsedTeacher {
   id: string;
   name: string;
@@ -893,27 +644,6 @@ export const parseTeachers = (raw: Teacher[]): ParsedTeacher[] => {
   }));
 };
 
-// export const fetchTeacherDetails1 = async (teacherId: string | number) => {
-//   return Promise.resolve({
-//     id: teacherId.toString(),
-//     name: 'Doc. Ing. John Smith, PhD.',
-//     email: 'john.smith@fiit.stuba.sk',
-//     phone: '+421 123 456 789',
-//     office: 'BC-302',
-//     aisId: '123456',
-//     subjectCode: 'SPAASM_B',
-//     roles: ['Lecturer', 'Supervisor'],
-//     rating: 4.5,
-//     department: 'Computer Science',
-//     consultationHours: 'Monday 10:00-12:00',
-//     bio: 'John Smith has over 20 years of teaching experience in system programming and algorithms.',
-//     subjects: [
-//       { id: 1, name: 'System Programming in Assembly', code: 'SPAASM_B' },
-//       { id: 2, name: 'Operating Systems', code: 'OS_B' },
-//     ],
-//   });
-// };
-
 export interface ParsedTeacher1 {
   id: string;
   name: string;
@@ -929,58 +659,3 @@ export interface ParsedTeacher1 {
   bio?: string;
   subjects?: { id: string | number; name: string; code: string }[];
 }
-
-// func
-// export const fetchTeacherDetails2 = async (
-//   teacherId: string | number
-// ): Promise<ParsedTeacher1 | null> => {
-//   try {
-//     const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
-
-//     const response = await fetch(TEACHERS_URL, {
-//       headers: {
-//         Authorization: `Bearer ${accessToken}`,
-//         'Content-Type': 'application/json',
-//       },
-//     });
-
-//     if (!response.ok) {
-//       throw new Error('Failed to fetch teachers');
-//     }
-
-//     const json = await response.json();
-//     const allTeachers = json.teachers;
-
-//     const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
-
-//     if (!found) {
-//       console.warn('Teacher not found for ID:', teacherId);
-//       return null;
-//     }
-
-//     return {
-//       id: found.id,
-//       name: found.name,
-//       email: found.email,
-//       phone: found.phone,
-//       office: found.office,
-//       aisId: found.aisId || '',
-//       roles: found.roles ? found.roles.split(',').map((r: string) => r.trim()) : [],
-//       department: found.department || 'Unknown',
-//       consultationHours: found.consultationHours || '',
-//       bio: found.bio || '',
-//       subjectCode: found.subject_code || '',
-//       rating: found.rating || 0,
-//       subjects: Array.isArray(found.subjects)
-//         ? found.subjects.map((s: any) => ({
-//             id: s.id || s.code || s.name,
-//             name: s.name || 'Unknown',
-//             code: s.code || '---',
-//           }))
-//         : [],
-//     };
-//   } catch (error) {
-//     console.error('Error fetching teacher details:', error);
-//     return null;
-//   }
-// };
