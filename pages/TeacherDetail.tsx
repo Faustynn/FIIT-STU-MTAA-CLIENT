@@ -147,7 +147,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                   </XStack>
                   <XStack justifyContent="space-between" alignItems="center">
                     <Text color={subTextColor} fontSize={textSize - 1}>
-                      AIS ID: {teacher.aisId}
+                      AIS ID: {teacher.id}
                     </Text>
                     <View
                       backgroundColor={isDarkMode ? '#343B4A' : '#E1E8F0'}

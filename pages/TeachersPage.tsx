@@ -83,7 +83,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
   const filteredTeachers = teachers.filter((teacher) => {
     const matchesSearch =
       teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      teacher.aisId.includes(searchQuery);
+      teacher.id.includes(searchQuery);
 
     const matchesRole = !selectedRole || teacher.roles.includes(selectedRole);
 
@@ -237,7 +237,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                       </Text>
                       <XStack justifyContent="space-between">
                         <Text color={subTextColor} fontSize={textSize - 1}>
-                          {t('ais_id')}: {teacher.aisId}
+                          {t('ais_id')}: {teacher.id}
                         </Text>
                         <Text color={subTextColor} fontSize={textSize - 1}>
                           {teacher.rating}

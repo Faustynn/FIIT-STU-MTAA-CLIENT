@@ -207,8 +207,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         value={selectedType}
                         onValueChange={setSelectedType}
                         items={[
-                          { label: 'Obligatory', value: 'Obligatory' },
-                          { label: 'Optional', value: 'Optional' },
+                          { label: 'Obligatory', value: 'povinný' },
+                          { label: 'Optional', value: 'povinné-voliteľný' },
                         ]}
                         placeholder={t('subj_type')}
                         labelColor={subTextColor}
@@ -218,8 +218,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         value={selectedLevel}
                         onValueChange={setSelectedLevel}
                         items={[
-                          { label: 'Bachelor', value: 'Bachelor' },
-                          { label: 'Engineer', value: 'Engineer' },
+                          { label: 'Bachelor', value: 'bakalarský' },
+                          { label: 'Engineer', value: 'inženierský' },
                         ]}
                         placeholder={t('study_lvl')}
                         labelColor={subTextColor}
@@ -248,8 +248,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     value={selectedType}
                     onValueChange={setSelectedType}
                     items={[
-                      { label: 'Obligatory', value: 'Obligatory' },
-                      { label: 'Optional', value: 'Optional' },
+                      { label: 'Obligatory', value: 'povinný' },
+                      { label: 'Optional', value: 'povinné-voliteľný' },
                     ]}
                     placeholder={t('subj_type')}
                     labelColor={subTextColor}
@@ -259,8 +259,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     value={selectedLevel}
                     onValueChange={setSelectedLevel}
                     items={[
-                      { label: 'Bachelor', value: 'Bachelor' },
-                      { label: 'Engineer', value: 'Engineer' },
+                      { label: 'Bachelor', value: 'bakalarský' },
+                      { label: 'Engineer', value: 'inženierský' },
                     ]}
                     placeholder={t('study_lvl')}
                     labelColor={subTextColor}
