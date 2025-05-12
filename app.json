@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "UniMap",
-    "slug": "UniMap",
+    "slug": "unimap",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png",
@@ -60,7 +60,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "0299bc91-3bbc-48c8-be5d-4eae4ee7e6dd"
+        "projectId": "e2e4dbee-a73e-4b6f-b9f5-2ed1b29c6909"
       }
     }
   }

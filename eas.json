@@ -12,10 +12,12 @@
       "distribution": "internal"
     },
     "production": {
+      "developmentClient": false,
+      "distribution": "store",
       "autoIncrement": true,
       "env": {
         "GOOGLE_SERVICES_JSON": "@faustyyn/unimap-google-services-json"      }
-    }
+    },
   },
   "submit": {
     "production": {}

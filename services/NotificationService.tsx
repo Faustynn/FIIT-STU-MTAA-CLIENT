@@ -34,14 +34,16 @@ class NotificationService {
   private connectionStatusHandlers: ((status: ConnectionStatus) => void)[] = [];
   private lastReceivedNewsIds: Set<string> = new Set(); // Stores IDs of recently received news
 
+  // API endpoints
+  private readonly REGISTER_DEVICE_ENDPOINT = `http://147.175.162.157:8080/api/notifications/register-device`;
+
+
   // Storage keys
   private readonly PUSH_TOKEN_KEY = 'PUSH_TOKEN';
   private readonly DEVICE_ID_KEY = 'DEVICE_ID';
   private readonly BADGE_COUNT_KEY = 'BADGE_COUNT';
   private readonly LAST_NEWS_DATE_KEY = 'LAST_NEWS_DATE';
 
-  // API endpoints
-  private readonly REGISTER_DEVICE_ENDPOINT = `http://192.168.0.119:8080/api/notifications/register-device`;
 
   // Subscriptions
   private notificationReceivedSubscription?: Notifications.Subscription;

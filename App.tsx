@@ -13,18 +13,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendPushTokenToServer, checkAuthOnStartup, startTokenRefreshTask } from './services/apiService';
 import NotificationService from './services/NotificationService';
 import config from './tamagui.config';
+import { saveAppClosureTime, initOfflineNotifications } from './services/OfflineNotification';
 
 // Components
 import AppNavigator from './navigation/AppNavigator';
 import { ThemeProvider } from './components/SettingsController';
 
-// Prevent the splash screen from auto-hiding
+// Prevent splash screens from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
-  /* reloading the app might trigger some race conditions, ignore them */
 });
 
 const BACKGROUND_TASK = 'background-task-news';
-const NEWS_FETCH_INTERVAL = 1;
 
 // background task
 TaskManager.defineTask(BACKGROUND_TASK, async () => {
@@ -52,13 +51,6 @@ TaskManager.defineTask(BACKGROUND_TASK, async () => {
   }
 });
 
-
-
-
-
-
-
-
 const App = () => {
   const [fontsLoaded] = useFonts({
     Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
@@ -82,6 +74,34 @@ const App = () => {
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
+  // Register background task for app closure notifications
+  useEffect(() => {
+    const setupOfflineNotifications = async () => {
+      try {
+        await initOfflineNotifications();
+      } catch (error) {
+        console.error('❌ Error initializing offline notifications:', error);
+      }
+    };
+
+    setupOfflineNotifications();
+  }, []);
+
+  // Track app state for  time
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if ((appState.current.match(/active/) && nextAppState.match(/inactive|background/)) || (appState.current.match(/background/) && nextAppState.match(/inactive/))) {
+        await saveAppClosureTime();
+      }
+
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   // Init NotificationService
   useEffect(() => {
     const initNotificationService = async () => {
@@ -93,35 +113,6 @@ const App = () => {
     return () => {
       NotificationService.cleanup();
     };
-  }, []);
-
-
-  // Register background task
-  useEffect(() => {
-    const registerBackgroundTask = async () => {
-      try {
-        // Check if the task is already registered
-        const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_TASK);
-
-        if (!isRegistered) {
-          console.log('Registering background task');
-
-          // Define the task logic
-          TaskManager.defineTask(BACKGROUND_TASK, async () => {
-            console.log('Executing background task');
-            // Add your background task logic here
-          });
-
-          console.log('Background task defined successfully');
-        } else {
-          console.log('Background task is already registered');
-        }
-      } catch (error) {
-        console.error('Error registering background task:', error);
-      }
-    };
-
-    registerBackgroundTask();
   }, []);
 
   // Start background task
@@ -157,7 +148,7 @@ const App = () => {
 
     resetBadgeCount();
 
-    const requestNotificationPermissions = async () => {
+    const requestNotificationPermissionsAndToken = async () => {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -183,7 +174,7 @@ const App = () => {
       }
     };
 
-    requestNotificationPermissions();
+    requestNotificationPermissionsAndToken();
 
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
