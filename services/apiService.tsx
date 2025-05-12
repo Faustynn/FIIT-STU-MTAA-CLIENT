@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {User} from '../components/User'
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 
 // API URLs
-export const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
+export const API_URL = 'http://172.20.10.14:8080/api/unimap_pc/';
 
+const oAuth_LOGIN_URL = `${API_URL}oauth2/login`;
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
 const GET_NEWS_URL = `${API_URL}news/all`;
 const AUTH_URL = `${API_URL}authenticate`;
@@ -196,6 +196,53 @@ export const sendAuthenticationRequest = async (email: string, password: string)
     return false;
   }
 };
+
+// Send authentication request oAuth2
+export const oAuth2sendAuthenticationRequest = async (token: string, provider: string) => {
+  if (!token || !provider) return false;
+
+  const postData = `code=${token}&provider=${provider}`;
+
+  try {
+    const response = await fetch(oAuth_LOGIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'include',
+      body: postData,
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      const user = json.user;
+      const accessToken = json.accessToken;
+      const refreshToken = extractRefreshToken(response);
+
+      if (accessToken && refreshToken) {
+        //  console.log('Access ', accessToken);
+        //  console.log('Refresh ', refreshToken);
+        //  console.log('User :', user);
+        await AsyncStorage.setItem('ACCESS_TOKEN', accessToken);
+        await AsyncStorage.setItem('REFRESH_TOKEN', refreshToken);
+        await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
+
+        // Start token refresh task
+        startTokenRefreshTask();
+
+        return true;
+      } else {
+        console.error('Tokens not found in the response.');
+        return false;
+      }
+    } else {
+      console.error(`Authentication failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Authentication request failed:', error);
+    return false;
+  }
+};
+
 
 // Send registration request
 export const sendRegistrationRequest = async (login: string,username: string,email: string,password: string) => {

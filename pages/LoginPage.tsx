@@ -8,6 +8,8 @@ import { sendAuthenticationRequest } from '../services/apiService';
 import { useTranslation } from 'react-i18next';
 import '../utils/i18n';
 import { ComboBox} from "../components/ComboBox";
+import OAuthButtons from '../components/oAuthButtons';
+
 
 const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -145,6 +147,9 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                 }}
               />
             </XStack>
+
+            {/* OAuth buttons */}
+            <OAuthButtons isDarkMode={isDarkMode} />
 
             <XStack justifyContent="space-between" alignItems="center" width="100%">
               <Text
