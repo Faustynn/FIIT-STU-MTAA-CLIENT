@@ -23,10 +23,12 @@ export const ComboBox = ({
   textColor,
 }: ComboBoxProps) => {
   const { theme, fontSize, highContrast } = useTheme();
+
   const isDarkMode = theme === 'dark';
   const textSize = getFontSizeValue(fontSize);
 
   const bgColor = highContrast ? '#000000' : isDarkMode ? '#262A35' : '#FFFFFF';
+
 
   const selectedBgColor = highContrast ? '#333333' : isDarkMode ? '#3A3F4B' : '#E0E0E0';
 

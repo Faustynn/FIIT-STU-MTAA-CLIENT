@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "133862542784",
+    "project_id": "unimap-4ce25",
+    "storage_bucket": "unimap-4ce25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:133862542784:android:79eae91b5a06b4763fcc25",
+        "android_client_info": {
+          "package_name": "com.faustyyn.UniMap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "133862542784-rcnfu95knnen78oq34d66tgkdqm3lf2b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.faustyyn.UniMap",
+            "certificate_hash": "e44f2ae04c82fc58917531163eda2cdd610f40b1"
+          }
+        },
+        {
+          "client_id": "133862542784-tngpil613uf8m9le4fij7nm24eugl27m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.faustyyn.UniMap",
+            "certificate_hash": "e7da291ce805470b689ef5da0b690d529020dfcd"
+          }
+        },
+        {
+          "client_id": "133862542784-r9qp6k409aprcbkafnb3r21veqevt338.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATgEGIrxZ0HxzOXNVY7zb30KMGGH22c4c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "133862542784-r9qp6k409aprcbkafnb3r21veqevt338.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "133862542784-57eq8c580uv2avdlg7neb9dn6ar80bph.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.faustyyn.UniMap"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
