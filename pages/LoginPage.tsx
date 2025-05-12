@@ -1,11 +1,13 @@
-import React, { useState } from "react";
-import { YStack, H1, H2, Input, Button, Text, Theme, XStack, View} from "tamagui";
-import { useTheme } from '../components/SettingsController';
-import { StyleSheet, Image } from 'react-native';
-import { NavigationProp } from "@react-navigation/native";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { sendAuthenticationRequest } from '../services/apiService';
+import { NavigationProp } from '@react-navigation/native';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Image } from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { YStack, H1, H2, Input, Button, Text, Theme, XStack, View } from 'tamagui';
+
+import { useTheme } from '../components/SettingsController';
+import { sendAuthenticationRequest } from '../services/apiService';
+
 import '../utils/i18n';
 import { ComboBox} from "../components/ComboBox";
 import OAuthButtons from '../components/oAuthButtons';
@@ -39,7 +41,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
   const languages = [
     { label: t('en_lang'), value: 'en' },
     { label: t('sk_lang'), value: 'sk' },
-    { label: t('ua_lang'), value: 'ua' }
+    { label: t('ua_lang'), value: 'ua' },
   ];
 
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
@@ -52,8 +54,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
         style={[
           styles.settingCard,
           { backgroundColor: cardColor, position: 'absolute', top: 16, right: 16, zIndex: 1 },
-        ]}
-      >
+        ]}>
         <YStack space="$2">
           <ComboBox
             value={language}
@@ -70,20 +71,11 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
         alignItems="center"
         justifyContent="center"
         padding="$4"
-        backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
-      >
-
+        backgroundColor={isDarkMode ? '#191C22' : '$gray50'}>
         {/* Header */}
         <XStack alignItems="center" marginBottom="$4" space="$0">
-          <Image
-            source={require('../assets/icon.png')}
-            style={{ width: 80, height: 80 }}
-          />
-          <H1
-            fontSize={32}
-            fontWeight="bold"
-            color={isDarkMode ? '#FFFFFF' : '$blue600'}
-          >
+          <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80 }} />
+          <H1 fontSize={32} fontWeight="bold" color={isDarkMode ? '#FFFFFF' : '$blue600'}>
             UNIMAP
           </H1>
         </XStack>
@@ -94,25 +86,24 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
           elevation="$4"
           padding="$6"
           width="100%"
-          maxWidth={400}
-        >
+          maxWidth={400}>
           <H2
             fontSize={20}
             fontWeight="600"
             color={isDarkMode ? '#FFFFFF' : '$gray800'}
             marginBottom="$4"
-            textAlign="center"
-          >
+            textAlign="center">
             {t('login')}
           </H2>
 
           <YStack space="$4">
-            <XStack alignItems="center" borderWidth={1} borderColor={isDarkMode ? '#262A35' : '$gray300'} borderRadius="$2" paddingHorizontal="$2">
-              <MaterialIcons
-                name="email"
-                size={20}
-                color={isDarkMode ? '#79E3A5' : '$blue600'}
-              />
+            <XStack
+              alignItems="center"
+              borderWidth={1}
+              borderColor={isDarkMode ? '#262A35' : '$gray300'}
+              borderRadius="$2"
+              paddingHorizontal="$2">
+              <MaterialIcons name="email" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
               <Input
                 placeholder={t('email_field')}
                 value={email}
@@ -127,12 +118,13 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
               />
             </XStack>
 
-            <XStack alignItems="center" borderWidth={1} borderColor={isDarkMode ? '#262A35' : '$gray300'} borderRadius="$2" paddingHorizontal="$2">
-              <MaterialIcons
-                name="lock"
-                size={20}
-                color={isDarkMode ? '#79E3A5' : '$blue600'}
-              />
+            <XStack
+              alignItems="center"
+              borderWidth={1}
+              borderColor={isDarkMode ? '#262A35' : '$gray300'}
+              borderRadius="$2"
+              paddingHorizontal="$2">
+              <MaterialIcons name="lock" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
               <Input
                 placeholder={t('pass_field')}
                 value={password}
@@ -159,8 +151,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                 color={isDarkMode ? '#79E3A5' : '$blue600'}
                 hoverStyle={{ color: isDarkMode ? '#66D294' : '$blue800' }}
                 cursor="pointer"
-                onPress={() => navigation.navigate('ForgotPasswordPage')}
-              >
+                onPress={() => navigation.navigate('ForgotPasswordPage')}>
                 {t('fgt_pass')}
               </Text>
 
@@ -169,8 +160,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                   textAlign="right"
                   fontSize={10}
                   fontWeight="500"
-                  color={isDarkMode ? '#FFFFFF' : '$gray800'}
-                >
+                  color={isDarkMode ? '#FFFFFF' : '$gray800'}>
                   {t('dnt_hv_acc')}
                 </Text>
                 <Text
@@ -180,8 +170,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
                   color={isDarkMode ? '#79E3A5' : '$blue600'}
                   hoverStyle={{ color: isDarkMode ? '#66D294' : '$blue800' }}
                   cursor="pointer"
-                  onPress={() => navigation.navigate('RegistratePage')}
-                >
+                  onPress={() => navigation.navigate('RegistratePage')}>
                   {t('reg')}
                 </Text>
               </XStack>
@@ -193,8 +182,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
               hoverStyle={{ backgroundColor: '#66D294' }}
               color="#191C22"
               padding="$3"
-              borderRadius="$2"
-            >
+              borderRadius="$2">
               {t('login')}
             </Button>
           </YStack>

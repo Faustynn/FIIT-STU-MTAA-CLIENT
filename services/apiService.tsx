@@ -1,6 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { SubjectDetails } from 'pages/SubjectDetail';
 import {User} from '../components/User'
 import { Platform } from 'react-native';
+
+import { startTokenRefreshTask } from '../components/TokenRefresher';
+import { User } from '../components/User';
 
 // API URLs
 export const API_URL = 'http://172.20.10.14:8080/api/unimap_pc/';
@@ -57,6 +62,7 @@ const extractRefreshToken = (response: Response) => {
   return refreshToken ? refreshToken.split('=')[1] : null;
 };
 
+
 // Refresh access token
 export const refreshAccessToken = async () => {
   try {
@@ -94,6 +100,7 @@ export const refreshAccessToken = async () => {
     return false;
   }
 };
+
 
 // Check connection
 export const checkConnection = async () => {
@@ -245,7 +252,12 @@ export const oAuth2sendAuthenticationRequest = async (token: string, provider: s
 
 
 // Send registration request
-export const sendRegistrationRequest = async (login: string,username: string,email: string,password: string) => {
+export const sendRegistrationRequest = async (
+  login: string,
+  username: string,
+  email: string,
+  password: string
+) => {
   try {
     const response = await fetch(REGISTR_URL, {
       method: 'POST',
@@ -263,7 +275,7 @@ export const sendRegistrationRequest = async (login: string,username: string,ema
     console.error('Registation request failed:', error);
     return false;
   }
-}
+};
 
 // Send password change request
 // Confirm email
@@ -284,9 +296,9 @@ export const sendEmailConfirmationRequest = async (email: string) => {
     console.error('Email confirmation request failed:', error);
     return false;
   }
-}
+};
 // Confirm code
-export const sendCodeConfirmationRequest = async (email: string,code: string) => {
+export const sendCodeConfirmationRequest = async (email: string, code: string) => {
   try {
     const response = await fetch(CONFIRM_CODE_TO_EMAIL, {
       method: 'POST',
@@ -304,9 +316,9 @@ export const sendCodeConfirmationRequest = async (email: string,code: string) =>
     console.error('Code confirmation failed:', error);
     return false;
   }
-}
+};
 // Set new password
-export const sendNewPasswordRequest = async (email: string,password: string) => {
+export const sendNewPasswordRequest = async (email: string, password: string) => {
   try {
     const response = await fetch(CHANGE_PASSWORD, {
       method: 'PUT',
@@ -324,166 +336,203 @@ export const sendNewPasswordRequest = async (email: string,password: string) => 
     console.error('NewPass request failed:', error);
     return false;
   }
+};
+
+export const fetchSubjects = async (): Promise<Subject[]> => {
+  const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+  if (!accessToken) throw new Error('No access token');
+
+  let attempt = 0;
+  const maxAttempts = 10;
+
+  while (attempt < maxAttempts) {
+    try {
+      const response = await fetch(SUBJECTS_URL, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`❌ Failed (status ${response.status}): ${text}`);
+      }
+
+      const json = await response.json();
+      return parseSubjects(json.subjects || []);
+    } catch (err) {
+      attempt++;
+      console.error(
+        `❌ fetchSubjects failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`
+      );
+      await new Promise((res) => setTimeout(res, 15000));
+    }
+  }
+
+  throw new Error(`❌ fetchSubjects failed after ${maxAttempts} attempts`);
+};
+
+export interface Subject {
+  code: string;
+  name: string;
+  type: string;
+  credits: number;
+  studyType: string;
+  semester: string;
+  languages: string[];
+  completionType: string;
+  studentCount: number;
+  assesmentMethods: string;
+  learningOutcomes: string;
+  courseContents: string;
+  plannedActivities: string;
+  evaluationMethods: string;
+  guarantor: string;
+  a_score: string;
+  b_score: string;
+  c_score: string;
+  d_score: string;
+  e_score: string;
+  fx_score: string;
+  description: string;
+  objectives: string;
+  prerequisites: string[];
+  syllabus: string[];
+  instructors: Instructor[];
 }
 
-// Fetch subjects from local storage
-export const fetchSubjects = async () => {
+export interface Instructor {
+  id: number | string;
+  name: string;
+  role?: string;
+}
 
-  return [
-    {
-      id: 1,
-      name: 'Web Technologies',
-      code: 'WTECH_B',
-      guarantor: 'Prof. Doc. Yaroslav Marochok, PhD',
-      type: 'Obligatory',
-      semester: 'Winter Semester'
-    },
-    {
-      id: 2,
-      name: 'System Programming in Assembly',
-      code: 'SPAASM_B',
-      guarantor: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      type: 'Optional',
-      semester: 'Summer Semester'
-    },
-    {
-      id: 3,
-      name: 'Probability and Statistics',
-      code: 'PAS_B',
-      guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-      type: 'Optional',
-      semester: 'Winter Semester'
-    },
-    {
-      id: 4,
-      name: 'Programming in Rust Language',
-      code: 'RUST_B',
-      guarantor: 'Doc. Doc. Nazar Meredov, Doc.',
-      type: 'Optional',
-      semester: 'Summer Semester'
-    }
-  ];
-
+export const parseSubjects = (raw: any[]): Subject[] => {
+  return raw.map((s) => ({
+    code: s.code ?? '',
+    name: s.name ?? '',
+    type: s.type ?? '',
+    credits: Number(s.credits ?? 0),
+    studyType: s.studyType ?? s.study_type ?? '',
+    semester: s.semester ?? '',
+    languages: Array.isArray(s.languages) ? s.languages.map((l: string) => l.trim()) : [],
+    completionType: s.completionType ?? s.completion_type ?? '',
+    studentCount: Number(s.studentCount ?? s.student_count ?? 0),
+    assesmentMethods: s.assesmentMethods ?? s.assessment_methods ?? '',
+    learningOutcomes: s.learningOutcomes ?? s.learning_outcomes ?? '',
+    courseContents: s.courseContents ?? s.course_contents ?? '',
+    plannedActivities: s.plannedActivities ?? s.planned_activities ?? '',
+    evaluationMethods: s.evaluationMethods ?? '',
+    guarantor: s.guarantor ?? '',
+    a_score: s.a_score ?? s.ascore ?? '',
+    b_score: s.b_score ?? s.bscore ?? '',
+    c_score: s.c_score ?? s.cscore ?? '',
+    d_score: s.d_score ?? s.dscore ?? '',
+    e_score: s.e_score ?? s.escore ?? '',
+    fx_score: s.fx_score ?? '',
+    description: s.description ?? '',
+    objectives: s.objectives ?? '',
+    prerequisites: [],
+    syllabus: [],
+    instructors: [],
+  }));
 };
-// Fetch concrete subject from local storage
-export const fetchSubjectDetails = async (subjectId: string | number) => {
-  try {
-    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
 
-    const response = await fetch(`${SUBJECTS_URL}/${subjectId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch subject details');
+export const fetchSubjectDetails = async (subjectId: string | number): Promise<Subject> => {
+  let attempt = 0;
+  while (true) {
+    try {
+      const allSubjects = await fetchSubjects();
+      const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
+      if (!found) throw new Error('Subject not found by code: ' + subjectId);
+      return found;
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchSubjectDetails failed (attempt ${attempt}), retrying in 15s...`, err);
+      await new Promise((res) => setTimeout(res, 15000));
     }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching subject details:', error);
-    throw error;
   }
 };
 
-
-// Fetch teachers from local storage
 export const fetchTeachers = async () => {
+  let attempt = 0;
+  while (true) {
+    try {
+      const token = await AsyncStorage.getItem('ACCESS_TOKEN');
+      if (!token) throw new Error('No access token available');
 
-  // For demo purposes, return test data if API fails
-  return [
-    {
-      id: 1,
-      name: 'Prof. Doc. Yaroslav Marochok, PhD',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Professor',
-      department: 'Computer Science'
-    },
-    {
-      id: 2,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Associate Professor',
-      department: 'Software Engineering'
-    },
-    {
-      id: 3,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Associate Professor',
-      department: 'Mathematics'
-    },
-    {
-      id: 4,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Assistant Professor',
-      department: 'Information Systems'
-    },
-    {
-      id: 5,
-      name: 'Ing. Doc. Olexandr Dokaniev, Mgr.',
-      aisId: '127421',
-      rating: '3.16',
-      role: 'Professor',
-      department: 'Artificial Intelligence'
+      const response = await fetch(TEACHERS_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error(`Failed to fetch teachers: ${response.status}`);
+
+      const json = await response.json();
+      return json.teachers || [];
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchTeachers failed (attempt ${attempt}), retrying in 15s...`, err);
+      await new Promise((res) => setTimeout(res, 15000));
     }
-  ];
-};
-// Fetch concrete teacher from local storage
-export const fetchTeacherDetails = async (teacherId: string | number) => {
-  try {
-    const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
-
-    const response = await fetch(`${TEACHERS_URL}/${teacherId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch teacher details');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching teacher details:', error);
-    throw error;
   }
 };
 
-// Buy premium
-export const buyPremium = async (userId: string) => {
+export const fetchTeacherDetails = async (teacherId: string | number) => {
+  let attempt = 0;
+  while (true) {
+    try {
+      console.log('🔍 Fetching teacher from list by ID:', teacherId);
+
+      const allTeachers = await fetchTeachers();
+      const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
+
+      if (!found) throw new Error('Teacher not found by ID: ' + teacherId);
+
+      return found;
+    } catch (err) {
+      attempt++;
+      console.error(`❌ fetchTeacherDetails failed (attempt ${attempt}), retrying in 15s...`, err);
+      await new Promise((res) => setTimeout(res, 15000));
+    }
+  }
+};
+
+export const buyPremium = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
 
-  try {
-    const response = await fetch(`${PREMIUM_URL}${userId}`, {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`, },
-    });
+  while (true) {
+    try {
+      const token = await AsyncStorage.getItem('ACCESS_TOKEN');
+      if (!token) throw new Error('No access token available');
 
-    if (response.ok) {
+      const response = await fetch(`${PREMIUM_URL}${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`❌ Failed (status ${response.status}): ${text}`);
+      }
+
       const json = await response.json();
       const user = json.user;
-
-      console.log(user);
       await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
       return true;
-    } else {
-      console.error(`Buying Premium failed with status code: ${response.status}`);
-      return false;
+    } catch (error) {
+      console.error(`❌ buyPremium failed, retrying in 15s...`, error);
+      await new Promise((res) => setTimeout(res, 15000));
     }
-  } catch (error) {
-    console.error('Premium buying request failed:', error);
-    return false;
   }
-  return true;
-}
+};
 
 // Delete all user comments
 export const deleteComments = async (userId: number | undefined) => {
@@ -520,7 +569,10 @@ export const deleteUser = async (userId: number | undefined) => {
   try {
     const response = await fetch(`${DELETE_USER_URL}${userId}`, {
       method: 'DELETE',
-      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`, },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
     });
 
     if (response.ok) {
@@ -536,7 +588,7 @@ export const deleteUser = async (userId: number | undefined) => {
     return false;
   }
   return true;
-}
+};
 
 // Change user email
 export const changeUserEmail = async (login: string | undefined, newEmail: string) => {
@@ -590,7 +642,11 @@ export const changeUserName = async (email: string | undefined, newName: string)
 };
 
 // Change user avatar
-export const updateUserAvatar = async (userId: number | undefined, base64ImageData: string, fileName: string | undefined) => {
+export const updateUserAvatar = async (
+  userId: number | undefined,
+  base64ImageData: string,
+  fileName: string | undefined
+) => {
   if (!userId || !base64ImageData || !fileName) return false;
 
   try {
@@ -619,11 +675,12 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
 
     const formData = new FormData();
     formData.append('file', {
-      uri: Platform.OS === 'android'
-        ? `data:${contentType};base64,${base64ImageData}`
-        : base64ImageData.includes('data:')
-          ? base64ImageData
-          : `data:${contentType};base64,${base64ImageData}`,
+      uri:
+        Platform.OS === 'android'
+          ? `data:${contentType};base64,${base64ImageData}`
+          : base64ImageData.includes('data:')
+            ? base64ImageData
+            : `data:${contentType};base64,${base64ImageData}`,
       name: fileName,
       type: contentType,
     } as any);
@@ -631,7 +688,7 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
     const response = await fetch(CHANGE_USER_AVATAR_URL, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: formData,
     });
@@ -652,3 +709,66 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
     return false;
   }
 };
+
+export interface ParsedTeacher {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  aisId: string;
+  subjectCode: string;
+  roles: string[];
+  rating: number;
+  department: string;
+  consultationHours?: string;
+  bio?: string;
+}
+
+export interface Teacher {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  aisId: string;
+  subject_code: string;
+  roles: string;
+  rating: number;
+  department: string;
+  consultationHours?: string;
+  bio?: string;
+}
+
+export const parseTeachers = (raw: Teacher[]): ParsedTeacher[] => {
+  return raw.map((t) => ({
+    id: t.id,
+    name: t.name,
+    email: t.email,
+    phone: t.phone,
+    office: t.office,
+    aisId: t.aisId,
+    subjectCode: t.subject_code,
+    roles: t.roles ? t.roles.split(',').map((r) => r.trim()) : [],
+    rating: t.rating,
+    department: t.department || 'Unknown',
+    consultationHours: t.consultationHours || 'Not specified',
+    bio: t.bio || 'No bio available',
+  }));
+};
+
+export interface ParsedTeacher1 {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  aisId?: string;
+  subjectCode?: string;
+  roles?: string[];
+  rating?: number;
+  department?: string;
+  consultationHours?: string;
+  bio?: string;
+  subjects?: { id: string | number; name: string; code: string }[];
+}
