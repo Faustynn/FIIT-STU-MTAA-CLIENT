@@ -1,15 +1,24 @@
-import { useTranslation } from 'react-i18next';
+import { NavigationProp, useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useRef } from 'react';
-import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner, Button } from "tamagui";
-import { useTheme, getFontSizeValue } from '../components/SettingsController';
-import { NavigationProp, useFocusEffect } from "@react-navigation/native";
+import { useTranslation } from 'react-i18next';
+import {
+  Linking,
+  Image,
+  AppState,
+  useWindowDimensions,
+  AppStateStatus,
+  Platform,
+  Alert,
+} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { Linking, Image, AppState, useWindowDimensions, AppStateStatus, Platform, Alert } from 'react-native';
+import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner, Button } from 'tamagui';
 
+import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import '../utils/i18n';
-import sseService from '../services/sseService';
 import notificationService, { NewsModel } from '../services/NotificationService';
+import sseService from '../services/sseService';
+
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
@@ -26,11 +35,16 @@ type HomePageProps = {
 };
 
 const openWebLink = (url: string) => {
-  Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
+  Linking.openURL(url).catch((err) => console.log('[ERROR] Failed to open URL:', err));
 };
 
 //open maps with directions
-const openMapsWithDirections = (destLatitude: number, destLongitude: number, userLatitude?: number, userLongitude?: number) => {
+const openMapsWithDirections = (
+  destLatitude: number,
+  destLongitude: number,
+  userLatitude?: number,
+  userLongitude?: number
+) => {
   let url = '';
 
   // user share location
@@ -40,7 +54,8 @@ const openMapsWithDirections = (destLatitude: number, destLongitude: number, use
     } else {
       url = `google.navigation:q=${destLatitude},${destLongitude}&origin=${userLatitude},${userLongitude}`;
     }
-  } else { // user dont share location make only navigation to dest
+  } else {
+    // user dont share location make only navigation to dest
     if (Platform.OS === 'ios') {
       url = `maps://app?daddr=${destLatitude},${destLongitude}`;
     } else {
@@ -49,7 +64,7 @@ const openMapsWithDirections = (destLatitude: number, destLongitude: number, use
   }
 
   Linking.canOpenURL(url)
-    .then(supported => {
+    .then((supported) => {
       if (supported) {
         return Linking.openURL(url);
       } else {
@@ -57,12 +72,19 @@ const openMapsWithDirections = (destLatitude: number, destLongitude: number, use
         return Linking.openURL(fallbackUrl);
       }
     })
-    .catch(err => console.error('An error occurred', err));
+    .catch((err) => console.log('[ERROR] An error occurred', err));
 };
 
 const hasValidCoordinates = (newsItem: NewsModel) => {
   // check coords
-  return newsItem.coordinates !== undefined && newsItem.coordinates !== null && newsItem.coordinates.latitude !== undefined && newsItem.coordinates.longitude !== undefined && newsItem.coordinates.latitude !== 0 && newsItem.coordinates.longitude !== 0;
+  return (
+    newsItem.coordinates !== undefined &&
+    newsItem.coordinates !== null &&
+    newsItem.coordinates.latitude !== undefined &&
+    newsItem.coordinates.longitude !== undefined &&
+    newsItem.coordinates.latitude !== 0 &&
+    newsItem.coordinates.longitude !== 0
+  );
 };
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
@@ -79,7 +101,9 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const [hasData, setHasData] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [news, setNews] = useState<NewsModel[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
+    ConnectionStatus.DISCONNECTED
+  );
   const [badgeCount, setBadgeCount] = useState<number>(0);
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
@@ -117,7 +141,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
         console.log('Permissions for notif. granted');
       } catch (error) {
-        console.error('Err while requesting notification permissions:', error);
+        console.log('[ERROR] Err while requesting notification permissions:', error);
       }
     };
 
@@ -141,7 +165,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           console.log('Location permission denied');
         }
       } catch (error) {
-        console.error('Error requesting location permissions:', error);
+        console.log('[ERROR] Error requesting location permissions:', error);
       }
     };
 
@@ -168,14 +192,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
       setBadgeCount(count);
 
       notificationListener.current = notificationService.addNotificationReceivedListener(
-        notification => {
+        (notification) => {
           const newsId = notification.request.content.data?.newsId;
           console.log(`Received notification for news ID: ${newsId}`);
         }
       );
 
       responseListener.current = notificationService.addNotificationResponseReceivedListener(
-        response => {
+        (response) => {
           const newsId = response.notification.request.content.data?.newsId;
           console.log(`User tapped on notification for news ID: ${newsId}`);
         }
@@ -188,7 +212,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
         if (projectId) {
           token = await Notifications.getExpoPushTokenAsync({
-            projectId: projectId,
+            projectId,
           });
         } else {
           token = await Notifications.getExpoPushTokenAsync();
@@ -199,7 +223,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           console.log('Push token for this device:', token.data);
         }
       } catch (error) {
-        console.error('Error getting push token:', error);
+        console.log('[ERROR] Error getting push token:', error);
       }
     };
 
@@ -221,10 +245,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   }, []);
 
   const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-    if (
-      appState.current.match(/inactive|background/) &&
-      nextAppState === 'active'
-    ) {
+    if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
       console.log('App has come to the foreground');
       await notificationService.resetBadgeCount();
       setBadgeCount(0);
@@ -237,7 +258,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           });
           setUserLocation(location);
         } catch (error) {
-          console.error('Error updating user location:', error);
+          console.log('[ERROR] Error updating user location:', error);
         }
       }
 
@@ -245,10 +266,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
       if (connectionStatus !== ConnectionStatus.CONNECTED) {
         sseService.connectToSSEServer();
       }
-    } else if (
-      appState.current === 'active' &&
-      nextAppState.match(/inactive|background/)
-    ) {
+    } else if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
       console.log('App has gone to the background');
     }
 
@@ -268,7 +286,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           }
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.log('[ERROR] Error fetching user:', error);
         setHasData(false);
         setIsAdmin(false);
       } finally {
@@ -317,7 +335,9 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const handleLocationPress = async (newsItem: NewsModel) => {
     // Check if news have valid coords
     if (!hasValidCoordinates(newsItem)) {
-      Alert.alert(t('no_location'), t('no_location_message'), [{ text: t('ok'), style: 'default' }]);
+      Alert.alert(t('no_location'), t('no_location_message'), [
+        { text: t('ok'), style: 'default' },
+      ]);
       return;
     }
 
@@ -352,13 +372,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         );
       }
     } catch (error) {
-      console.error('Error handling location press:', error);
+      console.log('[ERROR] Error handling location press:', error);
 
       if (hasValidCoordinates(newsItem) && newsItem.coordinates) {
-        openMapsWithDirections(
-          newsItem.coordinates.latitude,
-          newsItem.coordinates.longitude
-        );
+        openMapsWithDirections(newsItem.coordinates.latitude, newsItem.coordinates.longitude);
       }
     }
   };
@@ -372,7 +389,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     [ConnectionStatus.CONNECTED]: '#4CAF50',
     [ConnectionStatus.CONNECTING]: '#FFC107',
     [ConnectionStatus.DISCONNECTED]: '#9E9E9E',
-    [ConnectionStatus.ERROR]: '#F44336'
+    [ConnectionStatus.ERROR]: '#F44336',
   };
 
   if (isLoading) {
@@ -436,8 +453,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                         backgroundColor="#FF4136"
                         alignItems="center"
                         justifyContent="center"
-                        zIndex={1}
-                      >
+                        zIndex={1}>
                         <Text color="white" fontSize={10} fontWeight="bold">
                           {badgeCount > 9 ? '9+' : badgeCount}
                         </Text>
@@ -478,8 +494,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                         backgroundColor="#FF4136"
                         alignItems="center"
                         justifyContent="center"
-                        zIndex={1}
-                      >
+                        zIndex={1}>
                         <Text color="white" fontSize={10} fontWeight="bold">
                           {badgeCount > 9 ? '9+' : badgeCount}
                         </Text>
@@ -502,7 +517,9 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           {/* Location Permission Status (for admins) */}
           {isAdmin && (
             <XStack justifyContent="flex-end" paddingHorizontal="$4" marginBottom="$2">
-              <Text fontSize={12} color={locationPermissionStatus === 'granted' ? '#4CAF50' : '#F44336'}>
+              <Text
+                fontSize={12}
+                color={locationPermissionStatus === 'granted' ? '#4CAF50' : '#F44336'}>
                 {locationPermissionStatus === 'granted'
                   ? t('location_enabled')
                   : t('location_disabled')}
@@ -528,17 +545,23 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               paddingBottom: 24,
               paddingLeft: isLandscape ? 19 : 0,
             }}>
-            
             {/* status for admins */}
             {isAdmin && (
               <YStack marginBottom="$3">
-                <XStack space="$2" alignItems="center" justifyContent="space-between" marginBottom="$2">
+                <XStack
+                  space="$2"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  marginBottom="$2">
                   <Text color={subTextColor}>Status: </Text>
                   <Text color={statusColors[connectionStatus]}>
-                    {connectionStatus === ConnectionStatus.CONNECTED ? t('connected') :
-                      connectionStatus === ConnectionStatus.CONNECTING ? t('connecting') :
-                        connectionStatus === ConnectionStatus.DISCONNECTED ? t('disconnected') :
-                          t('connection_error')}
+                    {connectionStatus === ConnectionStatus.CONNECTED
+                      ? t('connected')
+                      : connectionStatus === ConnectionStatus.CONNECTING
+                        ? t('connecting')
+                        : connectionStatus === ConnectionStatus.DISCONNECTED
+                          ? t('disconnected')
+                          : t('connection_error')}
                   </Text>
                 </XStack>
 
@@ -547,14 +570,13 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                     backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
                     color={headerTextColor}
                     onPress={handleClearBadges}
-                    marginBottom="$2"
-                  >
+                    marginBottom="$2">
                     {t('clear_badges')} ({badgeCount})
                   </Button>
                 )}
               </YStack>
             )}
-            
+
             {/* News section */}
             <XStack alignItems="center" marginBottom="$3" justifyContent="space-between">
               <XStack alignItems="center">
@@ -568,10 +590,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                   {t('news_upd')}
                 </Text>
               </XStack>
-              
+
               {/* Status indicators for admins */}
-              {isAdmin && (
-                connectionStatus === ConnectionStatus.CONNECTED ? (
+              {isAdmin &&
+                (connectionStatus === ConnectionStatus.CONNECTED ? (
                   <Text fontSize={12} color={statusColors[ConnectionStatus.CONNECTED]}>
                     {t('live')}
                   </Text>
@@ -586,10 +608,9 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                   <Text fontSize={12} color={statusColors[ConnectionStatus.DISCONNECTED]}>
                     {t('offline')}
                   </Text>
-                )
-              )}
+                ))}
             </XStack>
-            
+
             {/* Connection Status Message for admins*/}
             {isAdmin && connectionStatus === ConnectionStatus.CONNECTING && (
               <YStack alignItems="center" marginBottom="$3">
@@ -619,9 +640,13 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 padding="$4"
                 marginBottom="$3"
                 width="100%"
-                alignItems="center"
-              >
-                <MaterialIcons name="info-outline" size={24} color={subTextColor} style={{ marginBottom: 8 }} />
+                alignItems="center">
+                <MaterialIcons
+                  name="info-outline"
+                  size={24}
+                  color={subTextColor}
+                  style={{ marginBottom: 8 }}
+                />
                 <Text fontSize={textSize} color={subTextColor} textAlign="center">
                   {connectionStatus === ConnectionStatus.CONNECTED
                     ? t('no_news_found')
@@ -630,15 +655,29 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               </YStack>
             ) : (
               news.map((newsItem) => (
-                <YStack key={newsItem.id} backgroundColor={cardBackgroundColor} borderRadius="$2" padding="$4" marginBottom="$3" width="100%">
-                  <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor} marginBottom="$2">
+                <YStack
+                  key={newsItem.id}
+                  backgroundColor={cardBackgroundColor}
+                  borderRadius="$2"
+                  padding="$4"
+                  marginBottom="$3"
+                  width="100%">
+                  <Text
+                    fontSize={textSize + 4}
+                    fontWeight="bold"
+                    color={headerTextColor}
+                    marginBottom="$2">
                     {newsItem.title}
                   </Text>
                   <Text fontSize={textSize} color={subTextColor} lineHeight={textSize + 6}>
                     {newsItem.content}
                   </Text>
                   <Text fontSize={12} color={subTextColor} position="absolute" top={8} right={8}>
-                    {new Date(newsItem.date_of_creation).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })}
+                    {new Date(newsItem.date_of_creation).toLocaleDateString(undefined, {
+                      year: '2-digit',
+                      month: 'numeric',
+                      day: 'numeric',
+                    })}
                   </Text>
 
                   {/* show icon if we have valid coords */}
@@ -650,7 +689,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                         color={highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '#3366BB'}
                         onPress={() => handleLocationPress(newsItem)}
                       />
-                      <Text fontSize={10} color={highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '#3366BB'} marginLeft={2}>
+                      <Text
+                        fontSize={10}
+                        color={highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '#3366BB'}
+                        marginLeft={2}>
                         {t('get_directions')}
                       </Text>
                     </XStack>

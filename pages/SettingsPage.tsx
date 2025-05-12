@@ -52,7 +52,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
           setHasData(false);
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.log('[ERROR] Error fetching user:', error);
         setHasData(false);
       } finally {
         setIsLoading(false);

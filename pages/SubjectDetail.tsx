@@ -79,7 +79,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
           setLoading(false);
         } catch (err) {
           setError('Failed to load subject details. Please try again later.');
-          console.error('Error fetching subject details:', err);
+          console.log('[ERROR] Error fetching subject details:', err);
         }
       };
       loadSubjectDetails();

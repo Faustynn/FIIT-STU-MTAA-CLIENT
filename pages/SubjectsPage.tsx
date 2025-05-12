@@ -58,11 +58,11 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
           if (isMounted) {
             setSubjects(data);
             setLoading(false);
-            break; // ⬅️ Важно: прерываем цикл, если всё ок
+            break;
           }
         } catch (err) {
-          console.error('❌ fetchSubjects failed, retrying in 15s...');
-          await new Promise((res) => setTimeout(res, 15000)); // подождать 15 секунд
+          console.log('[ERROR] fetchSubjects failed, retrying in 15s...');
+          await new Promise((res) => setTimeout(res, 15000));
         }
       }
     };

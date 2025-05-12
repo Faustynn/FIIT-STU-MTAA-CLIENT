@@ -88,10 +88,10 @@ export const refreshAccessToken = async () => {
       }
     }
 
-    console.error('Token refresh failed with status:', response.status);
+    console.log('[ERROR] Token refresh failed with status:', response.status);
     return false;
   } catch (error) {
-    console.error('Refresh token error:', error);
+    console.log('[ERROR] Refresh token error:', error);
     return false;
   }
 };
@@ -102,7 +102,7 @@ export const checkConnection = async () => {
     const response = await fetch(CHECK_CONNECTION_URL);
     return response.ok;
   } catch (error) {
-    console.error('Connection check failed:', error);
+    console.log('[ERROR] Connection check failed:', error);
     return false;
   }
 };
@@ -122,7 +122,7 @@ export const checkAuthOnStartup = async () => {
     console.log('User is authenticated');
     return true;
   } catch (error) {
-    console.error('Error checking authentication:', error);
+    console.log('[ERROR] Error checking authentication:', error);
     return false;
   }
 };
@@ -150,7 +150,7 @@ export const sendPushTokenToServer = async (token: string) => {
     const data = await response.json();
     console.log('FCM token sent successfully:', data);
   } catch (error) {
-    console.error('Error sending FCM token to server:', error);
+    console.log('[ERROR] Error sending FCM token to server:', error);
   }
 };
 
@@ -185,15 +185,15 @@ export const sendAuthenticationRequest = async (email: string, password: string)
 
         return true;
       } else {
-        console.error('Tokens not found in the response.');
+        console.log('[ERROR] Tokens not found in the response.');
         return false;
       }
     } else {
-      console.error(`Authentication failed with status code: ${response.status}`);
+      console.log('[ERROR] Authentication failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Authentication request failed:', error);
+    console.log('[ERROR] Authentication request failed:', error);
     return false;
   }
 };
@@ -231,15 +231,15 @@ export const oAuth2sendAuthenticationRequest = async (token: string, provider: s
 
         return true;
       } else {
-        console.error('Tokens not found in the response.');
+        console.log('[ERROR] Tokens not found in the response.');
         return false;
       }
     } else {
-      console.error(`Authentication failed with status code: ${response.status}`);
+      console.log('[ERROR] Authentication failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Authentication request failed:', error);
+    console.log('[ERROR] Authentication request failed:', error);
     return false;
   }
 };
@@ -255,17 +255,17 @@ export const sendRegistrationRequest = async (
     const response = await fetch(REGISTR_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: `${username}:${email}:${login}:${password}` }),
+      body: JSON.stringify({ data: `${username}:${password}:${email}:${login}` }),
     });
 
     if (response.ok) {
       return true;
     } else {
-      console.error(`Authentication failed with status code: ${response.status}`);
+      console.log('[ERROR] Authentication failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Registation request failed:', error);
+    console.log('[ERROR] Registation request failed:', error);
     return false;
   }
 };
@@ -282,11 +282,11 @@ export const sendEmailConfirmationRequest = async (email: string) => {
     if (response.ok) {
       return true;
     } else {
-      console.error(`Authentication failed with status code: ${response.status}`);
+      console.log('[ERROR] Authentication failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Email confirmation request failed:', error);
+    console.log('[ERROR] Email confirmation request failed:', error);
     return false;
   }
 };
@@ -302,11 +302,11 @@ export const sendCodeConfirmationRequest = async (email: string, code: string) =
     if (response.ok) {
       return true;
     } else {
-      console.error(`Authentication failed with status code: ${response.status}`);
+      console.log('[ERROR] Authentication failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Code confirmation failed:', error);
+    console.log('[ERROR] Code confirmation failed:', error);
     return false;
   }
 };
@@ -322,11 +322,11 @@ export const sendNewPasswordRequest = async (email: string, password: string) =>
     if (response.ok) {
       return true;
     } else {
-      console.error(`sendNewPasswordRequest failed with status code: ${response.status}`);
+      console.log('[ERROR] sendNewPasswordRequest failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('NewPass request failed:', error);
+    console.log('[ERROR] NewPass request failed:', error);
     return false;
   }
 };
@@ -357,14 +357,14 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
       return parseSubjects(json.subjects || []);
     } catch (err) {
       attempt++;
-      console.error(
-        `❌ fetchSubjects failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`
+      console.log(
+        '[ERROR] fetchSubjects failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...'
       );
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
 
-  throw new Error(`❌ fetchSubjects failed after ${maxAttempts} attempts`);
+  throw new Error(`fetchSubjects failed after ${maxAttempts} attempts`);
 };
 
 export interface Subject {
@@ -443,7 +443,10 @@ export const fetchSubjectDetails = async (subjectId: string | number): Promise<S
       return found;
     } catch (err) {
       attempt++;
-      console.error(`❌ fetchSubjectDetails failed (attempt ${attempt}), retrying in 15s...`, err);
+      console.log(
+        '[ERROR] fetchSubjectDetails failed (attempt ${attempt}), retrying in 15s...',
+        err
+      );
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
@@ -466,7 +469,7 @@ export const fetchTeachers = async () => {
       return json.teachers || [];
     } catch (err) {
       attempt++;
-      console.error(`❌ fetchTeachers failed (attempt ${attempt}), retrying in 15s...`, err);
+      console.log('[ERROR] fetchTeachers failed (attempt ${attempt}), retrying in 15s...', err);
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
@@ -486,7 +489,10 @@ export const fetchTeacherDetails = async (teacherId: string | number) => {
       return found;
     } catch (err) {
       attempt++;
-      console.error(`❌ fetchTeacherDetails failed (attempt ${attempt}), retrying in 15s...`, err);
+      console.log(
+        '[ERROR] fetchTeacherDetails failed (attempt ${attempt}), retrying in 15s...',
+        err
+      );
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
@@ -518,7 +524,7 @@ export const buyPremium = async (userId: string): Promise<boolean> => {
       await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
       return true;
     } catch (error) {
-      console.error(`❌ buyPremium failed, retrying in 15s...`, error);
+      console.log('[ERROR] buyPremium failed, retrying in 15s...', error);
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
@@ -542,11 +548,11 @@ export const deleteComments = async (userId: number | undefined) => {
 
       return true;
     } else {
-      console.error(`Deleting comments failed with status code: ${response.status}`);
+      console.log('[ERROR] Deleting comments failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Deleting comments request failed:', error);
+    console.log('[ERROR] Deleting comments request failed:', error);
     return false;
   }
   return true;
@@ -570,11 +576,11 @@ export const deleteUser = async (userId: number | undefined) => {
 
       return true;
     } else {
-      console.error(`Delete user failed with status code: ${response.status}`);
+      console.log('[ERROR] Delete user failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Delete user request failed:', error);
+    console.log('[ERROR] Delete user request failed:', error);
     return false;
   }
   return true;
@@ -595,11 +601,11 @@ export const changeUserEmail = async (login: string | undefined, newEmail: strin
       await User.setEmail(newEmail);
       return true;
     } else {
-      console.error(`Email changing failed with status code: ${response.status}`);
+      console.log('[ERROR] Email changing failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Change email request failed:', error);
+    console.log('[ERROR] Change email request failed:', error);
     return false;
   }
   return true;
@@ -621,11 +627,11 @@ export const changeUserName = async (email: string | undefined, newName: string)
       await User.setName(newName);
       return true;
     } else {
-      console.error(`Username changing failed with status code: ${response.status}`);
+      console.log('[ERROR] Username changing failed with status code: ${response.status}');
       return false;
     }
   } catch (error) {
-    console.error('Change username request failed:', error);
+    console.log('[ERROR] Change username request failed:', error);
     return false;
   }
   return true;
@@ -642,7 +648,7 @@ export const updateUserAvatar = async (
   try {
     const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
     if (!accessToken) {
-      console.error('No access token available for avatar upload');
+      console.log('[ERROR] No access token available for avatar upload');
       return false;
     }
 
@@ -691,11 +697,11 @@ export const updateUserAvatar = async (
       return true;
     } else {
       const errorText = await response.text();
-      console.error(`Avatar update failed: ${response.status} - ${errorText}`);
+      console.log('[ERROR] Avatar update failed: ${response.status} - ${errorText}');
       return false;
     }
   } catch (error) {
-    console.error('Change avatar request failed:', error);
+    console.log('[ERROR] Change avatar request failed:', error);
     return false;
   }
 };
@@ -771,4 +777,39 @@ export const parseTeachers = (raw: any[]): ParsedTeacher[] => {
   });
 
   return Array.from(teacherMap.values());
+};
+
+export const sendTempLogin = async (idUser: number, deleteInMinutes: number) => {
+  try {
+    const res = await fetch('http://172.20.10.4:8080/api/temp-user/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ idUser, deleteInMinutes }),
+    });
+  } catch (e) {}
+};
+
+export const getUserIdByEmail = async (email: string): Promise<number | null> => {
+  try {
+    const response = await fetch(
+      `http://172.20.10.4:8080/api/unimap_pc/user/id-by-email/${email}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const id = await response.json();
+    return id;
+  } catch (error) {
+    return null;
+  }
 };

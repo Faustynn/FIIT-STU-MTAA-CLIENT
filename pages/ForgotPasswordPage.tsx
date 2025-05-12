@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { YStack, Input, Button, Text, Theme, XStack, H1 } from "tamagui";
-import { useTheme } from '../components/SettingsController';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp } from '@react-navigation/native';
-import { Image } from "react-native";
-import { sendEmailConfirmationRequest, sendCodeConfirmationRequest, sendNewPasswordRequest } from '../services/apiService';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from 'react-native';
+import { YStack, Input, Button, Text, Theme, XStack, H1 } from 'tamagui';
+
+import { useTheme } from '../components/SettingsController';
+import {
+  sendEmailConfirmationRequest,
+  sendCodeConfirmationRequest,
+  sendNewPasswordRequest,
+} from '../services/apiService';
 
 const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -76,8 +81,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
         alignItems="center"
         justifyContent="center"
         padding="$4"
-        backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
-      >
+        backgroundColor={isDarkMode ? '#191C22' : '$gray50'}>
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Button
             icon={<MaterialIcons name="chevron-left" size={24} color="black" />}
@@ -85,17 +89,10 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
             backgroundColor="transparent"
             color={headerTextColor}
           />
-          <H1
-            fontSize={32}
-            fontWeight="bold"
-            color={isDarkMode ? '#FFFFFF' : '$blue600'}
-          >
+          <H1 fontSize={32} fontWeight="bold" color={isDarkMode ? '#FFFFFF' : '$blue600'}>
             UNIMAP
           </H1>
-          <Image
-            source={require('../assets/icon.png')}
-            style={{ width: 80, height: 80 }}
-          />
+          <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80 }} />
         </XStack>
 
         <YStack
@@ -104,15 +101,13 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
           elevation="$4"
           padding="$6"
           width="100%"
-          maxWidth={400}
-        >
+          maxWidth={400}>
           <Text
             fontSize={20}
             fontWeight="600"
             color={isDarkMode ? '#FFFFFF' : '$gray800'}
             marginBottom="$4"
-            textAlign="center"
-          >
+            textAlign="center">
             {step === 1 && t('entr_email')}
             {step === 2 && t('entr_code')}
             {step === 3 && t('set_new_pass')}
@@ -174,8 +169,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
               color="#191C22"
               padding="$3"
               borderRadius="$2"
-              marginTop="$4"
-            >
+              marginTop="$4">
               {step === 3 ? t('rst_pass_btn') : t('next')}
             </Button>
           </YStack>

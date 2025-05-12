@@ -3,6 +3,8 @@
     "name": "UniMap",
     "slug": "UniMap",
     "version": "1.0.0",
+    "scheme": "unimap",
+    "platforms": ["android", "ios"],
     "web": {
       "favicon": "./assets/favicon.png",
       "s_icon_0": "./assets/avatars/0.png",

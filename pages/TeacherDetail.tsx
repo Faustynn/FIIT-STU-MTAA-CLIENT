@@ -56,12 +56,12 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
             console.log('Fetched teacher:', data);
             setTeacher(data as ParsedTeacher);
             setError(null);
-            setLoading(false); // ✅ только если всё ок — выходим
+            setLoading(false);
             break;
           } catch (err) {
-            console.error('Error fetching teacher details:', err);
+            console.log('[ERROR] Error fetching teacher details:', err);
             setError('Failed to load teacher details. Retrying...');
-            await new Promise((res) => setTimeout(res, 15000)); // 🔁 подождать 15 сек
+            await new Promise((res) => setTimeout(res, 15000));
           }
         }
       };

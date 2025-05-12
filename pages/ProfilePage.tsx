@@ -302,7 +302,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error(err);
+      console.log('[ERROR] ' + err);
       setError(t('change_username_failed'));
     } finally {
       setIsUsernameModalVisible(false);
@@ -330,7 +330,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error(err);
+      console.log('[ERROR] ' + err);
       setError(t('buy_prem_failed'));
     }
   };
@@ -350,7 +350,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error(err);
+      console.log('[ERROR] ' + err);
       setError(t('delete_user_failed'));
     } finally {
       setIsDeleteUserModalVisible(false);
@@ -380,7 +380,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error(err);
+      console.log('[ERROR] ' + err);
       setError(t('email_changed_failed'));
     }
   };
@@ -397,7 +397,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error(err);
+      console.log('[ERROR] ' + err);
       setError(t('delete_comments_failed'));
     } finally {
       setIsDeleteCommentsModalVisible(false);
@@ -439,7 +439,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error('Error updating avatar:', err);
+      console.log('[ERROR] Error updating avatar:', err);
       setError(t('avatar_update_failed'));
     } finally {
       setIsLoading(false);
@@ -466,7 +466,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
           encoding: FileSystem.EncodingType.Base64,
         });
       } catch (err) {
-        console.error('Error reading file as base64:', err);
+        console.log('[ERROR] Error reading file as base64:', err);
         throw new Error('Could not read image file');
       }
 
@@ -489,7 +489,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         setSuccessMessage(null);
       }
     } catch (err) {
-      console.error('Error processing and uploading image:', err);
+      console.log('[ERROR] Error processing and uploading image:', err);
       setError(t('avatar_update_failed'));
     } finally {
       setIsLoading(false);
@@ -518,7 +518,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         await processAndUploadImage(selectedImage.uri);
       }
     } catch (err) {
-      console.error('Error choosing from gallery:', err);
+      console.log('[ERROR] Error choosing from gallery:', err);
       setError(t('image_selection_failed'));
     }
   };
@@ -543,7 +543,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         await processAndUploadImage(takenPhoto.uri);
       }
     } catch (err) {
-      console.error('Error taking photo:', err);
+      console.log('[ERROR] Error taking photo:', err);
       setError(t('photo_capture_failed'));
     }
   };

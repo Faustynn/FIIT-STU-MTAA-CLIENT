@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import * as Facebook from 'expo-auth-session/providers/facebook';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
+
 import { oAuth2sendAuthenticationRequest } from '../services/apiService';
 
 //WebBrowser for OAuth
@@ -31,10 +32,10 @@ export function useGoogleAuth() {
 
       // Send token
       await oAuth2sendAuthenticationRequest(id_token, 'google');
-      console.log("Google login token sent to server");
+      console.log('Google login token sent to server');
       return true;
     } catch (err) {
-      console.error("Google login error:", err);
+      console.log('[ERROR] Google login error:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
       return false;
     } finally {
@@ -69,10 +70,10 @@ export function useFacebookAuth() {
 
       // Send token
       await oAuth2sendAuthenticationRequest(token, 'facebook');
-      console.log("Facebook login token sent to server");
+      console.log('Facebook login token sent to server');
       return true;
     } catch (err) {
-      console.error("Facebook login error:", err);
+      console.log('[ERROR] Facebook login error:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
       return false;
     } finally {

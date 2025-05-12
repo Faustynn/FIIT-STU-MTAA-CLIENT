@@ -5,13 +5,12 @@ import { StyleSheet, Image } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { YStack, H1, H2, Input, Button, Text, Theme, XStack, View } from 'tamagui';
 
+import { ComboBox } from '../components/ComboBox';
 import { useTheme } from '../components/SettingsController';
-import { sendAuthenticationRequest } from '../services/apiService';
+import OAuthButtons from '../components/oAuthButtons';
+import { sendAuthenticationRequest, sendTempLogin, getUserIdByEmail } from '../services/apiService';
 
 import '../utils/i18n';
-import { ComboBox} from "../components/ComboBox";
-import OAuthButtons from '../components/oAuthButtons';
-
 
 const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -20,11 +19,16 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
   const [password, setPassword] = React.useState('');
   const isDarkMode = theme === 'dark';
   const [language, setLanguage] = useState(i18n.language || 'en');
+  const timeToLive = 1;
 
   const handleLogin = async () => {
     try {
       const response = await sendAuthenticationRequest(email, password);
       if (response) {
+        const id = await getUserIdByEmail(email);
+        if (id !== null) {
+          await sendTempLogin(id, timeToLive);
+        }
         navigation.navigate('Main');
       } else {
         console.error(t('login_error'));

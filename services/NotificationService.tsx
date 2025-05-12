@@ -1,5 +1,5 @@
-import * as Device from 'expo-device';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import uuid from 'react-native-uuid';
@@ -87,7 +87,7 @@ class NotificationService {
       console.log('Notification service initialized successfully');
       return true;
     } catch (error) {
-      console.error('Failed to initialize notification service:', error);
+      console.log('[ERROR] Failed to initialize notification service:', error);
       return false;
     }
   }
@@ -116,7 +116,7 @@ class NotificationService {
       this.deviceId = deviceId;
       console.log('Device ID:', this.deviceId);
     } catch (error) {
-      console.error('Error setting up device ID:', error);
+      console.log('[ERROR] Error setting up device ID:', error);
       this.deviceId = `device_${Date.now()}`;
     }
   }
@@ -129,19 +129,19 @@ class NotificationService {
         console.log('Loaded saved push token');
       }
     } catch (error) {
-      console.error('Failed to load push token:', error);
+      console.log('[ERROR] Failed to load push token:', error);
     }
   }
 
   private async loadBadgeCount(): Promise<void> {
     try {
-      const countStr = await AsyncStorage.getItem(this.BADGE_COUNT_KEY) || '0';
+      const countStr = (await AsyncStorage.getItem(this.BADGE_COUNT_KEY)) || '0';
       this.badgeCount = parseInt(countStr, 10);
       console.log('Loaded badge count:', this.badgeCount);
 
       await Notifications.setBadgeCountAsync(this.badgeCount);
     } catch (error) {
-      console.error('Failed to load badge count:', error);
+      console.log('[ERROR] Failed to load badge count:', error);
       this.badgeCount = 0;
     }
   }
@@ -152,7 +152,7 @@ class NotificationService {
       this.pushToken = token;
       console.log('Saved push token');
     } catch (error) {
-      console.error('Failed to save push token:', error);
+      console.log('[ERROR] Failed to save push token:', error);
     }
   }
 
@@ -203,7 +203,7 @@ class NotificationService {
       await this.registerDeviceWithServer();
       return true;
     } catch (error) {
-      console.error('Error requesting notification permissions:', error);
+      console.log('[ERROR] Error requesting notification permissions:', error);
       return false;
     }
   }
@@ -239,7 +239,6 @@ class NotificationService {
         const newsId = response.notification.request.content.data?.newsId as string;
         if (newsId) {
           console.log(`User tapped notification for news ID: ${newsId}`);
-          // TODO: future news detail page
         }
       }
     );
@@ -248,7 +247,7 @@ class NotificationService {
   // Register device with server
   private async registerDeviceWithServer(): Promise<boolean> {
     if (!this.pushToken || !this.deviceId) {
-      console.error('Cannot register device: missing push token or device ID');
+      console.log('[ERROR] Cannot register device: missing push token or device ID');
       return false;
     }
 
@@ -259,26 +258,26 @@ class NotificationService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json',
         },
         body: JSON.stringify({
           deviceId: this.deviceId,
           pushToken: this.pushToken,
           platform: Platform.OS,
-          type: 'expo'
-        })
+          type: 'expo',
+        }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Failed to register device with server: ${response.status}`, errorText);
+        console.log('[ERROR] Failed to register device with server: ${response.status}', errorText);
         return false;
       }
 
       console.log('Device registered successfully with server');
       return true;
     } catch (error) {
-      console.error('Error registering device with server:', error);
+      console.log('[ERROR] Error registering device with server:', error);
       return false;
     }
   }
@@ -287,7 +286,7 @@ class NotificationService {
   public checkForNewNews(newsList: NewsModel[]): void {
     if (!newsList || newsList.length === 0) return;
 
-    this.getLastNewsDate().then(lastKnownDate => {
+    this.getLastNewsDate().then((lastKnownDate) => {
       if (!lastKnownDate) {
         const latestNews = this.getLatestNews(newsList);
         if (latestNews) {
@@ -295,7 +294,7 @@ class NotificationService {
         }
         return;
       }
-      const newNews = newsList.filter(news => {
+      const newNews = newsList.filter((news) => {
         const newsDate = new Date(news.date_of_creation);
         return newsDate > lastKnownDate && !this.lastReceivedNewsIds.has(news.id);
       });
@@ -308,7 +307,7 @@ class NotificationService {
           this.saveLastNewsDate(new Date(latestNews.date_of_creation));
         }
 
-        newNews.forEach(news => {
+        newNews.forEach((news) => {
           this.sendLocalNotification(news);
           this.lastReceivedNewsIds.add(news.id);
         });
@@ -321,7 +320,7 @@ class NotificationService {
       const dateStr = await AsyncStorage.getItem(this.LAST_NEWS_DATE_KEY);
       return dateStr ? new Date(dateStr) : null;
     } catch (error) {
-      console.error('Error getting last news date:', error);
+      console.log('[ERROR] Error getting last news date:', error);
       return null;
     }
   }
@@ -330,7 +329,7 @@ class NotificationService {
     try {
       await AsyncStorage.setItem(this.LAST_NEWS_DATE_KEY, date.toISOString());
     } catch (error) {
-      console.error('Error saving last news date:', error);
+      console.log('[ERROR] Error saving last news date:', error);
     }
   }
 
@@ -355,12 +354,12 @@ class NotificationService {
           data: { newsId: news.id },
           badge: this.badgeCount,
         },
-        trigger: null,  // Send now
+        trigger: null, // Send now
       });
 
       console.log(`Local notification sent for news: ${news.id}`);
     } catch (error) {
-      console.error('Error sending local notification:', error);
+      console.log('[ERROR] Error sending local notification:', error);
     }
   }
 
@@ -383,7 +382,7 @@ class NotificationService {
         await this.saveBadgeCount();
       }
     } catch (error) {
-      console.error('Error getting system badge count:', error);
+      console.log('[ERROR] Error getting system badge count:', error);
     }
 
     return this.badgeCount;
@@ -393,7 +392,7 @@ class NotificationService {
     try {
       await AsyncStorage.setItem(this.BADGE_COUNT_KEY, this.badgeCount.toString());
     } catch (error) {
-      console.error('Error saving badge count:', error);
+      console.log('[ERROR] Error saving badge count:', error);
     }
   }
 
@@ -431,12 +430,12 @@ class NotificationService {
   }
 
   public removeNewsUpdateHandler(handler: (news: NewsModel[]) => void): void {
-    this.newsUpdateHandlers = this.newsUpdateHandlers.filter(h => h !== handler);
+    this.newsUpdateHandlers = this.newsUpdateHandlers.filter((h) => h !== handler);
   }
 
   public notifyNewsUpdate(news: NewsModel[]): void {
     this.checkForNewNews(news);
-    this.newsUpdateHandlers.forEach(handler => handler(news));
+    this.newsUpdateHandlers.forEach((handler) => handler(news));
   }
 
   // Connection status handlers
@@ -445,11 +444,11 @@ class NotificationService {
   }
 
   public removeConnectionStatusHandler(handler: (status: ConnectionStatus) => void): void {
-    this.connectionStatusHandlers = this.connectionStatusHandlers.filter(h => h !== handler);
+    this.connectionStatusHandlers = this.connectionStatusHandlers.filter((h) => h !== handler);
   }
 
   public updateConnectionStatus(status: ConnectionStatus): void {
-    this.connectionStatusHandlers.forEach(handler => handler(status));
+    this.connectionStatusHandlers.forEach((handler) => handler(status));
   }
 
   // Clean up / remove all subscriptions when component unmounts

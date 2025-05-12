@@ -1,22 +1,28 @@
-import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
-import React, { useEffect, useState, useRef } from 'react';
-import { TamaguiProvider } from 'tamagui';
 import { NavigationContainer } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import * as Notifications from 'expo-notifications';
+import * as SplashScreen from 'expo-splash-screen';
+import * as TaskManager from 'expo-task-manager';
+import React, { useEffect, useState, useRef } from 'react';
 import { useColorScheme, Platform, AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TamaguiProvider } from 'tamagui';
 import 'react-native-match-media-polyfill';
-import * as Notifications from 'expo-notifications';
-import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { sendPushTokenToServer, checkAuthOnStartup, startTokenRefreshTask } from './services/apiService';
+
+import { ThemeProvider } from './components/SettingsController';
+import AppNavigator from './navigation/AppNavigator';
 import NotificationService from './services/NotificationService';
+import {
+  getUserIdByEmail,
+  sendPushTokenToServer,
+  checkAuthOnStartup,
+  startTokenRefreshTask,
+} from './services/apiService';
 import config from './tamagui.config';
 
 // Components
-import AppNavigator from './navigation/AppNavigator';
-import { ThemeProvider } from './components/SettingsController';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -48,16 +54,9 @@ TaskManager.defineTask(BACKGROUND_TASK, async () => {
 
     console.log('Background task completed successfully');
   } catch (error) {
-    console.error('Error in background task:', error);
+    console.log('[ERROR] Error in background task:', error);
   }
 });
-
-
-
-
-
-
-
 
 const App = () => {
   const [fontsLoaded] = useFonts({
@@ -95,7 +94,6 @@ const App = () => {
     };
   }, []);
 
-
   // Register background task
   useEffect(() => {
     const registerBackgroundTask = async () => {
@@ -117,7 +115,7 @@ const App = () => {
           console.log('Background task is already registered');
         }
       } catch (error) {
-        console.error('Error registering background task:', error);
+        console.log('[ERROR] Error registering background task:', error);
       }
     };
 
@@ -132,14 +130,33 @@ const App = () => {
         const isLoggedIn = await checkAuthOnStartup();
         console.log('Auth check result:', isLoggedIn);
 
-        setIsAuthenticated(isLoggedIn);
-        setInitialRoute(isLoggedIn ? 'Main' : 'Login');
+        // setIsAuthenticated(isLoggedIn);
+        // setInitialRoute(isLoggedIn ? 'Main' : 'Login');
 
         if (isLoggedIn) {
+          const userData = await AsyncStorage.getItem('USER_DATA');
+          const parsed = userData ? JSON.parse(userData) : null;
+          const email = parsed?.email;
+
+          if (email) {
+            const userId = await getUserIdByEmail(email);
+            if (!userId) {
+              await AsyncStorage.clear();
+              setIsAuthenticated(false);
+              setInitialRoute('Login');
+              return;
+            }
+          }
+
           startTokenRefreshTask();
+          setIsAuthenticated(true);
+          setInitialRoute('Main');
+        } else {
+          setIsAuthenticated(false);
+          setInitialRoute('Login');
         }
       } catch (error) {
-        console.error('Error during auth initialization:', error);
+        console.log('[ERROR] Error during auth initialization:', error);
         setIsAuthenticated(false);
         setInitialRoute('Login');
       }
@@ -185,25 +202,19 @@ const App = () => {
 
     requestNotificationPermissions();
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
       console.log('Notification received:', notification);
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       console.log('Notification response received:', response);
     });
 
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         console.log('App has come to the foreground');
         resetBadgeCount();
-      } else if (
-        appState.current === 'active' &&
-        nextAppState.match(/inactive|background/)
-      ) {
+      } else if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
         console.log('App has gone to the background');
       }
 
