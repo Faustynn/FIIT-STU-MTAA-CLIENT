@@ -25,7 +25,7 @@ const openWebLink = (url: string) => {
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const { t } = useTranslation();
-  const { theme, fontSize } = useTheme();
+  const { theme, fontSize, highContrast } = useTheme();
   const textSize = getFontSizeValue(fontSize);
 
   const isDarkMode = theme === 'dark';
@@ -56,12 +56,15 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
     fetchAndParseUser();
   }, []);
+  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
 
-  const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
-  const cardBackgroundColor = isDarkMode ? '#1E2129' : '$F5F5F5';
-  const linkTextColor = isDarkMode ? '#79E3A5' : '$blue600';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+
+  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
+
+  const cardBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#1E2129' : '$F5F5F5';
+
+  const linkTextColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '$blue600';
 
   if (isLoading) {
     return (

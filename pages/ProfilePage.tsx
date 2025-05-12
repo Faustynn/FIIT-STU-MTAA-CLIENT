@@ -36,6 +36,7 @@ type AvatarSelectionModalProps = {
   onChooseFromGallery: () => void;
   isDarkMode: boolean;
   textSize: number;
+  highContrast: boolean;
 };
 
 const standardAvatars = [
@@ -59,6 +60,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   onChooseFromGallery,
   isDarkMode,
   textSize,
+  highContrast,
 }) => {
   const { t } = useTranslation();
   const [isPremium, setIsPremium] = useState(false);
@@ -96,11 +98,9 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
     filterAvatars();
   }, [isPremium, isVisible]);
 
-  const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
-  const modalBackgroundColor = isDarkMode ? '#2A2F3B' : '#FFFFFF';
-  const buttonTextColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const secondaryButtonColor = '#B3C7EE';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+  const buttonTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#000000';
+  const secondaryButtonColor = highContrast ? '#FFA500' : '#B3C7EE';
 
   return (
     <ConfirmationModal
@@ -207,7 +207,7 @@ type ProfilePageProps = {
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const { t } = useTranslation();
-  const { theme, fontSize } = useTheme();
+  const { theme, fontSize, highContrast } = useTheme();
   const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
 
@@ -231,13 +231,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const isLandscape = width > height;
 
   // Theme colors
-  const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
-  const inputBackgroundColor = isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const primaryButtonColor = '#79E3A5';
-  const secondaryButtonColor = '#B3C7EE';
-  const dangerButtonColor = '#FF617D';
+  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
+  const inputBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
+  const primaryButtonColor = highContrast ? '#FFD700' : '#79E3A5';
+  const secondaryButtonColor = highContrast ? '#FFA500' : '#B3C7EE';
+  const dangerButtonColor = highContrast ? '#FF4444' : '#FF617D';
 
   const [isPremium, setIsPremium] = useState(false);
 
@@ -687,6 +687,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
             onChooseFromGallery={handleChooseFromGallery}
             isDarkMode={isDarkMode}
             textSize={textSize}
+            highContrast={highContrast}
           />
 
           {/* Main Content */}

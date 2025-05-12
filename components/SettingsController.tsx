@@ -12,6 +12,8 @@ type ThemeContextType = {
   setGestureMode: (mode: 'shake' | 'tilt' | 'both') => void;
   fontSize: string;
   setFontSize: (size: string) => void;
+  highContrast: boolean;
+  setHighContrast: (enabled: boolean) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -19,6 +21,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const GESTURE_NAVIGATION_KEY = '@app_gesture_navigation_enabled';
 const THEME_STORAGE_KEY = '@app_theme';
 const GESTURE_MODE_KEY = '@app_gesture_mode';
+const FONT_SIZE_KEY = '@app_font_size';
+const HIGH_CONTRAST_KEY = '@app_high_contrast';
 
 type TiltNavigationEventType = { direction: number | null };
 export const TiltNavigationEvent = {
@@ -39,22 +43,20 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
   const [gestureNavigationEnabled, setGestureNavigationEnabled] = useState<boolean>(false);
   const [gestureMode, setGestureMode] = useState<'shake' | 'tilt' | 'both'>('both');
   const [currentTiltDirection, setCurrentTiltDirection] = useState<number | null>(null);
+  const [fontSize, setFontSizeState] = useState<string>('12');
+  const [highContrast, setHighContrastState] = useState<boolean>(false);
 
-  // gesture detection
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
   const lastShakeTime = useRef(0);
   const lastTiltTime = useRef(0);
   const tiltDeadzone = useRef(false);
   const accelerometerSubscription = useRef<any>(null);
 
-  // init theme and settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const storedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (storedTheme) {
-          setTheme(storedTheme as 'light' | 'dark');
-        }
+        if (storedTheme) setTheme(storedTheme as 'light' | 'dark');
 
         const storedGestureNavigation = await AsyncStorage.getItem(GESTURE_NAVIGATION_KEY);
         if (storedGestureNavigation !== null) {
@@ -63,92 +65,54 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
 
         const storedGestureMode = await AsyncStorage.getItem(GESTURE_MODE_KEY);
         if (
-          storedGestureMode !== null &&
-          (storedGestureMode === 'shake' ||
-            storedGestureMode === 'tilt' ||
-            storedGestureMode === 'both')
+          storedGestureMode === 'shake' ||
+          storedGestureMode === 'tilt' ||
+          storedGestureMode === 'both'
         ) {
-          setGestureMode(storedGestureMode as 'shake' | 'tilt' | 'both');
+          setGestureMode(storedGestureMode);
         }
+
+        const storedFontSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
+        if (storedFontSize) setFontSizeState(storedFontSize);
+
+        const storedHighContrast = await AsyncStorage.getItem(HIGH_CONTRAST_KEY);
+        if (storedHighContrast !== null) setHighContrastState(storedHighContrast === 'true');
       } catch (error) {
         console.error('Error loading settings:', error);
       }
     };
-
     loadSettings();
   }, []);
 
-  // Save theme preference
   useEffect(() => {
-    const saveTheme = async () => {
-      try {
-        await AsyncStorage.setItem(THEME_STORAGE_KEY, theme);
-      } catch (error) {
-        console.error('Error saving theme setting:', error);
-      }
-    };
-
-    saveTheme();
+    AsyncStorage.setItem(THEME_STORAGE_KEY, theme).catch(console.error);
   }, [theme]);
 
-  // Save gesture preference
   useEffect(() => {
-    const saveGestureNavigation = async () => {
-      try {
-        await AsyncStorage.setItem(GESTURE_NAVIGATION_KEY, gestureNavigationEnabled.toString());
-      } catch (error) {
-        console.error('Error saving gesture navigation setting:', error);
-      }
-    };
-
-    saveGestureNavigation();
+    AsyncStorage.setItem(GESTURE_NAVIGATION_KEY, gestureNavigationEnabled.toString()).catch(
+      console.error
+    );
   }, [gestureNavigationEnabled]);
 
-  // Save gesture mode preference
   useEffect(() => {
-    const saveGestureMode = async () => {
-      try {
-        await AsyncStorage.setItem(GESTURE_MODE_KEY, gestureMode);
-      } catch (error) {
-        console.error('Error saving gesture mode setting:', error);
-      }
-    };
-
-    saveGestureMode();
+    AsyncStorage.setItem(GESTURE_MODE_KEY, gestureMode).catch(console.error);
   }, [gestureMode]);
 
-  // Start &stop accelerometer
   useEffect(() => {
-    const startAccelerometer = async () => {
-      if (accelerometerSubscription.current) {
-        accelerometerSubscription.current.remove();
-        accelerometerSubscription.current = null;
-      }
+    AsyncStorage.setItem(FONT_SIZE_KEY, fontSize).catch(console.error);
+  }, [fontSize]);
 
-      if (gestureNavigationEnabled) {
-        await Accelerometer.setUpdateInterval(100);
-
-        accelerometerSubscription.current = Accelerometer.addListener(handleAccelerometerData);
-      }
-    };
-
-    startAccelerometer();
-
-    return () => {
-      if (accelerometerSubscription.current) {
-        accelerometerSubscription.current.remove();
-        accelerometerSubscription.current = null;
-      }
-    };
-  }, [gestureNavigationEnabled, gestureMode]);
+  useEffect(() => {
+    AsyncStorage.setItem(HIGH_CONTRAST_KEY, highContrast.toString()).catch(console.error);
+  }, [highContrast]);
 
   const handleAccelerometerData = (accelerometerData: { x: number; y: number; z: number }) => {
     const { x, y, z } = accelerometerData;
     const now = Date.now();
 
     if (gestureNavigationEnabled && (gestureMode === 'shake' || gestureMode === 'both')) {
-      const SHAKE_TIMEOUT = 2000; // 2sec cooldown
-      const SHAKE_THRESHOLD = 1.8; // add  threshold
+      const SHAKE_TIMEOUT = 2000;
+      const SHAKE_THRESHOLD = 1.8;
 
       const deltaX = Math.abs(x - lastAcceleration.current.x);
       const deltaY = Math.abs(y - lastAcceleration.current.y);
@@ -162,7 +126,6 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
         deltaX < SHAKE_THRESHOLD &&
         deltaZ < SHAKE_THRESHOLD
       ) {
-        // check shake in y axis
         toggleTheme();
         lastShakeTime.current = now;
       }
@@ -196,6 +159,26 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
     lastAcceleration.current = { x, y, z };
   };
 
+  useEffect(() => {
+    const startAccelerometer = async () => {
+      if (accelerometerSubscription.current) {
+        accelerometerSubscription.current.remove();
+        accelerometerSubscription.current = null;
+      }
+      if (gestureNavigationEnabled) {
+        await Accelerometer.setUpdateInterval(100);
+        accelerometerSubscription.current = Accelerometer.addListener(handleAccelerometerData);
+      }
+    };
+    startAccelerometer();
+    return () => {
+      if (accelerometerSubscription.current) {
+        accelerometerSubscription.current.remove();
+        accelerometerSubscription.current = null;
+      }
+    };
+  }, [gestureNavigationEnabled, gestureMode]);
+
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
@@ -204,22 +187,12 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
     setGestureNavigationEnabled((prev) => !prev);
   };
 
-  const [fontSize, setFontSizeState] = useState<string>('12');
-
-  useEffect(() => {
-    const loadFontSize = async () => {
-      const storedSize = await AsyncStorage.getItem('@app_font_size');
-      if (storedSize) setFontSizeState(storedSize);
-    };
-    loadFontSize();
-  }, []);
-
-  useEffect(() => {
-    AsyncStorage.setItem('@app_font_size', fontSize);
-  }, [fontSize]);
-
   const setFontSize = (size: string) => {
     setFontSizeState(size);
+  };
+
+  const setHighContrast = (enabled: boolean) => {
+    setHighContrastState(enabled);
   };
 
   return (
@@ -234,6 +207,8 @@ export const ThemeProvider: React.FC<React.PropsWithChildren<object>> = ({ child
         setGestureMode,
         fontSize,
         setFontSize,
+        highContrast,
+        setHighContrast,
       }}>
       {children}
     </ThemeContext.Provider>

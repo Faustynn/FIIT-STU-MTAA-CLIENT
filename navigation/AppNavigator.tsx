@@ -15,8 +15,8 @@ import RegistratePage from '../pages/RegistratePage';
 import SettingsPage from '../pages/SettingsPage';
 import SubjectDetail from '../pages/SubjectDetail';
 import SubjectsPage from '../pages/SubjectsPage';
-import TeachersPage from '../pages/TeachersPage';
 import TeacherDetail from '../pages/TeacherDetail';
+import TeachersPage from '../pages/TeachersPage';
 
 import '../utils/i18n';
 
@@ -38,7 +38,7 @@ type TabContentProps = {
 const TabContent = ({ navigation }: TabContentProps) => {
   const [activeTab, setActiveTab] = useState(0);
   const [swipingDisabled, setSwipingDisabled] = useState(false);
-  const { theme, gestureNavigationEnabled, gestureMode } = useTheme();
+  const { theme, gestureNavigationEnabled, gestureMode, highContrast } = useTheme();
   const isDarkMode = theme === 'dark';
   const scrollViewRef = useRef<ScrollView>(null);
   const lastTabChangeTime = useRef(0);
@@ -140,9 +140,11 @@ const TabContent = ({ navigation }: TabContentProps) => {
     }
   }, [swipingDisabled, activeTab]);
 
-  const tabBarBackgroundColor = isDarkMode ? '#1E2129' : '#F5F5F5';
-  const activeTabColor = isDarkMode ? '#79E3A5' : '#0066CC';
-  const inactiveTabColor = isDarkMode ? '#A0A7B7' : '#666666';
+  const tabBarBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#1E2129' : '#F5F5F5';
+
+  const activeTabColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '#0066CC';
+
+  const inactiveTabColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '#666666';
 
   return (
     <GestureHandlerRootView style={styles.container}>

@@ -10,7 +10,7 @@ import User from '../components/User';
 import { fetchSubjects, Subject } from '../services/apiService';
 
 const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
-  const { theme, fontSize } = useTheme();
+  const { theme, fontSize, highContrast } = useTheme();
   const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
   const { t } = useTranslation();
@@ -28,11 +28,11 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
   const [error, setError] = useState<string | null>(null);
   const [hasData, setHasData] = useState(false);
 
-  const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
-  const inputBackgroundColor = isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const itemBackgroundColor = isDarkMode ? '#2A2F3B' : '#F5F5F5';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
+  const inputBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
+  const itemBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
+  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
 
   useEffect(() => {
     let isMounted = true;

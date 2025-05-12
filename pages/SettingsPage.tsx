@@ -24,6 +24,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
     setGestureMode,
     fontSize,
     setFontSize,
+    highContrast,
+    setHighContrast,
   } = useTheme();
   const isDarkMode = theme === 'dark';
   const { t, i18n } = useTranslation();
@@ -37,7 +39,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [language, setLanguage] = useState(i18n.language || 'en');
-  const [contrast, setContrast] = useState('0');
   const [swipeLocked, setSwipeLocked] = useState(false);
 
   useEffect(() => {
@@ -60,12 +61,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
     fetchAndParseUser();
   }, []);
 
-  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const cardColor = isDarkMode ? '#2a2f3b' : '#F0F0F0';
-  const labelColor = isDarkMode ? '#A0A7B7' : '#555555';
-  const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
+  const textColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#000000';
+  const cardColor = highContrast ? '#000000' : isDarkMode ? '#2a2f3b' : '#F0F0F0';
+  const labelColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '#555555';
+  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
 
   const languages = [
     { label: t('en_lang'), value: 'en' },
@@ -79,14 +80,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
     { label: '12 (default)', value: '12' },
     { label: '14', value: '14' },
     { label: '16', value: '16' },
-  ];
-
-  const contrastOptions = [
-    { label: '0% (default)', value: '0' },
-    { label: '25%', value: '25' },
-    { label: '50%', value: '50' },
-    { label: '75%', value: '75' },
-    { label: '100%', value: '100' },
   ];
 
   const gestureModes = [
@@ -347,17 +340,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                   />
                 </YStack>
                 <YStack space="$2">
-                  <Text color={labelColor} fontSize={textSize}>
-                    {t('contrast')}
-                  </Text>
-                  <ComboBox
-                    value={contrast}
-                    onValueChange={setContrast}
-                    items={contrastOptions}
-                    placeholder={t('select_contrast')}
-                    labelColor={labelColor}
-                    textColor={textColor}
-                  />
+                  <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
+                    <Text
+                      style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
+                      {t('contrast')}
+                    </Text>
+                    <View style={styles.settingRow}>
+                      <Text style={{ fontSize: textSize, color: textColor }}>
+                        {t('Enable contrast')}
+                      </Text>
+                      <Switch
+                        value={highContrast}
+                        onValueChange={setHighContrast}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={highContrast ? '#374b6a' : '#f4f3f4'}
+                      />
+                    </View>
+                  </View>
                 </YStack>
               </YStack>
             </View>

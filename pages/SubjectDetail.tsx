@@ -49,7 +49,7 @@ export interface SubjectDetails {
 }
 
 const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
-  const { theme, fontSize } = useTheme();
+  const { theme, fontSize, highContrast } = useTheme();
   const textSize = getFontSizeValue(fontSize);
 
   const isDarkMode = theme === 'dark';
@@ -57,12 +57,12 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
-  const backgroundColor = isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = isDarkMode ? '#A0A7B7' : '$gray800';
-  const cardBackgroundColor = isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const sectionBackgroundColor = isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const accentColor = isDarkMode ? '#79E3A5' : '$blue500';
+  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
+  const cardBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
+  const sectionBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
+  const accentColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '$blue500';
 
   const [subject, setSubject] = useState<SubjectDetails | null>(null);
   const [loading, setLoading] = useState(true);
