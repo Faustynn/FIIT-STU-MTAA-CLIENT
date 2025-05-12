@@ -1,84 +1,92 @@
-import { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as Facebook from 'expo-auth-session/providers/facebook';
-import { oAuth2sendAuthenticationRequest } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { oAuth2sendAuthenticationRequest } from "../services/apiService";
 
-//WebBrowser for OAuth
 WebBrowser.maybeCompleteAuthSession();
 
-// Google
-export function useGoogleAuth() {
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: 'hardy-gearing-450923-h5',
-  });
+export const useGoogleAuth = () => {
+  const [request, response, promptAsync] = Google.useAuthRequest(
+    {
+      clientId: '162210744287-qn8sq1a09rbjcagtnqmk38t98f8132u3.apps.googleusercontent.com',
+      scopes: ['openid', 'profile', 'email'],
+    }
+  );
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const loginWithGoogle = async () => {
+  const handleGoogleSignIn = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      const authResult = await promptAsync();
 
-      const result = await promptAsync();
-      if (result.type !== 'success') {
-        throw new Error('Google authentication was cancelled or failed');
+      if (authResult.type === 'success') {
+        const { authentication } = authResult;
+
+        if (authentication?.accessToken) {
+          const isSuccess = await oAuth2sendAuthenticationRequest(
+            authentication.accessToken,
+            'google'
+          );
+
+          if (isSuccess) {
+            await AsyncStorage.setItem('userToken', authentication.accessToken);
+            return true;
+          }
+        }
       }
-
-      // Get token
-      const { id_token } = result.params;
-
-      // Send token
-      await oAuth2sendAuthenticationRequest(id_token, 'google');
-      console.log("Google login token sent to server");
-      return true;
-    } catch (err) {
-      console.error("Google login error:", err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
       return false;
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Google Auth Error:', error);
+      return false;
     }
   };
 
-  return { loginWithGoogle, isLoading, error, response };
-}
+  return {
+    request,
+    response,
+    handleGoogleSignIn
+  };
+};
 
-// Facebook
-export function useFacebookAuth() {
-  const [request, response, promptAsync] = Facebook.useAuthRequest({
-    clientId: '9055047127939874',
-  });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
-  const loginWithFacebook = async () => {
+
+export const useFacebookAuth = () => {
+  const [request, response, promptAsync] = Facebook.useAuthRequest(
+    {
+      clientId: '577543324819426',
+      scopes: ['public_profile', 'email'],
+    }
+  );
+
+  const handleFacebookSignIn = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      const authResult = await promptAsync();
 
-      const result = await promptAsync();
-      if (result.type !== 'success') {
-        throw new Error('Facebook authentication was cancelled or failed');
+      if (authResult.type === 'success') {
+        const { authentication } = authResult;
+
+        if (authentication?.accessToken) {
+          const isSuccess = await oAuth2sendAuthenticationRequest(
+            authentication.accessToken,
+            'facebook'
+          );
+
+          if (isSuccess) {
+            await AsyncStorage.setItem('userToken', authentication.accessToken);
+            return true;
+          }
+        }
       }
-
-      // Get token
-      const { token } = result.params;
-
-      // Send token
-      await oAuth2sendAuthenticationRequest(token, 'facebook');
-      console.log("Facebook login token sent to server");
-      return true;
-    } catch (err) {
-      console.error("Facebook login error:", err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
       return false;
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Facebook Auth Error:', error);
+      return false;
     }
   };
 
-  return { loginWithFacebook, isLoading, error, response };
-}
+  return {
+    request,
+    response,
+    handleFacebookSignIn
+  };
+};

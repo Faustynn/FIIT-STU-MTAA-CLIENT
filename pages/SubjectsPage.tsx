@@ -54,9 +54,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
 
       while (isMounted) {
         try {
-          const data = await fetchSubjects();
+        //  const data = await fetchSubjects();
           if (isMounted) {
-            setSubjects(data);
+         //   setSubjects(data);
             setLoading(false);
             break; // ⬅️ Важно: прерываем цикл, если всё ок
           }

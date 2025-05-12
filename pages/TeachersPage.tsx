@@ -58,9 +58,9 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
       const loadTeachers = async () => {
         try {
           setLoading(true);
-          const data = await fetchTeachers(); // ⚙️ функция уже ретраится сама
-          const parsed = parseTeachers(data);
-          setTeachers(parsed);
+     //     const data = await fetchTeachers(); // ⚙️ функция уже ретраится сама
+      //    const parsed = parseTeachers(data);
+      //    setTeachers(parsed);
           setError(null);
           setLoading(false); // ✅ только если успех
         } catch (err) {

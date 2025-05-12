@@ -41,7 +41,7 @@ class NotificationService {
   private readonly LAST_NEWS_DATE_KEY = 'LAST_NEWS_DATE';
 
   // API endpoints
-  private readonly REGISTER_DEVICE_ENDPOINT = `http://192.168.0.119:8080/api/notifications/register-device`;
+  private readonly REGISTER_DEVICE_ENDPOINT = `http://147.175.162.157:8080/api/notifications/register-device`;
 
   // Subscriptions
   private notificationReceivedSubscription?: Notifications.Subscription;

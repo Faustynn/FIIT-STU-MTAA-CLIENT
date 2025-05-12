@@ -1,27 +1,59 @@
-import React from 'react';
+import React, { useState } from "react";
 import { Button, XStack } from 'tamagui';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useGoogleAuth, useFacebookAuth } from '../utils/oAuthUtil';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { Alert } from 'react-native';
 
 const OAuthButtons: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { loginWithGoogle, isLoading: isGoogleLoading } = useGoogleAuth();
-  const { loginWithFacebook, isLoading: isFacebookLoading } = useFacebookAuth();
+  const { request: googleRequest, handleGoogleSignIn } = useGoogleAuth();
+  const { request: facebookRequest, handleFacebookSignIn } = useFacebookAuth();
 
   const handleGoogleLogin = async () => {
-    const success = await loginWithGoogle();
-    if (success) {
-      navigation.navigate('Main');
+    if (!googleRequest) {
+      Alert.alert('Error', 'Google authentication is not ready');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const success = await handleGoogleSignIn();
+      if (success) {
+        navigation.navigate('Main');
+      } else {
+        Alert.alert('Login Failed', 'Unable to log in with Google');
+      }
+    } catch (error) {
+      console.error('Google Login Error:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleFacebookLogin = async () => {
-    const success = await loginWithFacebook();
-    if (success) {
-      navigation.navigate('Main');
+    if (!facebookRequest) {
+      Alert.alert('Error', 'Facebook authentication is not ready');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const success = await handleFacebookSignIn();
+      if (success) {
+        navigation.navigate('Main');
+      } else {
+        Alert.alert('Login Failed', 'Unable to log in with Facebook');
+      }
+    } catch (error) {
+      console.error('Facebook Login Error:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,18 +70,26 @@ const OAuthButtons: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
       <Button
         style={buttonStyle}
         onPress={handleGoogleLogin}
-        disabled={isGoogleLoading}
+        disabled={isLoading || !googleRequest}
       >
-        <MaterialCommunityIcons name={'google'} size={24} color={isDarkMode ? '#79E3A5' : '#000000'} />
-        {isGoogleLoading ? 'Loading...' : 'Google'}
+        <MaterialIcons
+          name={'login'}
+          size={24}
+          color={isDarkMode ? '#79E3A5' : '#000000'}
+        />
+        {isLoading ? 'Loading...' : 'Google'}
       </Button>
       <Button
         style={buttonStyle}
         onPress={handleFacebookLogin}
-        disabled={isFacebookLoading}
+        disabled={isLoading || !facebookRequest}
       >
-        <MaterialCommunityIcons name={'facebook'} size={24} color={isDarkMode ? '#79E3A5' : '#000000'} />
-        {isFacebookLoading ? 'Loading...' : 'Facebook'}
+        <MaterialIcons
+          name={'facebook'}
+          size={24}
+          color={isDarkMode ? '#79E3A5' : '#000000'}
+        />
+        {isLoading ? 'Loading...' : 'Facebook'}
       </Button>
     </XStack>
   );

@@ -239,6 +239,7 @@ const AppNavigator = ({ initialRoute, setIsAuthenticated }: AppNavigatorProps) =
     setIsAuthenticated
   }), [setIsAuthenticated]);
 
+
   return (
     <AuthContext.Provider value={authContextValue}>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
@@ -284,6 +285,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
 
 export default AppNavigator;
 export { MainTabNavigator };
