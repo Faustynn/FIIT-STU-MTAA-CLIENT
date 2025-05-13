@@ -36,6 +36,28 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadTeacherDetails = async () => {
+    try {
+      setLoading(true);
+      const subjectData = await fetchSubjectDetails(subjectId);
+      setSubject(subjectData);
+
+      // Fetch teachers for this subject
+      const teachersData = await getTeachersForSubject(subjectData.code);
+      setSubjectTeachers(teachersData);
+
+      setError(null);
+    } catch (err) {
+      console.error('Error loading teacher details:', err);
+      setError(t('failed_load_subject_details'));
+
+      // Retry after 15 seconds
+      setTimeout(() => loadTeacherDetails(), 15000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadSubjectWithTeachers = async () => {
       try {

@@ -42,6 +42,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<UserRole>('regular');
   const [userName, setUserName] = useState<string>(t('profile'));
+  const [error, setError] = useState<string | null>(null);
   const [comments, setComments] = useState<CommentType[]>([]);
   const [averageRating, setAverageRating] = useState<number>(0);
   const [newComment, setNewComment] = useState('');
