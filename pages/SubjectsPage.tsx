@@ -50,19 +50,23 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
     };
 
     const loadSubjects = async () => {
-      setLoading(true);
+      if (isMounted) setLoading(true);
 
-      while (isMounted) {
-        try {
-        //  const data = await fetchSubjects();
-          if (isMounted) {
-         //   setSubjects(data);
-         //   setLoading(false);
-            break; // ⬅️ Важно: прерываем цикл, если всё ок
-          }
-        } catch (err) {
-          console.error('❌ fetchSubjects failed, retrying in 15s...');
-          await new Promise((res) => setTimeout(res, 15000)); // подождать 15 секунд
+      try {
+        const data = await fetchSubjects();
+        if (isMounted && data) {
+          setSubjects(data);
+          setFilteredSubjects(data);
+          setError(null);
+        }
+      } catch (err) {
+        console.error(' Error loading subjects:', err);
+        if (isMounted) {
+          setError(t('failed_to_load_subjects'));
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
       }
     };
@@ -73,7 +77,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const filtered = subjects.filter((subject) => {
@@ -98,6 +102,12 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
     setSelectedLevel('');
   };
 
+  const handleRetryLoad = () => {
+    setError(null);
+    setLoading(true);
+    setSubjects([]);
+  };
+
   if (loading) {
     return (
       <YStack
@@ -106,6 +116,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
         alignItems="center"
         backgroundColor={backgroundColor}>
         <Spinner size="large" color={headerTextColor} />
+        <Text color={subTextColor} marginTop="$4">
+          {t('loading_subjects')}
+        </Text>
       </YStack>
     );
   }
@@ -173,6 +186,10 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
 
           {/* Search & Filters */}
           <YStack marginTop="$4" space="$4" marginBottom={isLandscape ? 48 : 8}>
+            <Text fontSize={textSize + 15} fontWeight="bold" color={headerTextColor}>
+              {t('subjects')}
+            </Text>
+
             <Input
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -286,23 +303,16 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
             }}>
             <YStack space="$2">
               <Text color={subTextColor} fontSize={textSize}>
-                {t('result')}
+                {t('result')} ({filteredSubjects.length})
               </Text>
-              {loading ? (
-                <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                  <Spinner size="large" color={headerTextColor} />
-                  <Text color={subTextColor} marginTop="$2">
-                    {t('loading')}
-                  </Text>
-                </YStack>
-              ) : error ? (
+              {error ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
                   <Text color="$red10" fontSize={textSize}>
                     {error}
                   </Text>
-                  <Text color={subTextColor} marginTop="$2">
-                    {t('pull_to_refresh')}
-                  </Text>
+                  <Button onPress={handleRetryLoad} marginTop="$4">
+                    {t('retry')}
+                  </Button>
                 </YStack>
               ) : filteredSubjects.length === 0 ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
@@ -336,8 +346,13 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         </Text>
                       </XStack>
                       <Text color={subTextColor} fontSize={textSize - 3}>
-                        {subject.type}, {subject.semester}
+                        {subject.type}, {subject.semester}, {subject.credits} {t('credits')}
                       </Text>
+                      {subject.languages && subject.languages.length > 0 && (
+                        <Text color={subTextColor} fontSize={textSize - 3}>
+                          {t('languages')}: {subject.languages.join(', ')}
+                        </Text>
+                      )}
                     </YStack>
                   ))}
                 </YStack>

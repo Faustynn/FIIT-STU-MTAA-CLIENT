@@ -1,54 +1,21 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { useWindowDimensions, Alert } from 'react-native';
 import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } from 'tamagui';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { fetchSubjectDetails } from '../services/apiService';
+import { fetchSubjectDetails, fetchTeachers, getTeachersForSubject, Teacher, Subject } from '../services/apiService';
 
 type SubjectDetailProps = {
   route: RouteProp<AppStackParamList, 'SubjectSubPage'>;
   navigation: NavigationProp<AppStackParamList>;
 };
 
-export interface Instructor {
-  id: number | string;
-  name: string;
-  role?: string;
-}
-
-export interface SubjectDetails {
-  code: string;
-  name: string;
-  type: string;
-  credits: number;
-  studyType: string;
-  semester: string;
-  languages: string[];
-  completionType: string;
-  studentCount: number;
-  assesmentMethods: string;
-  learningOutcomes: string;
-  courseContents: string;
-  plannedActivities: string;
-  evaluationMethods: string;
-  guarantor: string;
-  a_score: string;
-  b_score: string;
-  c_score: string;
-  d_score: string;
-  e_score: string;
-  fx_score: string;
-  description: string;
-  objectives: string;
-  prerequisites: string[];
-  syllabus: string[];
-  instructors: Instructor[];
-}
-
 const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
+  const { t } = useTranslation();
   const { theme, fontSize, highContrast } = useTheme();
   const textSize = getFontSizeValue(fontSize);
 
@@ -64,27 +31,38 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
   const sectionBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
   const accentColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '$blue500';
 
-  const [subject, setSubject] = useState<SubjectDetails | null>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [subjectTeachers, setSubjectTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadSubjectWithTeachers = async () => {
+      try {
+        setLoading(true);
+        const subjectData = await fetchSubjectDetails(subjectId);
+        setSubject(subjectData);
+
+        // Take teachers for this subject
+        const teachersData = await getTeachersForSubject(subjectData.code);
+        setSubjectTeachers(teachersData);
+
+        setError(null);
+      } catch (err) {
+        console.error('Error loading subject with teachers:', err);
+        setError(t('failed_load_subject_details'));
+
+        // Retry after 15 secs
+        setTimeout(() => loadTeacherDetails(), 15000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (subjectId) {
-      const loadSubjectDetails = async () => {
-        try {
-          setLoading(true);
-          const data = await fetchSubjectDetails(subjectId);
-          setSubject(data as SubjectDetails);
-          setError(null);
-          setLoading(false);
-        } catch (err) {
-          setError('Failed to load subject details. Please try again later.');
-          console.error('Error fetching subject details:', err);
-        }
-      };
-      loadSubjectDetails();
+      loadSubjectWithTeachers();
     }
-  }, [subjectId]);
+  }, [subjectId, t]);
 
   const handleGoBack = () => {
     navigation.goBack();
@@ -94,6 +72,153 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
     navigation.navigate('TeacherSubPage', { teacherId });
   };
 
+  // translate study type
+  const translateStudyType = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'full-time': return t('full_time');
+      case 'part-time': return t('part_time');
+      case 'distance': return t('distance');
+      case 'online': return t('online');
+      default: return type;
+    }
+  };
+
+  // translate semester
+  const translateSemester = (semester: string) => {
+    switch (semester.toLowerCase()) {
+      case 'fall': return t('fall_semester');
+      case 'spring': return t('spring_semester');
+      case 'summer': return t('summer_semester');
+      case 'winter': return t('winter_semester');
+      default: return semester;
+    }
+  };
+
+  // translate end type
+  const translateCompletionType = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'exam': return t('exam');
+      case 'credit': return t('credit');
+      case 'classified credit': return t('classified_credit');
+      default: return type;
+    }
+  };
+
+  // langs. formatter
+  const formatLanguages = (languages: string[] | undefined) => {
+    if (!languages || languages.length === 0) return t('not_specified');
+    return languages.join(", ");
+  };
+
+  // grades view
+  const renderGrades = () => {
+    if (!subject) return null;
+
+    return (
+      <YStack space="$2">
+        <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
+          {t('grading_scale')}
+        </Text>
+        <YStack
+          backgroundColor={sectionBackgroundColor}
+          borderRadius={8}
+          padding="$3"
+          space="$2">
+          <XStack justifyContent="space-between">
+            <Text color={headerTextColor} fontSize={textSize}>A:</Text>
+            <Text color={headerTextColor} fontSize={textSize}>{subject.ascore || '—'}</Text>
+          </XStack>
+          <XStack justifyContent="space-between">
+            <Text color={headerTextColor} fontSize={textSize}>B:</Text>
+            <Text color={headerTextColor} fontSize={textSize}>{subject.bscore || '—'}</Text>
+          </XStack>
+          <XStack justifyContent="space-between">
+            <Text color={headerTextColor} fontSize={textSize}>C:</Text>
+            <Text color={headerTextColor} fontSize={textSize}>{subject.cscore || '—'}</Text>
+          </XStack>
+          <XStack justifyContent="space-between">
+            <Text color={headerTextColor} fontSize={textSize}>D:</Text>
+            <Text color={headerTextColor} fontSize={textSize}>{subject.dscore || '—'}</Text>
+          </XStack>
+          <XStack justifyContent="space-between">
+            <Text color={headerTextColor} fontSize={textSize}>E:</Text>
+            <Text color={headerTextColor} fontSize={textSize}>{subject.escore || '—'}</Text>
+          </XStack>
+          <XStack justifyContent="space-between">
+            <Text color={headerTextColor} fontSize={textSize}>FX:</Text>
+            <Text color={headerTextColor} fontSize={textSize}>{subject.FXscore || '—'}</Text>
+          </XStack>
+        </YStack>
+      </YStack>
+    );
+  };
+
+  // teachers view
+  const renderTeachers = () => {
+    if (subjectTeachers.length === 0) return null;
+
+    return (
+      <YStack space="$2">
+        <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
+          {t('instructors_and_roles')}
+        </Text>
+        <YStack space="$2">
+          {subjectTeachers.map((teacher) => {
+            const subjectRoles = teacher.subjects.find(s => s.subjectCode === subject?.code);
+            const roles = subjectRoles?.roles || [];
+
+            return (
+              <YStack
+                key={teacher.id}
+                backgroundColor={sectionBackgroundColor}
+                borderRadius={8}
+                padding="$3"
+                onPress={() => navigateToTeacher(teacher.id)}
+                pressStyle={{ opacity: 0.8 }}>
+                <XStack justifyContent="space-between">
+                  <Text color={headerTextColor} fontSize={textSize} fontWeight="bold">
+                    {teacher.name}
+                  </Text>
+                </XStack>
+                {roles.length > 0 && (
+                  <Text color={accentColor} fontSize={textSize - 1} marginTop="$1">
+                    {roles.join(", ")}
+                  </Text>
+                )}
+                <XStack space="$2" marginTop="$2" flexWrap="wrap">
+                  {teacher.email && (
+                    <Text color={subTextColor} fontSize={textSize - 2}>
+                      📧 {teacher.email}
+                    </Text>
+                  )}
+                  {teacher.phone && (
+                    <Text color={subTextColor} fontSize={textSize - 2}>
+                      📞 {teacher.phone}
+                    </Text>
+                  )}
+                </XStack>
+                {teacher.office && (
+                  <Text color={subTextColor} fontSize={textSize - 2}>
+                    🏢 {t('office')}: {teacher.office}
+                  </Text>
+                )}
+              </YStack>
+            );
+          })}
+        </YStack>
+      </YStack>
+    );
+  };
+
+  const navigateToComments = () => {
+    if (subject) {
+      const Id = subject.code;
+      navigation.navigate('CommentsSubPage', { Id });
+    } else {
+      console.error('Subject is null, cannot navigate to comments.');
+    }
+  };
+
   return (
     <Theme name={isDarkMode ? 'dark' : 'light'}>
       <YStack flex={1} backgroundColor={backgroundColor} padding="$0" alignItems="center">
@@ -101,13 +226,13 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
           {/* Header */}
           <XStack padding="$4" paddingTop="$6" alignItems="center" space="$2">
             <Button
-              icon={<MaterialIcons name="chevron-left" size={24} color="white" />}
+              icon={<MaterialIcons name="chevron-left" size={24} color={isDarkMode ? 'white' : 'black'} />}
               onPress={handleGoBack}
               backgroundColor="transparent"
               color={headerTextColor}
             />
             <H1 fontSize={textSize + 6} fontWeight="bold" color={headerTextColor} flex={1}>
-              Subject Details
+              {t('subject_details')}
             </H1>
           </XStack>
 
@@ -116,7 +241,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
             <YStack justifyContent="center" alignItems="center" flex={1}>
               <Spinner size="large" color={headerTextColor} />
               <Text color={subTextColor} marginTop="$2" fontSize={textSize}>
-                Loading subject details...
+                {t('loading_subject_details')}
               </Text>
             </YStack>
           ) : error ? (
@@ -125,7 +250,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                 {error}
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">
-                Go Back
+                {t('go_back')}
               </Button>
             </YStack>
           ) : subject ? (
@@ -143,40 +268,26 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                   <Text fontSize={textSize + 6} fontWeight="bold" color={headerTextColor}>
                     {subject.name}
                   </Text>
-                  <XStack space="$2">
-                    <Text color={headerTextColor} fontSize={textSize}>
+                  <XStack space="$3" flexWrap="wrap">
+                    <Text color={headerTextColor} fontSize={textSize} fontWeight="bold">
                       {subject.code}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
                       {subject.type}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      {subject.semester}
+                      {translateSemester(subject.semester)}
                     </Text>
                   </XStack>
                   <Text color={accentColor} fontSize={textSize + 2} fontWeight="bold">
-                    {subject.credits} credits
+                    {subject.credits} {t('credits')}
                   </Text>
                 </YStack>
 
-                {/* Description */}
-                {subject.description && (
-                  <YStack space="$2">
-                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
-                      Description
-                    </Text>
-                    <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3">
-                      <Text color={headerTextColor} fontSize={textSize}>
-                        {subject.description}
-                      </Text>
-                    </YStack>
-                  </YStack>
-                )}
-
-                {/* Subject Info */}
+                {/* Basic Information */}
                 <YStack space="$2">
                   <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
-                    Subject Information
+                    {t('basic_information')}
                   </Text>
                   <YStack
                     backgroundColor={sectionBackgroundColor}
@@ -184,127 +295,85 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                     padding="$3"
                     space="$2">
                     <Text color={headerTextColor} fontSize={textSize}>
-                      Study Type: {subject.studyType}
+                      <Text fontWeight="bold">{t('study_type')}:</Text> {translateStudyType(subject.studyType)}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      Completion Type: {subject.completionType}
+                      <Text fontWeight="bold">{t('completion_type')}:</Text> {translateCompletionType(subject.completionType)}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      Student Count: {subject.studentCount}
+                      <Text fontWeight="bold">{t('student_count')}:</Text> {subject.studentCount}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      Assessment: {subject.assesmentMethods}
+                      <Text fontWeight="bold">{t('languages')}:</Text> {formatLanguages(subject.languages)}
                     </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      Evaluation: {subject.evaluationMethods}
-                    </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      Course Contents: {subject.courseContents}
-                    </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      Planned Activities: {subject.plannedActivities}
-                    </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      Learning Outcomes: {subject.learningOutcomes}
-                    </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      Grades: A {subject.a_score || '—'}, B {subject.b_score || '—'}, C{' '}
-                      {subject.c_score || '—'}, D {subject.d_score || '—'}, E{' '}
-                      {subject.e_score || '—'}, Fx {subject.fx_score || '—'}
-                    </Text>
-                    {subject.languages?.length > 0 && (
-                      <Text color={headerTextColor} fontSize={textSize}>
-                        Languages: {subject.languages.join(', ')}
-                      </Text>
-                    )}
-                    {subject.prerequisites?.length > 0 && (
-                      <YStack>
-                        <Text color={headerTextColor} fontSize={textSize}>
-                          Prerequisites:
-                        </Text>
-                        {subject.prerequisites.map((p, i) => (
-                          <Text key={i} color={headerTextColor} fontSize={textSize}>
-                            • {p}
-                          </Text>
-                        ))}
-                      </YStack>
-                    )}
                   </YStack>
                 </YStack>
 
-                {/* Objectives */}
-                {subject.objectives && (
-                  <YStack space="$2">
-                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
-                      Objectives
+                {/* Educational Methods */}
+                <YStack space="$2">
+                  <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
+                    {t('educational_methods')}
+                  </Text>
+                  <YStack
+                    backgroundColor={sectionBackgroundColor}
+                    borderRadius={8}
+                    padding="$3"
+                    space="$2">
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      <Text fontWeight="bold">{t('course_contents')}:</Text> {subject.courseContents}
                     </Text>
-                    <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3">
-                      <Text color={headerTextColor} fontSize={textSize}>
-                        {subject.objectives}
-                      </Text>
-                    </YStack>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      <Text fontWeight="bold">{t('planned_activities')}:</Text> {subject.plannedActivities}
+                    </Text>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      <Text fontWeight="bold">{t('learning_outcomes')}:</Text> {subject.learningOutcomes}
+                    </Text>
                   </YStack>
-                )}
+                </YStack>
 
-                {/* Syllabus */}
-                {subject.syllabus?.length > 0 && (
-                  <YStack space="$2">
-                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
-                      Syllabus
+                {/* Assessment */}
+                <YStack space="$2">
+                  <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
+                    {t('assessment_evaluation')}
+                  </Text>
+                  <YStack
+                    backgroundColor={sectionBackgroundColor}
+                    borderRadius={8}
+                    padding="$3"
+                    space="$2">
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      <Text fontWeight="bold">{t('assessment_methods')}:</Text> {subject.assesmentMethods}
                     </Text>
-                    <YStack
-                      backgroundColor={sectionBackgroundColor}
-                      borderRadius={8}
-                      padding="$3"
-                      space="$2">
-                      {subject.syllabus.map((s, i) => (
-                        <Text key={i} color={headerTextColor} fontSize={textSize}>
-                          {i + 1}. {s}
-                        </Text>
-                      ))}
-                    </YStack>
+                    <Text color={headerTextColor} fontSize={textSize}>
+                      <Text fontWeight="bold">{t('evaluation_methods')}:</Text> {subject.evaluationMethods}
+                    </Text>
                   </YStack>
-                )}
+                </YStack>
 
-                {/* Instructors */}
-                {subject.instructors?.length > 0 && (
-                  <YStack space="$2">
-                    <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
-                      Instructors
-                    </Text>
-                    <YStack space="$2">
-                      {subject.instructors.map((instructor) => (
-                        <YStack
-                          key={instructor.id}
-                          backgroundColor={sectionBackgroundColor}
-                          borderRadius={8}
-                          padding="$3"
-                          onPress={() => navigateToTeacher(instructor.id)}
-                          pressStyle={{ opacity: 0.8 }}>
-                          <XStack justifyContent="space-between">
-                            <Text color={headerTextColor} fontSize={textSize}>
-                              {instructor.name}
-                            </Text>
-                            {instructor.role && (
-                              <Text color={subTextColor} fontSize={textSize - 2}>
-                                {instructor.role}
-                              </Text>
-                            )}
-                          </XStack>
-                        </YStack>
-                      ))}
-                    </YStack>
-                  </YStack>
-                )}
+                {/* Grading Scale */}
+                {renderGrades()}
+
+                {/* Teachers */}
+                {renderTeachers()}
+              </YStack>
+
+              {/* Comments button */}
+              <YStack paddingHorizontal="$1" marginBottom="$5">
+                <Button
+                  onPress={navigateToComments}
+                  backgroundColor={accentColor}
+                  color={isDarkMode ? 'black' : 'white'}>
+                  {t('view_comments')}
+                </Button>
               </YStack>
             </ScrollView>
           ) : (
             <YStack justifyContent="center" alignItems="center" flex={1}>
               <Text color={subTextColor} fontSize={textSize}>
-                Subject not found
+                {t('subject_not_found')}
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">
-                Go Back
+                {t('go_back')}
               </Button>
             </YStack>
           )}

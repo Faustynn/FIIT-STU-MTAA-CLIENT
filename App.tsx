@@ -13,7 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendPushTokenToServer, checkAuthOnStartup, startTokenRefreshTask } from './services/apiService';
 import NotificationService from './services/NotificationService';
 import config from './tamagui.config';
-import { saveAppClosureTime, initOfflineNotifications } from './services/OfflineNotification';
 
 // Components
 import AppNavigator from './navigation/AppNavigator';
@@ -73,34 +72,6 @@ const App = () => {
   const appState = useRef(AppState.currentState);
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
-
-  // Register background task for app closure notifications
-  useEffect(() => {
-    const setupOfflineNotifications = async () => {
-      try {
-        await initOfflineNotifications();
-      } catch (error) {
-        console.error('❌ Error initializing offline notifications:', error);
-      }
-    };
-
-    setupOfflineNotifications();
-  }, []);
-
-  // Track app state for  time
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', async (nextAppState) => {
-      if ((appState.current.match(/active/) && nextAppState.match(/inactive|background/)) || (appState.current.match(/background/) && nextAppState.match(/inactive/))) {
-        await saveAppClosureTime();
-      }
-
-      appState.current = nextAppState;
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   // Init NotificationService
   useEffect(() => {

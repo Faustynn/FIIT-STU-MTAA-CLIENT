@@ -528,7 +528,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               paddingBottom: 24,
               paddingLeft: isLandscape ? 19 : 0,
             }}>
-            
+
             {/* status for admins */}
             {isAdmin && (
               <YStack marginBottom="$3">
@@ -549,12 +549,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                     onPress={handleClearBadges}
                     marginBottom="$2"
                   >
-                    {t('clear_badges')} ({badgeCount})
+                    <Text>
+                      {t('clear_badges')} ({badgeCount})
+                    </Text>
                   </Button>
                 )}
               </YStack>
             )}
-            
+
             {/* News section */}
             <XStack alignItems="center" marginBottom="$3" justifyContent="space-between">
               <XStack alignItems="center">
@@ -568,7 +570,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                   {t('news_upd')}
                 </Text>
               </XStack>
-              
+
               {/* Status indicators for admins */}
               {isAdmin && (
                 connectionStatus === ConnectionStatus.CONNECTED ? (
@@ -589,7 +591,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 )
               )}
             </XStack>
-            
+
             {/* Connection Status Message for admins*/}
             {isAdmin && connectionStatus === ConnectionStatus.CONNECTING && (
               <YStack alignItems="center" marginBottom="$3">

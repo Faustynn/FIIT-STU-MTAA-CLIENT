@@ -17,6 +17,7 @@ import SubjectDetail from '../pages/SubjectDetail';
 import SubjectsPage from '../pages/SubjectsPage';
 import TeacherDetail from '../pages/TeacherDetail';
 import TeachersPage from '../pages/TeachersPage';
+import CommentsSubPage from '../pages/CommentsSubPage';
 
 import '../utils/i18n';
 
@@ -25,6 +26,7 @@ export type AppStackParamList = {
   Main: undefined;
   TeacherSubPage: { teacherId: string | number };
   SubjectSubPage: { subjectId: string | number };
+  CommentsSubPage: { Id: string | number };
   ForgotPasswordPage: undefined;
   RegistratePage: undefined;
 };
@@ -250,6 +252,7 @@ const AppNavigator = ({ initialRoute, setIsAuthenticated }: AppNavigatorProps) =
         </Stack.Screen>
         <Stack.Screen name="TeacherSubPage" component={TeacherDetail} />
         <Stack.Screen name="SubjectSubPage" component={SubjectDetail} />
+        <Stack.Screen name="CommentsSubPage" component={CommentsSubPage} />
       </Stack.Navigator>
     </AuthContext.Provider>
   );

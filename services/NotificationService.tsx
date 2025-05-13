@@ -35,7 +35,7 @@ class NotificationService {
   private lastReceivedNewsIds: Set<string> = new Set(); // Stores IDs of recently received news
 
   // API endpoints
-  private readonly REGISTER_DEVICE_ENDPOINT = `http://147.175.162.157:8080/api/notifications/register-device`;
+  private readonly REGISTER_DEVICE_ENDPOINT = `http://147.175.161.45:8080/api/notifications/register-device`;
 
 
   // Storage keys
