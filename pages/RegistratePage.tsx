@@ -1,12 +1,13 @@
+import { MaterialIcons } from '@expo/vector-icons';
+import { NavigationProp } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { YStack, Input, Button, Text, Theme, XStack, H1 } from "tamagui";
-import { useTheme } from '../components/SettingsController';
-import { Image } from "react-native";
-import { NavigationProp } from "@react-navigation/native";
-import { AppStackParamList } from "../navigation/AppNavigator";
-import { sendRegistrationRequest } from "../services/apiService";
 import { useTranslation } from 'react-i18next';
-import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from 'react-native';
+import { YStack, Input, Button, Text, Theme, XStack, H1 } from 'tamagui';
+
+import { useTheme } from '../components/SettingsController';
+import { AppStackParamList } from '../navigation/AppNavigator';
+import { sendRegistrationRequest } from '../services/apiService';
 
 type RegistrateProps = {
   navigation: NavigationProp<AppStackParamList>;
@@ -61,8 +62,7 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
         alignItems="center"
         justifyContent="center"
         padding="$4"
-        backgroundColor={isDarkMode ? '#191C22' : '$gray50'}
-      >
+        backgroundColor={isDarkMode ? '#191C22' : '$gray50'}>
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Button
             icon={<MaterialIcons name="chevron-left" size={24} color="black" />}
@@ -70,17 +70,10 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
             backgroundColor="transparent"
             color={headerTextColor}
           />
-          <H1
-            fontSize={32}
-            fontWeight="bold"
-            color={isDarkMode ? '#FFFFFF' : '$blue600'}
-          >
+          <H1 fontSize={32} fontWeight="bold" color={isDarkMode ? '#FFFFFF' : '$blue600'}>
             UNIMAP
           </H1>
-          <Image
-            source={require('../assets/icon.png')}
-            style={{ width: 80, height: 80 }}
-          />
+          <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80 }} />
         </XStack>
 
         <YStack
@@ -89,15 +82,13 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
           elevation="$4"
           padding="$6"
           width="100%"
-          maxWidth={400}
-        >
+          maxWidth={400}>
           <Text
             fontSize={20}
             fontWeight="600"
             color={isDarkMode ? '#FFFFFF' : '$gray800'}
             marginBottom="$4"
-            textAlign="center"
-          >
+            textAlign="center">
             {t('registration')}
           </Text>
 
@@ -148,14 +139,14 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
             )}
 
             <Button
+              height={50}
               onPress={handleRegister}
               backgroundColor="#79E3A5"
               hoverStyle={{ backgroundColor: '#66D294' }}
               color="#191C22"
               padding="$3"
               borderRadius="$2"
-              marginTop="$4"
-            >
+              marginTop="$4">
               {t('reg')}
             </Button>
 

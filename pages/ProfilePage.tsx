@@ -159,6 +159,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
 
         <XStack space="$2" justifyContent="space-between">
           <Button
+            height={textSize * 4}
             flex={1}
             backgroundColor={secondaryButtonColor}
             color={buttonTextColor}
@@ -178,6 +179,7 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
           </Button>
 
           <Button
+            height={textSize * 4}
             flex={1}
             backgroundColor={secondaryButtonColor}
             color={buttonTextColor}
@@ -809,6 +811,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   placeholder={user?.email || ''}
                 />
                 <Button
+                  height={textSize * 4}
                   backgroundColor={secondaryButtonColor}
                   color="#000000"
                   fontSize={textSize}
@@ -828,6 +831,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 {t('change_password')}
               </Text>
               <Button
+                height={textSize * 4}
                 backgroundColor={secondaryButtonColor}
                 color="#000000"
                 fontSize={textSize}
@@ -847,6 +851,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
               </Text>
               <XStack space="$3">
                 <Button
+                  height={textSize * 4}
                   flex={1}
                   backgroundColor={secondaryButtonColor}
                   color="#000000"
@@ -858,6 +863,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   {t('d_user')}
                 </Button>
                 <Button
+                  height={textSize * 4}
                   flex={1}
                   backgroundColor={secondaryButtonColor}
                   color="#000000"
@@ -873,6 +879,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
             {/* Logout */}
             <Button
+              height={textSize * 4}
               backgroundColor={dangerButtonColor}
               color="#FFFFFF"
               fontSize={textSize}

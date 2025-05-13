@@ -163,6 +163,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
             )}
 
             <Button
+              height={50}
               onPress={handleNext}
               backgroundColor="#79E3A5"
               hoverStyle={{ backgroundColor: '#66D294' }}

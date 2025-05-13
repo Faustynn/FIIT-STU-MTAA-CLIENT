@@ -181,6 +181,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
             </XStack>
 
             <Button
+              height={50}
               onPress={handleLogin}
               backgroundColor="#79E3A5"
               hoverStyle={{ backgroundColor: '#66D294' }}
