@@ -27,7 +27,6 @@
     "expo": "53.0.9",
     "expo-asset": "~11.1.5",
     "expo-auth-session": "^6.1.5",
-    "expo-background-fetch": "^13.1.5",
     "expo-background-task": "^0.2.7",
     "expo-constants": "~17.1.6",
     "expo-dev-client": "~5.1.8",

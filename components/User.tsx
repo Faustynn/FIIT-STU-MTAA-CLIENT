@@ -176,6 +176,14 @@ export class User {
     return User.setAvatarBase64(base64);
   }
 
+  static async getId(): Promise<boolean>{
+    return User.getId();
+  }
+
+  getId(): number{
+    return this.id;
+  }
+
   getFullName(): string {
     return this.username;
   }

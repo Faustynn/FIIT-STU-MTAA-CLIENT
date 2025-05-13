@@ -545,6 +545,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               paddingBottom: 24,
               paddingLeft: isLandscape ? 19 : 0,
             }}>
+
             {/* status for admins */}
             {isAdmin && (
               <YStack marginBottom="$3">

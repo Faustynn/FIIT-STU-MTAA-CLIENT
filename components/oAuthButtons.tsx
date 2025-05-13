@@ -40,7 +40,7 @@ const OAuthButtons: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
         onPress={handleGoogleLogin}
         disabled={isGoogleLoading}
       >
-        <MaterialCommunityIcons name={'google'} size={24} color={isDarkMode ? '#79E3A5' : '#000000'} />
+        <MaterialCommunityIcons name={'shop'} size={24} color={isDarkMode ? '#79E3A5' : '#000000'} />
         {isGoogleLoading ? 'Loading...' : 'Google'}
       </Button>
       <Button

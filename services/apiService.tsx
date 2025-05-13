@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { User } from '../components/User';
 
 // API URLs
-export const API_URL = 'http://172.20.10.4:8080/api/unimap_pc/';
+export const API_URL = 'http://147.175.161.45:8080/api/unimap_pc/';
 
 const oAuth_LOGIN_URL = `${API_URL}oauth2/login`;
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
@@ -14,7 +14,7 @@ const REGISTR_URL = `${API_URL}register`;
 const FIND_USER_BY_EMAIL_URL = `${API_URL}user/email/`;
 const CONFIRM_CODE_TO_EMAIL = `${API_URL}user/email/code`;
 const CHANGE_PASSWORD = `${API_URL}user/email/password`;
-const SUBJECTS_URL = `${API_URL}resources/subjects`;
+const SUBJECTS_URL =`${API_URL}resources/subjects`;
 const TEACHERS_URL = `${API_URL}resources/teachers`;
 const LOG_URL = `${API_URL}log`;
 const COMMENTS_URL = `${API_URL}comments/`;
@@ -176,9 +176,15 @@ export const sendAuthenticationRequest = async (email: string, password: string)
         //  console.log('Access ', accessToken);
         //  console.log('Refresh ', refreshToken);
         //  console.log('User :', user);
+        await AsyncStorage.clear();
+
         await AsyncStorage.setItem('ACCESS_TOKEN', accessToken);
         await AsyncStorage.setItem('REFRESH_TOKEN', refreshToken);
         await AsyncStorage.setItem('USER_DATA', JSON.stringify(user));
+
+        // Take subject and teacher data
+        fetchSubjects();
+        fetchTeachers();
 
         // Start token refresh task
         startTokenRefreshTask();
@@ -245,12 +251,7 @@ export const oAuth2sendAuthenticationRequest = async (token: string, provider: s
 };
 
 // Send registration request
-export const sendRegistrationRequest = async (
-  login: string,
-  username: string,
-  email: string,
-  password: string
-) => {
+export const sendRegistrationRequest = async (login: string, username: string, email: string, password: string) => {
   try {
     const response = await fetch(REGISTR_URL, {
       method: 'POST',
@@ -331,7 +332,191 @@ export const sendNewPasswordRequest = async (email: string, password: string) =>
   }
 };
 
+
+
+
+
+
+export interface Subject {
+  code: string;
+  name: string;
+  type: string;
+  credits: number;
+  studyType: string;
+  semester: string;
+  languages: string[];
+  completionType: string;
+  studentCount: number;
+  evaluation: string | null;
+  assesmentMethods: string;
+  learningOutcomes: string;
+  courseContents: string;
+  plannedActivities: string;
+  evaluationMethods: string;
+  ascore: string;
+  bscore: string;
+  cscore: string;
+  dscore: string;
+  escore: string;
+  FXscore: string;
+}
+export interface SubjectRole {
+  subjectCode: string;
+  roles: string[];
+}
+export interface Teacher {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  office: string | null;
+  subjects: SubjectRole[];
+}
+
+// parse subject data from JSON
+export const parseSubjects = (data: any): Subject[] => {
+  const subjects: Subject[] = [];
+
+  if (!data || typeof data !== 'object') {
+    console.error('Invalid subjects data format');
+    return subjects;
+  }
+
+  Object.entries(data).forEach(([key, value]: [string, any]) => {
+    try {
+      if (value && typeof value === 'object') {
+        const subject: Subject = {
+          code: value.code || key,
+          name: value.name || '',
+          type: value.type || '',
+          credits: Number(value.credits) || 0,
+          studyType: value.studyType || '',
+          semester: value.semester || '',
+          languages: Array.isArray(value.languages) ? value.languages : [],
+          completionType: value.completionType || '',
+          studentCount: Number(value.studentCount) || 0,
+          evaluation: value.evaluation,
+          assesmentMethods: value.assesmentMethods || '',
+          learningOutcomes: value.learningOutcomes || '',
+          courseContents: value.courseContents || '',
+          plannedActivities: value.plannedActivities || '',
+          evaluationMethods: value.evaluationMethods || '',
+          ascore: value.ascore || '0',
+          bscore: value.bscore || '0',
+          cscore: value.cscore || '0',
+          dscore: value.dscore || '0',
+          escore: value.escore || '0',
+          FXscore: value.FXscore || '0'
+        };
+        subjects.push(subject);
+      }
+    } catch (error) {
+      console.error(`Error parsing subject data for ${key}:`, error);
+    }
+  });
+
+  return subjects;
+};
+// parse teacher datas
+export const parseTeachers = (data: any): Teacher[] => {
+  const teachersMap: Map<string, Teacher> = new Map();
+
+  interface SubjectRole {
+    subjectCode: string;
+    roles: string[];
+  }
+
+  try {
+    let parsedData;
+    if (typeof data === 'string') {
+      try {
+        parsedData = JSON.parse(data);
+      } catch (e) {
+        console.error('Error parsing teacher data string:', e);
+        return [];
+      }
+    } else {
+      parsedData = data;
+    }
+
+    const teachersArray = Array.isArray(parsedData)
+      ? parsedData
+      : (parsedData?.teachers && Array.isArray(parsedData.teachers)
+        ? parsedData.teachers
+        : []);
+
+    teachersArray.forEach((item: any) => {
+      if (item && typeof item === 'object') {
+        const subjectsArray = Array.isArray(item.subjects)  ? item.subjects.map((subject: any) => {
+            let roles: string[] = [];
+            if (Array.isArray(subject.roles)) {
+              roles = subject.roles;
+            } else if (typeof subject.roles === 'string') {
+              const rolesStr = subject.roles.replace(/^\{|\}$/g, '').replace(/\"/g, '');
+              roles = rolesStr.split(',').map((role: string) => role.trim());
+            }
+
+            return {
+              subjectCode: subject.subjectName || '',
+              roles: roles,
+            };
+          })
+          : [];
+
+        const teacherId = item.id.toString();
+
+        // Check if we have this teacher
+        if (teachersMap.has(teacherId)) {
+          // Merge subjects with existing teacher record
+          const existingTeacher = teachersMap.get(teacherId)!;
+          const existingSubjectMap = new Map<string, SubjectRole>();
+
+          existingTeacher.subjects.forEach((subject: SubjectRole) => {
+            existingSubjectMap.set(subject.subjectCode, subject);
+          });
+
+          // Merge new subjects
+          subjectsArray.forEach((newSubject: SubjectRole) => {
+            if (existingSubjectMap.has(newSubject.subjectCode)) {
+              // Merge roles
+              const existingSubject = existingSubjectMap.get(newSubject.subjectCode);
+              const uniqueRoles = new Set([...(existingSubject?.roles || []), ...newSubject.roles]);
+              if (existingSubject) {
+                existingSubject.roles = Array.from(uniqueRoles);
+              }
+            } else {
+              // Add new subject
+              existingTeacher.subjects.push(newSubject);
+            }
+          });
+        } else {
+          // Create new teacher record
+          teachersMap.set(teacherId, {
+            id: Number(item.id) || 0,
+            name: item.name || '',
+            email: item.email || '',
+            phone: item.phone || '',
+            office: item.office || null,
+            subjects: subjectsArray,
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error parsing teachers data:', error);
+  }
+  return Array.from(teachersMap.values());
+};
+
+
+
 export const fetchSubjects = async (): Promise<Subject[]> => {
+  const cachedData = await AsyncStorage.getItem('CACHED_SUBJECTS');
+  if (cachedData) {
+    console.log(' Using cached subjects data from AsyncStorage');
+    return JSON.parse(cachedData);
+  }
+  console.log(' No cached data found, fetching from server...');
   const accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
   if (!accessToken) throw new Error('No access token');
 
@@ -353,92 +538,43 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
         throw new Error(`❌ Failed (status ${response.status}): ${text}`);
       }
 
-      const json = await response.json();
-      return parseSubjects(json.subjects || []);
+      const rawData = await response.json();
+      const subjects = parseSubjects(rawData);
+
+      await AsyncStorage.setItem('CACHED_SUBJECTS', JSON.stringify(subjects));
+      console.log('💾 Subjects data cached to AsyncStorage');
+
+      return subjects;
     } catch (err) {
       attempt++;
-      console.log(
-        '[ERROR] fetchSubjects failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...'
+      console.log('[ERROR] fetchSubjects failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...'
       );
       await new Promise((res) => setTimeout(res, 15000));
     }
   }
-
   throw new Error(`fetchSubjects failed after ${maxAttempts} attempts`);
+
 };
-
-export interface Subject {
-  code: string;
-  name: string;
-  type: string;
-  credits: number;
-  studyType: string;
-  semester: string;
-  languages: string[];
-  completionType: string;
-  studentCount: number;
-  assesmentMethods: string;
-  learningOutcomes: string;
-  courseContents: string;
-  plannedActivities: string;
-  evaluationMethods: string;
-  guarantor: string;
-  a_score: string;
-  b_score: string;
-  c_score: string;
-  d_score: string;
-  e_score: string;
-  fx_score: string;
-  description: string;
-  objectives: string;
-  prerequisites: string[];
-  syllabus: string[];
-  instructors: Instructor[];
-}
-
-export interface Instructor {
-  id: number | string;
-  name: string;
-  role?: string;
-}
-
-export const parseSubjects = (raw: any[]): Subject[] => {
-  return raw.map((s) => ({
-    code: s.code ?? '',
-    name: s.name ?? '',
-    type: s.type ?? '',
-    credits: Number(s.credits ?? 0),
-    studyType: s.studyType ?? s.study_type ?? '',
-    semester: s.semester ?? '',
-    languages: Array.isArray(s.languages) ? s.languages.map((l: string) => l.trim()) : [],
-    completionType: s.completionType ?? s.completion_type ?? '',
-    studentCount: Number(s.studentCount ?? s.student_count ?? 0),
-    assesmentMethods: s.assesmentMethods ?? s.assessment_methods ?? '',
-    learningOutcomes: s.learningOutcomes ?? s.learning_outcomes ?? '',
-    courseContents: s.courseContents ?? s.course_contents ?? '',
-    plannedActivities: s.plannedActivities ?? s.planned_activities ?? '',
-    evaluationMethods: s.evaluationMethods ?? '',
-    guarantor: s.guarantor ?? '',
-    a_score: s.a_score ?? s.ascore ?? '',
-    b_score: s.b_score ?? s.bscore ?? '',
-    c_score: s.c_score ?? s.cscore ?? '',
-    d_score: s.d_score ?? s.dscore ?? '',
-    e_score: s.e_score ?? s.escore ?? '',
-    fx_score: s.fx_score ?? '',
-    description: s.description ?? '',
-    objectives: s.objectives ?? '',
-    prerequisites: [],
-    syllabus: [],
-    instructors: [],
-  }));
-};
-
 export const fetchSubjectDetails = async (subjectId: string | number): Promise<Subject> => {
+  const cachedData = await AsyncStorage.getItem('CACHED_SUBJECTS');
+  if (cachedData) {
+    const subjects = JSON.parse(cachedData) as Subject[];
+    const found = subjects.find((s) => s.code.toString() === subjectId.toString());
+
+    if (found) {
+      console.log(` Found subject ${subjectId} in cached data`);
+      return found;
+    }
+  }
+
+  console.log(` Subject ${subjectId} not found in cache, fetching from server...`);
   let attempt = 0;
-  while (true) {
+  const maxAttempts = 10;
+
+  while (attempt < maxAttempts) {
     try {
-      const allSubjects = await fetchSubjects();
-      const found = allSubjects.find((s) => s.code.toString() === subjectId.toString());
+      const subjects = await fetchSubjects();
+      const found = subjects.find((s) => s.code.toString() === subjectId.toString());
       if (!found) throw new Error('Subject not found by code: ' + subjectId);
       return found;
     } catch (err) {
@@ -448,55 +584,139 @@ export const fetchSubjectDetails = async (subjectId: string | number): Promise<S
         err
       );
       await new Promise((res) => setTimeout(res, 15000));
+
+      if (attempt >= maxAttempts) {
+        throw new Error(` fetchSubjectDetails failed after ${maxAttempts} attempts`);
+      }
     }
   }
+  throw new Error('Subject not found');
 };
 
-export const fetchTeachers = async () => {
+export const fetchTeachers = async (): Promise<Teacher[]> => {
+  const cachedTeachers = await AsyncStorage.getItem('CACHED_TEACHERS');
+  if (cachedTeachers) {
+    console.log(' Using cached teachers data from AsyncStorage');
+    try {
+      return JSON.parse(cachedTeachers);
+    } catch (err) {
+      console.error('Error parsing cached teachers data, will fetch from server', err);
+    }
+  }
+
+  console.log(' No cached teachers found, fetching from server...');
   let attempt = 0;
-  while (true) {
+  const maxAttempts = 10;
+
+  while (attempt < maxAttempts) {
     try {
       const token = await AsyncStorage.getItem('ACCESS_TOKEN');
       if (!token) throw new Error('No access token available');
+
       const response = await fetch(TEACHERS_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
+
       if (!response.ok) throw new Error(`Failed to fetch teachers: ${response.status}`);
+
       const json = await response.json();
-      return json.teachers || [];
+      console.log('Received teachers data format:', typeof json);
+      const teachers = parseTeachers(json);
+
+      await AsyncStorage.setItem('CACHED_TEACHERS', JSON.stringify(teachers));
+      console.log(' Teachers data cached to AsyncStorage');
+
+      return teachers;
     } catch (err) {
       attempt++;
       console.log('[ERROR] fetchTeachers failed (attempt ${attempt}), retrying in 15s...', err);
+
       await new Promise((res) => setTimeout(res, 15000));
+
+      if (attempt >= maxAttempts) {
+        throw new Error(` fetchTeachers failed after ${maxAttempts} attempts`);
+      }
     }
   }
+  throw new Error('Failed to fetch teachers');
 };
+export const fetchTeacherDetails = async (teacherId: string | number): Promise<Teacher> => {
+  // First check cache
+  const cachedTeachers = await AsyncStorage.getItem('CACHED_TEACHERS');
+  if (cachedTeachers) {
+    const teachers = JSON.parse(cachedTeachers);
+    const found = teachers.find((t: Teacher) => t.id.toString() === teacherId.toString());
 
-export const fetchTeacherDetails = async (teacherId: string | number) => {
+    if (found) {
+      console.log(`📦 Found teacher ${teacherId} in cached data`);
+      return found;
+    }
+  }
+
+  // If not found in cache, fetch from server
+  console.log(`🔄 Teacher ${teacherId} not found in cache, fetching from server...`);
   let attempt = 0;
-  while (true) {
-    try {
-      console.log('🔍 Fetching teacher from list by ID:', teacherId);
+  const maxAttempts = 10;
 
+  while (attempt < maxAttempts) {
+    try {
       const allTeachers = await fetchTeachers();
-      const found = allTeachers.find((t: any) => t.id.toString() === teacherId.toString());
+      const found = allTeachers.find((t: Teacher) => t.id.toString() === teacherId.toString());
 
       if (!found) throw new Error('Teacher not found by ID: ' + teacherId);
 
       return found;
     } catch (err) {
       attempt++;
-      console.log(
-        '[ERROR] fetchTeacherDetails failed (attempt ${attempt}), retrying in 15s...',
+      console.log('[ERROR] fetchTeacherDetails failed (attempt ${attempt}), retrying in 15s...',
         err
       );
       await new Promise((res) => setTimeout(res, 15000));
+
+      if (attempt >= maxAttempts) {
+        throw new Error(`❌ fetchTeacherDetails failed after ${maxAttempts} attempts`);
+      }
     }
   }
+
+  throw new Error('Teacher not found');
 };
+
+export const getTeachersForSubject = async (subjectCode: string): Promise<Teacher[]> => {
+  const allTeachers = await fetchTeachers();
+
+  return allTeachers.filter(teacher => teacher.subjects.some(subject => subject.subjectCode === subjectCode)
+  );
+};
+export const getSubjectsForTeacher = async (teacherId: number | string): Promise<{subject: Subject, roles: string[]}[]> => {
+  const teacher = await fetchTeacherDetails(teacherId);
+  const allSubjects = await fetchSubjects();
+  const result: {subject: Subject, roles: string[]}[] = [];
+
+  for (const teacherSubject of teacher.subjects) {
+    const subject = allSubjects.find(s => s.code === teacherSubject.subjectCode);
+    if (subject) {
+      result.push({
+        subject,
+        roles: teacherSubject.roles
+      });
+    }
+  }
+
+  return result;
+};
+
+
+
+
+
+
+
+
+
 
 export const buyPremium = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
@@ -638,11 +858,7 @@ export const changeUserName = async (email: string | undefined, newName: string)
 };
 
 // Change user avatar
-export const updateUserAvatar = async (
-  userId: number | undefined,
-  base64ImageData: string,
-  fileName: string | undefined
-) => {
+export const updateUserAvatar = async (userId: number | undefined, base64ImageData: string, fileName: string | undefined) => {
   if (!userId || !base64ImageData || !fileName) return false;
 
   try {
@@ -706,77 +922,62 @@ export const updateUserAvatar = async (
   }
 };
 
-interface TeacherSubject {
-  subjectName: string;
-  roles: string[];
-}
 
-interface ParsedTeacher {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  office: string | null;
-  subjects: TeacherSubject[];
-}
 
-interface TeacherSubject {
-  subjectName: string;
-  roles: string[];
-}
 
-interface ParsedTeacher {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  office: string | null;
-  subjects: TeacherSubject[];
-}
 
-export const parseTeachers = (raw: any[]): ParsedTeacher[] => {
-  if (!Array.isArray(raw)) return [];
 
-  const teacherMap = new Map<string, ParsedTeacher>();
+// Fetch all comments for a specific teacher
+export const get_all_teachers_comments = async (teacherId: number | string): Promise<any> => {
+  if (!teacherId) return false;
 
-  raw.forEach((t) => {
-    const id = String(t.id ?? '');
-    const name = t.name ?? '';
-    const email = t.email ?? null;
-    const phone = t.phone ?? null;
-    const office = t.office ?? null;
+  try {
+    const response = await fetch(`${ALL_TEACHERS_URL}${teacherId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
+    });
 
-    const parsedSubjects: TeacherSubject[] = Array.isArray(t.subjects)
-      ? t.subjects.map((s: any) => ({
-          subjectName: s.subjectName ?? '',
-          roles: Array.isArray(s.roles)
-            ? s.roles.flatMap((r: string) =>
-                r
-                  .replace(/[{}]/g, '')
-                  .replace(/^"|"$/g, '')
-                  .split(',')
-                  .map((x) => x.trim())
-                  .filter(Boolean)
-              )
-            : [],
-        }))
-      : [];
-
-    if (teacherMap.has(id)) {
-      teacherMap.get(id)!.subjects.push(...parsedSubjects);
+    if (response.ok) {
+      const json = await response.json();
+     // console.log('ALL TEACHERS:', json);
+      return json;
     } else {
-      teacherMap.set(id, {
-        id,
-        name,
-        email,
-        phone,
-        office,
-        subjects: parsedSubjects,
-      });
+      console.error(`Fetch all teacher comments failed with status code: ${response.status}`);
+      return false;
     }
-  });
+  } catch (error) {
+    console.error('Fetch all teacher comments request failed:', error);
+    return false;
+  }
+  return true;
+};
+// Add new comment for teacher
+export const add_new_commet_teachers = async (jsonBody: { code: string | number; user_id: number; rating: number | string; text: string; levelAccess: number; }): Promise<boolean> => {
+  if (!jsonBody) return false;
 
-  return Array.from(teacherMap.values());
+  try {
+    const response = await fetch(`${ADD_TEACHERS_COMMENT_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
+      body: JSON.stringify(jsonBody),
+    });
+
+    if (response.status === 201) {
+      return true;
+    } else {
+      console.error(`Fetch all teacher comments failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Fetch all teacher comments request failed:', error);
+    return false;
+  }
+  return true;
 };
 
 export const sendTempLogin = async (idUser: number, deleteInMinutes: number) => {
@@ -811,5 +1012,103 @@ export const getUserIdByEmail = async (email: string): Promise<number | null> =>
     return id;
   } catch (error) {
     return null;
+  }
+};
+
+
+//Delete comment for teacher
+export const delete_teacher_comment = async (comment_id: number): Promise<any> => {
+  if (!comment_id) return false;
+
+  try {
+    const response = await fetch(`${DELETE_TEACHERS_COMMENT_URL}${comment_id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(`Delete teacher comments failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Delete teacher comments request failed:', error);
+    return false;
+  }
+};
+
+
+// Fetch all comments for a specific subject
+export const get_all_subjects_comments = async (subjectId: number | string): Promise<any> => {
+  if (!subjectId) return false;
+
+  try {
+    const response = await fetch(`${ALL_SUBJECTS_URL}${subjectId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+     // console.log('ALL SUBJECTS:', json);
+      return json;
+    } else {
+      console.error(`Fetch all subjects comments failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Fetch all subjects comments request failed:', error);
+    return false;
+  }
+  return true;
+};
+// Add new comment for subject
+export const add_new_commet_subjects = async (jsonBody: { code: string | number; user_id: number; rating: number | string; text: string; levelAccess: number; }): Promise<boolean> => {
+  if (!jsonBody) return false;
+
+  try {
+    const response = await fetch(`${ADD_SUBJECTS_COMMENT_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+      },
+      body: JSON.stringify(jsonBody),
+    });
+
+    if (response.status === 201) {
+      return true;
+    } else {
+      console.error(`Fetch all teacher comments failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Fetch all teacher comments request failed:', error);
+    return false;
+  }
+
+  return true;
+};
+//Delete comment for subject
+export const delete_subject_comment = async (teacherId: number): Promise<any> => {
+  if (!teacherId) return false;
+
+  try {
+    const response = await fetch(`${DELETE_SUBJECTS_COMMENT_URL}${teacherId}`, {
+      method: 'DELETE',
+
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(`Delete subject comments failed with status code: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Delete subject comments request failed:', error);
+    return false;
   }
 };

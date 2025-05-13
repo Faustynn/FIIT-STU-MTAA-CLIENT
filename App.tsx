@@ -24,13 +24,11 @@ import config from './tamagui.config';
 
 // Components
 
-// Prevent the splash screen from auto-hiding
+// Prevent splash screens from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
-  /* reloading the app might trigger some race conditions, ignore them */
 });
 
 const BACKGROUND_TASK = 'background-task-news';
-const NEWS_FETCH_INTERVAL = 1;
 
 // background task
 TaskManager.defineTask(BACKGROUND_TASK, async () => {
@@ -94,34 +92,6 @@ const App = () => {
     };
   }, []);
 
-  // Register background task
-  useEffect(() => {
-    const registerBackgroundTask = async () => {
-      try {
-        // Check if the task is already registered
-        const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_TASK);
-
-        if (!isRegistered) {
-          console.log('Registering background task');
-
-          // Define the task logic
-          TaskManager.defineTask(BACKGROUND_TASK, async () => {
-            console.log('Executing background task');
-            // Add your background task logic here
-          });
-
-          console.log('Background task defined successfully');
-        } else {
-          console.log('Background task is already registered');
-        }
-      } catch (error) {
-        console.log('[ERROR] Error registering background task:', error);
-      }
-    };
-
-    registerBackgroundTask();
-  }, []);
-
   // Start background task
   useEffect(() => {
     const initializeAuth = async () => {
@@ -174,7 +144,7 @@ const App = () => {
 
     resetBadgeCount();
 
-    const requestNotificationPermissions = async () => {
+    const requestNotificationPermissionsAndToken = async () => {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -200,7 +170,7 @@ const App = () => {
       }
     };
 
-    requestNotificationPermissions();
+    requestNotificationPermissionsAndToken();
 
     notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
       console.log('Notification received:', notification);

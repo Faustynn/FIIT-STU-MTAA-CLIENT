@@ -55,18 +55,30 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
   }, []);
 
   useEffect(() => {
-    if (!initialTeachers) {
+    if (!initialTeachers && teachers.length === 0) {
       const loadTeachers = async () => {
         try {
           setLoading(true);
           const data = await fetchTeachers();
-          const parsed = parseTeachers(data);
-          setTeachers(parsed);
-          setError(null);
-          setLoading(false);
+          if (data && Array.isArray(data)) {
+            const parsed = parseTeachers(data).map((teacher) => ({
+              ...teacher,
+              id: teacher.id.toString(),
+              subjects: teacher.subjects.map((subject) => ({
+                subjectName: subject.subjectCode || '',
+                roles: subject.roles || [],
+              })),
+            }));
+            setTeachers(parsed);
+            setError(null);
+          } else {
+            setError(t('invalid_data_format'));
+          }
         } catch (err) {
           setError(t('no_data_found'));
-          console.log('[ERROR] Error fetching teachers:', err);
+          console.error('Error fetching teachers:', err);
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -91,6 +103,12 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
     return matchesSearch && matchesRole;
   });
 
+  const handleRetryLoad = () => {
+    setError(null);
+    setLoading(true);
+    setTeachers([]);
+  };
+
   if (loading) {
     return (
       <YStack
@@ -99,6 +117,9 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
         alignItems="center"
         backgroundColor={backgroundColor}>
         <Spinner size="large" color={headerTextColor} />
+        <Text color={subTextColor} marginTop="$4">
+          {t('loading_teachers')}
+        </Text>
       </YStack>
     );
   }
@@ -217,6 +238,9 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                   <Text color="$red10" fontSize={textSize}>
                     {error}
                   </Text>
+                  <Button onPress={handleRetryLoad} marginTop="$4">
+                    {t('retry')}
+                  </Button>
                 </YStack>
               ) : filteredTeachers.length === 0 ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
@@ -243,15 +267,12 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                         <Text color={subTextColor} fontSize={textSize - 1}>
                           {t('ais_id')}: {teacher.id}
                         </Text>
-                        {/* <Text color={subTextColor} fontSize={textSize - 1}>
-                          {teacher.rating}
-                        </Text> */}
                       </XStack>
-                      {/* {teacher.department && (
+                      {teacher.office && (
                         <Text color={subTextColor} fontSize={textSize - 1}>
-                          {t('department')}: {teacher.department}
+                          {t('office')}: {teacher.office}
                         </Text>
-                      )} */}
+                      )}
                     </YStack>
                   ))}
                 </YStack>

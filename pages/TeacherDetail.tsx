@@ -1,34 +1,34 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { Linking, useWindowDimensions } from "react-native";
 import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } from 'tamagui';
-
+import { useTranslation } from 'react-i18next';
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { fetchTeacherDetails } from '../services/apiService';
+import { fetchTeacherDetails, fetchSubjectDetails, getSubjectsForTeacher, Teacher as ApiTeacher, Subject } from '../services/apiService';
 
 type TeacherDetailProps = {
   route: RouteProp<AppStackParamList, 'TeacherSubPage'>;
   navigation: NavigationProp<AppStackParamList>;
 };
 
+interface TeacherSubject {
+  subject: Subject;
+  roles: string[];
+}
+
 export interface ParsedTeacher {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone: string;
-  office: string;
-  aisId: string;
-  roles: string[];
-  rating: number;
-  department: string;
-  consultationHours: string;
-  bio: string;
-  subjects: { id: string | number; name: string; code: string }[];
+  office: string | null;
+  subjects: TeacherSubject[];
 }
 
 const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
+  const { t } = useTranslation();
   const { theme, fontSize, highContrast } = useTheme();
   const textSize = getFontSizeValue(fontSize);
   const isDarkMode = theme === 'dark';
@@ -49,33 +49,92 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
   useEffect(() => {
     if (teacherId) {
       const loadTeacherDetails = async () => {
-        while (true) {
-          try {
-            setLoading(true);
-            const data = await fetchTeacherDetails(teacherId);
-            console.log('Fetched teacher:', data);
-            setTeacher(data as ParsedTeacher);
-            setError(null);
-            setLoading(false);
-            break;
-          } catch (err) {
-            console.log('[ERROR] Error fetching teacher details:', err);
-            setError('Failed to load teacher details. Retrying...');
-            await new Promise((res) => setTimeout(res, 15000));
-          }
+        try {
+          setLoading(true);
+
+          const teacherData = await fetchTeacherDetails(teacherId);
+          const subjectsWithRoles = await getSubjectsForTeacher(teacherId);
+
+          const parsedTeacher: ParsedTeacher = {
+            id: teacherData.id,
+            name: teacherData.name,
+            email: teacherData.email,
+            phone: teacherData.phone,
+            office: teacherData.office,
+            subjects: subjectsWithRoles,
+          };
+
+          setTeacher(parsedTeacher);
+          setError(null);
+          setLoading(false);
+        } catch (err) {
+          console.error('Error fetching teacher details:', err);
+          setError(t('failed_load_teacher_details'));
+
+          // Retry after 15 secs
+          setTimeout(() => loadTeacherDetails(), 15000);
         }
       };
 
       loadTeacherDetails();
     }
-  }, [teacherId]);
+  }, [teacherId, t]);
 
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  const navigateToSubject = (subjectId: number | string) => {
+  const navigateToSubject = (subjectId: string) => {
     navigation.navigate('SubjectSubPage', { subjectId });
+  };
+
+  const getRolesBadges = (roles: string[]) => {
+    return (
+      <XStack flexWrap="wrap" gap="$1" marginTop="$1">
+        {roles.map((role, index) => (
+          <View
+            key={`${role}-${index}`}
+            backgroundColor={isDarkMode ? '#343B4A' : '#E1E8F0'}
+            borderRadius={6}
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            marginBottom="$1">
+            <Text fontSize={textSize - 2} color={headerTextColor}>{role}</Text>
+          </View>
+        ))}
+      </XStack>
+    );
+  };
+
+  const accentColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '$blue500';
+
+  const navigateToComments = () => {
+    if (teacher) {
+      const Id = teacher.id;
+      navigation.navigate('CommentsSubPage', { Id });
+    } else {
+      console.error('Teacher is null, cannot navigate to comments.');
+    }
+  };
+
+  const translateStudyType = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'full-time': return t('full_time');
+      case 'part-time': return t('part_time');
+      case 'distance': return t('distance');
+      case 'online': return t('online');
+      default: return type;
+    }
+  };
+
+  const translateSemester = (semester: string) => {
+    switch (semester.toLowerCase()) {
+      case 'fall': return t('fall_semester');
+      case 'spring': return t('spring_semester');
+      case 'summer': return t('summer_semester');
+      case 'winter': return t('winter_semester');
+      default: return semester;
+    }
   };
 
   return (
@@ -85,13 +144,13 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
           {/* Header with back button */}
           <XStack padding="$4" paddingTop="$6" alignItems="center" space="$2">
             <Button
-              icon={<MaterialIcons name="chevron-left" size={24} color="white" />}
+              icon={<MaterialIcons name="chevron-left" size={24} color={isDarkMode ? 'white' : 'black'} />}
               onPress={handleGoBack}
               backgroundColor="transparent"
               color={headerTextColor}
             />
             <H1 fontSize={textSize + 5} fontWeight="bold" color={headerTextColor} flex={1}>
-              Teacher Details
+              {t('teacher_details')}
             </H1>
           </XStack>
 
@@ -100,7 +159,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
             <YStack justifyContent="center" alignItems="center" flex={1}>
               <Spinner size="large" color={headerTextColor} />
               <Text color={subTextColor} marginTop="$2">
-                Loading teacher details...
+                {t('loading_teacher_details')}
               </Text>
             </YStack>
           ) : error ? (
@@ -109,7 +168,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                 {error}
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">
-                Go Back
+                {t('go_back')}
               </Button>
             </YStack>
           ) : teacher ? (
@@ -126,43 +185,25 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                     {teacher.name}
                   </Text>
                   <XStack space="$2">
-                    {teacher.roles?.length > 0 && (
-                      <View
-                        backgroundColor={isDarkMode ? '#343B4A' : '#E1E8F0'}
-                        borderRadius={6}
-                        paddingHorizontal="$2"
-                        paddingVertical="$1">
-                        <Text color={headerTextColor}>{teacher.roles.join(', ')}</Text>
-                      </View>
-                    )}
-                    {teacher.department && (
-                      <View
-                        backgroundColor={isDarkMode ? '#343B4A' : '#E1E8F0'}
-                        borderRadius={6}
-                        paddingHorizontal="$2"
-                        paddingVertical="$1">
-                        <Text color={headerTextColor}>{teacher.department}</Text>
-                      </View>
-                    )}
-                  </XStack>
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text color={subTextColor} fontSize={textSize - 1}>
-                      AIS ID: {teacher.id}
-                    </Text>
                     <View
                       backgroundColor={isDarkMode ? '#343B4A' : '#E1E8F0'}
                       borderRadius={6}
                       paddingHorizontal="$2"
                       paddingVertical="$1">
-                      <Text color={headerTextColor}>Rating: {teacher.rating}</Text>
+                      <Text color={headerTextColor}>{t('teacher')}</Text>
                     </View>
+                  </XStack>
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text color={subTextColor} fontSize={textSize - 1}>
+                      {t('id')}: {teacher.id}
+                    </Text>
                   </XStack>
                 </YStack>
 
                 {/* Contact Information */}
                 <YStack space="$2">
                   <Text fontSize={textSize + 1} fontWeight="bold" color={headerTextColor}>
-                    Contact Information
+                    {t('contact_information')}
                   </Text>
                   <YStack
                     backgroundColor={sectionBackgroundColor}
@@ -170,19 +211,31 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                     padding="$3"
                     space="$2">
                     {teacher.email && (
-                      <XStack space="$2">
+                      <XStack space="$2" alignItems="center">
                         <Text color={subTextColor} fontSize={textSize - 1} width={80}>
-                          Email:
+                          {t('email')}:
                         </Text>
-                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
+                        <Text
+                          color={headerTextColor}
+                          fontSize={textSize - 1}
+                          flex={1}>
                           {teacher.email}
                         </Text>
+                        <Button
+                          onPress={() => Linking.openURL(`mailto:${teacher.email}`)}
+                          backgroundColor={accentColor}
+                          paddingHorizontal="$3"
+                          paddingVertical="$1">
+                          <Text color={isDarkMode ? 'black' : 'white'} fontSize={textSize - 1}>
+                            {t('send_email')}
+                          </Text>
+                        </Button>
                       </XStack>
                     )}
                     {teacher.phone && (
                       <XStack space="$2">
                         <Text color={subTextColor} fontSize={textSize - 1} width={80}>
-                          Phone:
+                          {t('phone')}:
                         </Text>
                         <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.phone}
@@ -192,77 +245,83 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                     {teacher.office && (
                       <XStack space="$2">
                         <Text color={subTextColor} fontSize={textSize - 1} width={80}>
-                          Office:
+                          {t('office')}:
                         </Text>
                         <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.office}
                         </Text>
                       </XStack>
                     )}
-                    {teacher.consultationHours && (
-                      <XStack space="$2" alignItems="flex-start">
-                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
-                          Consultation:
-                        </Text>
-                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
-                          {teacher.consultationHours}
-                        </Text>
-                      </XStack>
-                    )}
                   </YStack>
                 </YStack>
-
-                {/* Bio/About */}
-                {teacher.bio && (
-                  <YStack space="$2">
-                    <Text fontSize={textSize + 1} fontWeight="bold" color={headerTextColor}>
-                      About
-                    </Text>
-                    <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3">
-                      <Text color={headerTextColor} fontSize={textSize - 1}>
-                        {teacher.bio}
-                      </Text>
-                    </YStack>
-                  </YStack>
-                )}
 
                 {/* Subjects Taught */}
                 {teacher.subjects && teacher.subjects.length > 0 && (
                   <YStack space="$2">
                     <Text fontSize={textSize + 1} fontWeight="bold" color={headerTextColor}>
-                      Subjects Taught
+                      {t('subjects_taught')}
                     </Text>
                     <YStack space="$2">
-                      {teacher.subjects.map((subject, index) => (
+                      {teacher.subjects.map((item, index) => (
                         <YStack
-                          key={`${subject.id}-${index}`}
+                          key={`${item.subject.code}-${index}`}
                           backgroundColor={sectionBackgroundColor}
                           borderRadius={8}
                           padding="$3"
-                          onPress={() => navigateToSubject(subject.id)}
+                          onPress={() => navigateToSubject(item.subject.code)}
                           pressStyle={{ opacity: 0.8 }}>
                           <XStack justifyContent="space-between">
-                            <Text color={headerTextColor} fontSize={textSize}>
-                              {subject.name}
+                            <Text color={headerTextColor} fontSize={textSize} fontWeight="bold">
+                              {item.subject.name}
                             </Text>
                             <Text color={subTextColor} fontSize={textSize - 2}>
-                              {subject.code}
+                              {item.subject.code}
                             </Text>
                           </XStack>
+
+                          {/* Subject details */}
+                          <YStack marginTop="$1">
+                            <XStack flexWrap="wrap" space="$1">
+                              <Text color={subTextColor} fontSize={textSize - 2}>
+                                {item.subject.credits} {t('credits')} • {translateSemester(item.subject.semester)} • {translateStudyType(item.subject.studyType)}
+                              </Text>
+                            </XStack>
+                          </YStack>
+
+                          {/* Teacher roles */}
+                          {item.roles.length > 0 && (
+                            <YStack marginTop="$1">
+                              <Text color={subTextColor} fontSize={textSize - 2} marginBottom="$1">
+                                {t('roles')}:
+                              </Text>
+                              {getRolesBadges(item.roles)}
+                            </YStack>
+                          )}
                         </YStack>
                       ))}
                     </YStack>
                   </YStack>
                 )}
               </YStack>
+
+              {/* Comments button */}
+              <YStack paddingHorizontal="$1" marginTop="$5">
+                <Button
+                  onPress={navigateToComments}
+                  backgroundColor={accentColor}
+                  color={isDarkMode ? 'black' : 'white'}>
+                  {t('view_comments')}
+                </Button>
+              </YStack>
+
             </ScrollView>
           ) : (
             <YStack justifyContent="center" alignItems="center" flex={1}>
               <Text color={subTextColor} fontSize={textSize}>
-                Teacher not found
+                {t('teacher_not_found')}
               </Text>
               <Button onPress={handleGoBack} marginTop="$4">
-                Go Back
+                {t('go_back')}
               </Button>
             </YStack>
           )}
