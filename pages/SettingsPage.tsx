@@ -347,7 +347,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
                     </Text>
                     <View style={styles.settingRow}>
                       <Text style={{ fontSize: textSize, color: textColor }}>
-                        {t('Enable contrast')}
+                        {t('enable_contrast')}
                       </Text>
                       <Switch
                         value={highContrast}
