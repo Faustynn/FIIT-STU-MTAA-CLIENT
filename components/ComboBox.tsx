@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, ViewStyle } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 
 import { useTheme, getFontSizeValue } from './SettingsController';
@@ -12,6 +12,7 @@ type ComboBoxProps = {
   placeholder: string;
   labelColor: string;
   textColor: string;
+  style?: ViewStyle;
 };
 
 export const ComboBox = ({
@@ -21,6 +22,7 @@ export const ComboBox = ({
   placeholder,
   labelColor,
   textColor,
+  style,
 }: ComboBoxProps) => {
   const { theme, fontSize, highContrast } = useTheme();
 
@@ -29,14 +31,13 @@ export const ComboBox = ({
 
   const bgColor = highContrast ? '#000000' : isDarkMode ? '#262A35' : '#FFFFFF';
 
-
   const selectedBgColor = highContrast ? '#333333' : isDarkMode ? '#3A3F4B' : '#E0E0E0';
 
   const labelTextColor = highContrast ? '#FFD700' : labelColor;
   const itemTextColor = highContrast ? '#FFD700' : textColor;
 
   return (
-    <YStack space="$2">
+    <YStack space="$2" style={style}>
       <Text color={labelTextColor} fontSize={textSize - 2}>
         {placeholder}
       </Text>

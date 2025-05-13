@@ -54,11 +54,7 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
 
   return (
     <Theme name={theme}>
-      <View
-        style={[
-          styles.settingCard,
-          { backgroundColor: cardColor, position: 'absolute', top: 16, right: 16, zIndex: 1 },
-        ]}>
+      <View style={[styles.settingCard, { position: 'absolute', top: 16, right: 16, zIndex: 1 }]}>
         <YStack space="$2">
           <ComboBox
             value={language}
@@ -67,6 +63,10 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
             placeholder={t('select_language')}
             labelColor={labelColor}
             textColor={textColor}
+            style={{
+              paddingVertical: 10,
+              height: 100,
+            }}
           />
         </YStack>
       </View>
