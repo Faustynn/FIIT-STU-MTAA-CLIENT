@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { User } from '../components/User';
 
 // API URLs
-export const API_URL = 'http://147.175.161.45:8080/api/unimap_pc/';
+export const API_URL = 'http://147.175.161.201:8080/api/unimap_pc/';
 
 const oAuth_LOGIN_URL = `${API_URL}oauth2/login`;
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;
@@ -255,7 +255,7 @@ export const sendRegistrationRequest = async (login: string, username: string, e
     const response = await fetch(REGISTR_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: `${username}:${email}:${login}:${password}` }),
+      body: JSON.stringify({ data: `${username}:${password}:${email}:${login}` }),
     });
 
     if (response.ok) {
@@ -336,6 +336,7 @@ export const sendNewPasswordRequest = async (email: string, password: string) =>
 
 
 
+
 export interface Subject {
   code: string;
   name: string;
@@ -359,144 +360,6 @@ export interface Subject {
   escore: string;
   FXscore: string;
 }
-
-// Improved subject parsing function based on the actual server response format
-export const parseSubjects = (data: any): Subject[] => {
-  const subjects: Subject[] = [];
-
-  if (!data) {
-    console.error('No subject data received from server');
-    return subjects;
-  }
-
-  // Handle array format (as seen in the paste.txt where subjects are in Subject_dto format)
-  if (Array.isArray(data)) {
-    data.forEach((item: any) => {
-      try {
-        if (item && typeof item === 'object') {
-          // Parse languages properly - handle both string array and string containing JSON
-          let languages: string[] = [];
-          if (Array.isArray(item.languages)) {
-            languages = item.languages;
-          } else if (typeof item.languages === 'string') {
-            try {
-              // Try to parse if it's a JSON string
-              languages = JSON.parse(item.languages);
-            } catch {
-              // If not valid JSON, split by comma
-              languages = item.languages.split(',').map((l: string) => l.trim());
-            }
-          }
-
-          // Handle potential string format for languages that looks like [{"slovenský jazyk", "anglický jazyk"}]
-          if (languages.length === 1 && languages[0].includes('{') && languages[0].includes('}')) {
-            const langString = languages[0].replace(/[{}\[\]"]/g, '');
-            languages = langString.split(',').map((l: string) => l.trim());
-          }
-
-          const subject: Subject = {
-            code: item.code || '',
-            name: item.name || '',
-            type: item.type || '',
-            credits: Number(item.credits) || 0,
-            studyType: item.studyType || '',
-            semester: item.semester || '',
-            languages: languages,
-            completionType: item.completionType || '',
-            studentCount: Number(item.studentCount) || 0,
-            evaluation: item.evaluation,
-            assesmentMethods: item.assesmentMethods || '',
-            learningOutcomes: item.learningOutcomes || '',
-            courseContents: item.courseContents || '',
-            plannedActivities: item.plannedActivities || '',
-            evaluationMethods: item.evaluationMethods || '',
-            ascore: item.ascore?.toString() || '0',
-            bscore: item.bscore?.toString() || '0',
-            cscore: item.cscore?.toString() || '0',
-            dscore: item.dscore?.toString() || '0',
-            escore: item.escore?.toString() || '0',
-            FXscore: item.FXscore?.toString() || '0'
-          };
-          subjects.push(subject);
-        }
-      } catch (error) {
-        console.error(`Error parsing subject data:`, error);
-      }
-    });
-    return subjects;
-  }
-
-  // Handle object format where keys might be subject codes
-  if (typeof data === 'object' && !Array.isArray(data)) {
-    Object.entries(data).forEach(([key, value]: [string, any]) => {
-      try {
-        if (value && typeof value === 'object') {
-          // Process languages field
-          let languages: string[] = [];
-          if (Array.isArray(value.languages)) {
-            languages = value.languages;
-          } else if (typeof value.languages === 'string') {
-            try {
-              // Try to parse if it's a JSON string
-              languages = JSON.parse(value.languages);
-            } catch {
-              // If not valid JSON, split by comma
-              languages = value.languages.split(',').map((l: string) => l.trim());
-            }
-          }
-
-          // Special handling for languages that might be in unusual format
-          if (languages.length === 1 && languages[0].includes('{') && languages[0].includes('}')) {
-            const langString = languages[0].replace(/[{}\[\]"]/g, '');
-            languages = langString.split(',').map((l: string) => l.trim());
-          }
-
-          const subject: Subject = {
-            code: value.code || key,
-            name: value.name || '',
-            type: value.type || '',
-            credits: Number(value.credits) || 0,
-            studyType: value.studyType || '',
-            semester: value.semester || '',
-            languages: languages,
-            completionType: value.completionType || '',
-            studentCount: Number(value.studentCount) || 0,
-            evaluation: value.evaluation,
-            assesmentMethods: value.assesmentMethods || '',
-            learningOutcomes: value.learningOutcomes || '',
-            courseContents: value.courseContents || '',
-            plannedActivities: value.plannedActivities || '',
-            evaluationMethods: value.evaluationMethods || '',
-            ascore: value.ascore?.toString() || '0',
-            bscore: value.bscore?.toString() || '0',
-            cscore: value.cscore?.toString() || '0',
-            dscore: value.dscore?.toString() || '0',
-            escore: value.escore?.toString() || '0',
-            FXscore: value.FXscore?.toString() || '0'
-          };
-          subjects.push(subject);
-        }
-      } catch (error) {
-        console.error(`Error parsing subject data for ${key}:`, error);
-      }
-    });
-  }
-
-  return subjects;
-};
-
-// Helper function to safely parse string representation of scores to numbers
-const parseScore = (scoreStr: string | number | undefined): string => {
-  if (scoreStr === undefined || scoreStr === null) return '0';
-  if (typeof scoreStr === 'number') return scoreStr.toString();
-
-  // Try to parse the string to a number
-  const score = parseFloat(scoreStr);
-  return isNaN(score) ? '0' : score.toString();
-};
-
-
-
 export interface SubjectRole {
   subjectCode: string;
   roles: string[];
@@ -510,6 +373,143 @@ export interface Teacher {
   subjects: SubjectRole[];
 }
 
+// Parse subject datas
+export const parseSubjects = (data: any): Subject[] => {
+  const subjects: Subject[] = [];
+
+  if (!data) {
+    console.error('No subject data received!!');
+    return subjects;
+  }
+
+  if (typeof data === 'string') {
+    try {
+      const parsedData = JSON.parse(data);
+      return parseSubjects(parsedData);
+    } catch (error) {
+      console.error('Error parsing string as JSON:', error);
+      return subjects;
+    }
+  }
+
+  if (typeof data === 'object' && !Array.isArray(data) && data.subjects) {
+    if (Array.isArray(data.subjects)) {
+      data.subjects.forEach((item: any) => {
+        try {
+          const subject = parseSubjectObject(item);
+          if (subject) {
+            subjects.push(subject);
+          }
+        } catch (error) {
+          console.error(`Error parsing subject data from subjects array:`, error);
+        }
+      });
+    }
+    return subjects;
+  }
+
+  if (Array.isArray(data)) {
+    data.forEach((item: any) => {
+      try {
+        if (item && typeof item === 'object') {
+          const subject = parseSubjectObject(item);
+          if (subject) {
+            subjects.push(subject);
+          }
+        }
+      } catch (error) {
+        console.error(`Error parsing subject data from array:`, error);
+      }
+    });
+    return subjects;
+  }
+
+  if (typeof data === 'object' && !Array.isArray(data)) {
+    Object.entries(data).forEach(([key, value]: [string, any]) => {
+      try {
+        if (value && typeof value === 'object') {
+          const subject = parseSubjectObject(value, key);
+          if (subject) {
+            subjects.push(subject);
+          }
+        }
+      } catch (error) {
+        console.error(`Error parsing subject data for ${key}:`, error);
+      }
+    });
+  }
+
+  return subjects;
+}
+function parseSubjectObject(data: any, codeFromKey?: string): Subject | null {
+  if (!data) return null;
+
+  try {
+
+    let languages: string[] = [];
+    if (data.languages) {
+      if (Array.isArray(data.languages)) {
+
+        // ["{\"slovenský jazyk\"", "\"anglický jazyk\"}"]
+        if (data.languages.length > 0) {
+          const joinedLanguages = data.languages.join(',');
+
+          // cleaner
+          const cleanedLanguages = joinedLanguages
+            .replace(/["{}\\]/g, '')
+            .split(',')
+            .map((lang: string) => lang.trim())
+            .filter((lang: string) => lang);
+
+          languages = cleanedLanguages;
+        }
+      } else if (typeof data.languages === 'string') {
+        try {
+          languages = JSON.parse(data.languages); // try to pa
+        } catch {
+          languages = data.languages.split(',').map((l: string) => l.trim());
+        }
+      }
+    }
+
+    const safeToString = (value: any): string => {
+      if (value === null || value === undefined) return '0';
+      return value.toString();
+    };
+
+    const fxScore = data.FXscore !== undefined ? data.FXscore :
+      (data.fxscore !== undefined ? data.fxscore : '0');
+
+    const subject: Subject = {
+      code: data.code || codeFromKey || '',
+      name: data.name ? data.name.trim() : '',
+      type: data.type || '',
+      credits: Number(data.credits) || 0,
+      studyType: data.studyType || '',
+      semester: data.semester || '',
+      languages: languages,
+      completionType: data.completionType || '',
+      studentCount: Number(data.studentCount) || 0,
+      evaluation: data.evaluation === undefined ? null : data.evaluation,
+      assesmentMethods: data.assesmentMethods || '',
+      learningOutcomes: data.learningOutcomes || '',
+      courseContents: data.courseContents || '',
+      plannedActivities: data.plannedActivities || '',
+      evaluationMethods: data.evaluationMethods || '',
+      ascore: safeToString(data.ascore),
+      bscore: safeToString(data.bscore),
+      cscore: safeToString(data.cscore),
+      dscore: safeToString(data.dscore),
+      escore: safeToString(data.escore),
+      FXscore: safeToString(fxScore)
+    };
+
+    return subject;
+  } catch (error) {
+    console.error('Error parsing subject object:', error);
+    return null;
+  }
+}
 
 // parse teacher datas
 export const parseTeachers = (data: any): Teacher[] => {
@@ -633,6 +633,7 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
       }
 
       const rawData = await response.json();
+  //    console.log('Received subjects data:', JSON.stringify(rawData, null, 2));
       const subjects = parseSubjects(rawData);
 
       await AsyncStorage.setItem('CACHED_SUBJECTS', JSON.stringify(subjects));

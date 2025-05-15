@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import uuid from 'react-native-uuid';
+import { API_URL } from "./apiService";
 
 // News model
 export interface NewsModel {
@@ -35,7 +36,7 @@ class NotificationService {
   private lastReceivedNewsIds: Set<string> = new Set(); // Stores IDs of recently received news
 
   // API endpoints
-  private readonly REGISTER_DEVICE_ENDPOINT = `http://147.175.161.45:8080/api/notifications/register-device`;
+  private readonly REGISTER_DEVICE_ENDPOINT = `${API_URL}notifications/register-device`;
 
 
   // Storage keys
