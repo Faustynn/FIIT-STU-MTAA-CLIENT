@@ -5,14 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  ScrollView,
-  useWindowDimensions,
-} from 'react-native';
+import { Image, TextInput, FlatList, TouchableOpacity, ScrollView, useWindowDimensions, } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { YStack, H1, Theme, XStack, Text, View, Button, Input, Spinner } from 'tamagui';
 
@@ -52,20 +45,17 @@ const standardAvatars = [
   { id: '9', source: require('../assets/avatars/9.png'), role: 'all' },
 ];
 
-const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
-  isVisible,
-  onClose,
-  onSelectAvatar,
-  onTakePhoto,
-  onChooseFromGallery,
-  isDarkMode,
-  textSize,
-  highContrast,
-}) => {
+const buttontextSize = 12;
+
+type ProfilePageProps = {
+  navigation: NavigationProp<any>;
+};
+
+// Изменения в компоненте AvatarSelectionModal
+const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({ isVisible, onClose, onSelectAvatar, onTakePhoto, onChooseFromGallery, isDarkMode, textSize, highContrast, }) => {
   const { t } = useTranslation();
   const [isPremium, setIsPremium] = useState(false);
   const [filteredAvatars, setFilteredAvatars] = useState<typeof standardAvatars>([]);
-
   useEffect(() => {
     const checkPremiumStatus = async () => {
       if (isVisible) {
@@ -99,8 +89,8 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   }, [isPremium, isVisible]);
 
   const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
-  const buttonTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#000000';
-  const secondaryButtonColor = highContrast ? '#FFA500' : '#B3C7EE';
+  const buttonTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#FFFFFF';
+  const secondaryButtonColor = highContrast ? '#FFA500' : isDarkMode ? '#79E3A5' : '#4A86E8';
 
   return (
     <ConfirmationModal
@@ -148,25 +138,15 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
           style={{ maxHeight: 180 }}
         />
 
-        <Text
-          color={headerTextColor}
-          textAlign="center"
-          fontSize={textSize}
-          fontWeight="600"
-          marginTop="$2">
-          {t('custom_avatar')}
-        </Text>
-
-        <XStack space="$2" justifyContent="space-between">
+        <XStack space="$2" paddingBottom={"$3"} justifyContent="space-between">
           <Button
             flex={1}
             backgroundColor={secondaryButtonColor}
             color={buttonTextColor}
             fontSize={textSize}
             fontWeight="bold"
-            paddingVertical="$3"
-            paddingHorizontal="$2"
-            borderRadius="$2"
+            paddingVertical="$0"
+            borderRadius="$0"
             onPress={onChooseFromGallery}>
             <Icon
               name="photo-library"
@@ -183,9 +163,8 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
             color={buttonTextColor}
             fontSize={textSize}
             fontWeight="bold"
-            paddingVertical="$3"
-            paddingHorizontal="$2"
-            borderRadius="$2"
+            paddingVertical="$0"
+            borderRadius="$0"
             onPress={onTakePhoto}>
             <Icon
               name="camera-alt"
@@ -199,10 +178,6 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
       </YStack>
     </ConfirmationModal>
   );
-};
-
-type ProfilePageProps = {
-  navigation: NavigationProp<any>;
 };
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
@@ -235,8 +210,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
   const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
   const inputBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const primaryButtonColor = highContrast ? '#FFD700' : '#79E3A5';
-  const secondaryButtonColor = highContrast ? '#FFA500' : '#B3C7EE';
+  const primaryButtonColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '#4A86E8';
+  const secondaryButtonColor = highContrast ? '#FFA500' : isDarkMode ? '#79E3A5' : '#4A86E8';
   const dangerButtonColor = highContrast ? '#FF4444' : '#FF617D';
 
   const [isPremium, setIsPremium] = useState(false);
@@ -584,7 +559,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         <YStack width={isLandscape ? '85%' : '100%'}>
           {/* Header */}
           <XStack padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
-            <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
+            <H1 fontSize={textSize + 14} fontWeight="bold" color={headerTextColor}>
               UNIMAP
             </H1>
             <XStack alignItems="center" space="$2">
@@ -749,21 +724,27 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 <YStack>
                   {hasData ? (
                     <>
-                      <XStack alignItems="center" space="$2">
-                        <Text color={headerTextColor} fontSize={textSize + 8} fontWeight="bold">
+                      <View style={{ position: 'relative' }}>
+                        <Text color={headerTextColor} fontSize={textSize + 6} fontWeight="bold">
                           {user?.getFullName()}
                         </Text>
                         <Button
                           onPress={() => setIsUsernameModalVisible(true)}
                           backgroundColor="transparent"
-                          padding="$0">
+                          padding="$0"
+                          style={{
+                            position: 'absolute',
+                            top: -20,
+                            right: 120,
+                            zIndex: 1,
+                          }}>
                           <Icon
                             name="edit"
-                            size={textSize}
+                            size={18}
                             color={isDarkMode ? '#FFFFFF' : '#000000'}
                           />
                         </Button>
-                      </XStack>
+                      </View>
                       <Text color={subTextColor} fontSize={textSize - 4}>
                         @{user?.login}
                       </Text>
@@ -780,10 +761,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                   <Button
                     backgroundColor={primaryButtonColor}
                     fontSize={textSize}
-                    color="#000000"
+                    color="#FFFFFF"
                     fontWeight="bold"
                     paddingVertical="$2"
-                    borderRadius="$4"
                     onPress={handlePremium}>
                     {t('b_premium')}
                   </Button>
@@ -810,12 +790,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
                 />
                 <Button
                   backgroundColor={secondaryButtonColor}
-                  color="#000000"
-                  fontSize={textSize}
+                  color="#FFFFFF"
+                  fontSize={buttontextSize}
                   fontWeight="bold"
-                  paddingVertical="$3"
-                  paddingHorizontal="$4"
-                  borderRadius="$2"
                   onPress={handleEmailChange}>
                   {t('change_btn')}
                 </Button>
@@ -829,12 +806,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
               </Text>
               <Button
                 backgroundColor={secondaryButtonColor}
-                color="#000000"
-                fontSize={textSize}
+                color="#FFFFFF"
+                fontSize={buttontextSize}
                 fontWeight="bold"
-                paddingVertical="$3"
-                paddingHorizontal="$4"
-                borderRadius="$2"
                 onPress={() => navigation.navigate('ForgotPasswordPage')}>
                 {t('change_pass_btn')}
               </Button>
@@ -848,23 +822,19 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
               <XStack space="$3">
                 <Button
                   flex={1}
+                  fontSize={buttontextSize}
                   backgroundColor={secondaryButtonColor}
-                  color="#000000"
-                  fontSize={textSize}
+                  color="#FFFFFF"
                   fontWeight="bold"
-                  paddingVertical="$3"
-                  borderRadius="$2"
                   onPress={() => setIsDeleteUserModalVisible(true)}>
                   {t('d_user')}
                 </Button>
                 <Button
                   flex={1}
                   backgroundColor={secondaryButtonColor}
-                  color="#000000"
-                  fontSize={textSize}
+                  color="#FFFFFF"
+                  fontSize={buttontextSize}
                   fontWeight="bold"
-                  paddingVertical="$3"
-                  borderRadius="$2"
                   onPress={() => setIsDeleteCommentsModalVisible(true)}>
                   {t('d_comm')}
                 </Button>
@@ -873,12 +843,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
 
             {/* Logout */}
             <Button
+              fontSize={buttontextSize}
               backgroundColor={dangerButtonColor}
               color="#FFFFFF"
-              fontSize={textSize}
               fontWeight="bold"
-              paddingVertical="$3"
-              borderRadius="$2"
               onPress={handleLogout}
               marginTop="$2">
               {t('logout')}

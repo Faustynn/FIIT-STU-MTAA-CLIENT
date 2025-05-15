@@ -95,17 +95,34 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
     setFilteredSubjects(filtered);
   }, [searchQuery, selectedSemester, selectedType, selectedLevel, subjects]);
 
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    setSelectedSemester('');
-    setSelectedType('');
-    setSelectedLevel('');
-  };
-
   const handleRetryLoad = () => {
     setError(null);
     setLoading(true);
     setSubjects([]);
+  };
+
+  const handleSemesterChange = (value: string) => {
+    if (value === selectedSemester) {
+      setSelectedSemester('');
+    } else {
+      setSelectedSemester(value);
+    }
+  };
+
+  const handleTypeChange = (value: string) => {
+    if (value === selectedType) {
+      setSelectedType('');
+    } else {
+      setSelectedType(value);
+    }
+  };
+
+  const handleLevelChange = (value: string) => {
+    if (value === selectedLevel) {
+      setSelectedLevel('');
+    } else {
+      setSelectedLevel(value);
+    }
   };
 
   if (loading) {
@@ -141,7 +158,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
             <H1
-              fontSize={isLandscape ? textSize + 12 : textSize + 10}
+              fontSize={isLandscape ? textSize + 18 : textSize + 14}
               fontWeight="bold"
               color={headerTextColor}>
               UNIMAP
@@ -195,6 +212,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
               onChangeText={setSearchQuery}
               placeholder={t('search_subj')}
               placeholderTextColor={subTextColor}
+              opacity={0.6}
               backgroundColor={inputBackgroundColor}
               borderRadius={8}
               padding="$3"
@@ -210,8 +228,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <XStack space="$4">
                       <ComboBox
+                        view={'horizontal'}
                         value={selectedSemester}
-                        onValueChange={setSelectedSemester}
+                        onValueChange={handleSemesterChange}
                         items={[
                           { label: 'ZS', value: 'ZS' },
                           { label: 'LS', value: 'LS' },
@@ -221,8 +240,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         textColor={headerTextColor}
                       />
                       <ComboBox
+                        view={'horizontal'}
                         value={selectedType}
-                        onValueChange={setSelectedType}
+                        onValueChange={handleTypeChange}
                         items={[
                           { label: 'Obligatory', value: 'povinný' },
                           { label: 'Optional', value: 'povinné-voliteľný' },
@@ -232,8 +252,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         textColor={headerTextColor}
                       />
                       <ComboBox
+                        view={'horizontal'}
                         value={selectedLevel}
-                        onValueChange={setSelectedLevel}
+                        onValueChange={handleLevelChange}
                         items={[
                           { label: 'Bachelor', value: 'bakalarský' },
                           { label: 'Engineer', value: 'inženierský' },
@@ -244,15 +265,13 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                       />
                     </XStack>
                   </ScrollView>
-                  <Button onPress={handleClearFilters} alignSelf="flex-start" marginTop="$2">
-                    {t('reset')}
-                  </Button>
                 </>
               ) : (
                 <XStack space="$2" alignItems="center">
                   <ComboBox
+                    view={"horizontal"}
                     value={selectedSemester}
-                    onValueChange={setSelectedSemester}
+                    onValueChange={handleSemesterChange}
                     items={[
                       { label: 'ZS', value: 'ZS' },
                       { label: 'LS', value: 'LS' },
@@ -262,8 +281,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     textColor={headerTextColor}
                   />
                   <ComboBox
+                    view={'horizontal'}
                     value={selectedType}
-                    onValueChange={setSelectedType}
+                    onValueChange={handleTypeChange}
                     items={[
                       { label: 'Obligatory', value: 'povinný' },
                       { label: 'Optional', value: 'povinné-voliteľný' },
@@ -273,8 +293,9 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     textColor={headerTextColor}
                   />
                   <ComboBox
+                    view={'horizontal'}
                     value={selectedLevel}
-                    onValueChange={setSelectedLevel}
+                    onValueChange={handleLevelChange}
                     items={[
                       { label: 'Bachelor', value: 'bakalarský' },
                       { label: 'Engineer', value: 'inženierský' },
@@ -283,9 +304,6 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                     labelColor={subTextColor}
                     textColor={headerTextColor}
                   />
-                  <Button onPress={handleClearFilters} marginLeft="$2">
-                    {t('reset')}
-                  </Button>
                 </XStack>
               )}
             </YStack>

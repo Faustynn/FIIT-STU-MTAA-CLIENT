@@ -45,7 +45,7 @@ export const startTokenRefreshTask = () => {
   stopTokenRefreshTask();
   intervalId = setInterval(async () => {
     await refreshAccessToken();
-  }, 60 * 1000); // 1 min interval
+  }, 50 * 1000); // 50 sec interval
 };
 
 export const stopTokenRefreshTask = () => {

@@ -65,7 +65,7 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
       >
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Button
-            icon={<MaterialIcons name="chevron-left" size={24} color="black" />}
+            icon={<MaterialIcons name="chevron-left" size={24} color={isDarkMode ? '#79E3A5' : 'black'} />}
             onPress={handleGoBack}
             backgroundColor="transparent"
             color={headerTextColor}
@@ -102,44 +102,64 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
           </Text>
 
           <YStack space="$3">
-            <Input
-              placeholder={t('name')}
-              value={name}
-              onChangeText={setName}
-              backgroundColor="transparent"
-              color={isDarkMode ? '#FFFFFF' : '$gray800'}
-            />
-            <Input
-              placeholder={t('login')}
-              value={login}
-              onChangeText={setLogin}
-              backgroundColor="transparent"
-              color={isDarkMode ? '#FFFFFF' : '$gray800'}
-            />
-            <Input
-              placeholder={t('email_field')}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              backgroundColor="transparent"
-              color={isDarkMode ? '#FFFFFF' : '$gray800'}
-            />
-            <Input
-              placeholder={t('pass')}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              backgroundColor="transparent"
-              color={isDarkMode ? '#FFFFFF' : '$gray800'}
-            />
-            <Input
-              placeholder={t('conf_pass')}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              backgroundColor="transparent"
-              color={isDarkMode ? '#FFFFFF' : '$gray800'}
-            />
+            <XStack alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="person" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              <Input
+                placeholder={t('name')}
+                value={name}
+                onChangeText={setName}
+                backgroundColor="transparent"
+                color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                flex={1}
+              />
+            </XStack>
+            <XStack alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="account-circle" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              <Input
+                placeholder={t('login')}
+                value={login}
+                onChangeText={setLogin}
+                backgroundColor="transparent"
+                color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                flex={1}
+              />
+            </XStack>
+            <XStack alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="email" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              <Input
+                placeholder={t('email_field')}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                backgroundColor="transparent"
+                color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                flex={1}
+              />
+            </XStack>
+            <XStack alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="lock" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              <Input
+                placeholder={t('pass')}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                backgroundColor="transparent"
+                color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                flex={1}
+              />
+            </XStack>
+            <XStack alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="lock-outline" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              <Input
+                placeholder={t('conf_pass')}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                backgroundColor="transparent"
+                color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                flex={1}
+              />
+            </XStack>
 
             {error && (
               <Text color="$red10" fontSize={14} textAlign="center">
@@ -149,13 +169,10 @@ const RegistratePage: React.FC<RegistrateProps> = ({ navigation }) => {
 
             <Button
               onPress={handleRegister}
-              backgroundColor="#79E3A5"
-              hoverStyle={{ backgroundColor: '#66D294' }}
-              color="#191C22"
-              padding="$3"
-              borderRadius="$2"
-              marginTop="$4"
-            >
+              backgroundColor={isDarkMode ? '#79E3A5' : '#0000FF'}
+              hoverStyle={{ backgroundColor: isDarkMode ? '#66D294' : '#0000CC' }}
+              color={isDarkMode ? '#191C22' : '#FFFFFF'}
+              marginTop="$4">
               {t('reg')}
             </Button>
 

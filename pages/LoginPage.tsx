@@ -1,15 +1,14 @@
 import { NavigationProp } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Image } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { YStack, H1, H2, Input, Button, Text, Theme, XStack, View } from 'tamagui';
+import { YStack, H1, H2, Input, Button, Text, Theme, XStack } from 'tamagui';
 
 import { useTheme } from '../components/SettingsController';
 import { sendAuthenticationRequest } from '../services/apiService';
 
 import '../utils/i18n';
-import { ComboBox} from "../components/ComboBox";
 import OAuthButtons from '../components/oAuthButtons';
 
 
@@ -19,7 +18,6 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const isDarkMode = theme === 'dark';
-  const [language, setLanguage] = useState(i18n.language || 'en');
 
   const handleLogin = async () => {
     try {
@@ -34,44 +32,15 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
     }
   };
 
-  const handleLanguageChange = (value: string) => {
-    setLanguage(value);
-    i18n.changeLanguage(value);
-  };
-  const languages = [
-    { label: t('en_lang'), value: 'en' },
-    { label: t('sk_lang'), value: 'sk' },
-    { label: t('ua_lang'), value: 'ua' },
-  ];
-
-  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const cardColor = isDarkMode ? '#2a2f3b' : '#F0F0F0';
-  const labelColor = isDarkMode ? '#A0A7B7' : '#555555';
-
   return (
     <Theme name={theme}>
-      <View
-        style={[
-          styles.settingCard,
-          { backgroundColor: cardColor, position: 'absolute', top: 16, right: 16, zIndex: 1 },
-        ]}>
-        <YStack space="$2">
-          <ComboBox
-            value={language}
-            onValueChange={handleLanguageChange}
-            items={languages}
-            placeholder={t('select_language')}
-            labelColor={labelColor}
-            textColor={textColor}
-          />
-        </YStack>
-      </View>
       <YStack
         flex={1}
         alignItems="center"
         justifyContent="center"
         padding="$4"
         backgroundColor={isDarkMode ? '#191C22' : '$gray50'}>
+
         {/* Header */}
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80 }} />
@@ -98,12 +67,8 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
 
           <YStack space="$4">
             <XStack
-              alignItems="center"
-              borderWidth={1}
-              borderColor={isDarkMode ? '#262A35' : '$gray300'}
-              borderRadius="$2"
-              paddingHorizontal="$2">
-              <MaterialIcons name="email" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="email" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
               <Input
                 placeholder={t('email_field')}
                 value={email}
@@ -119,12 +84,8 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
             </XStack>
 
             <XStack
-              alignItems="center"
-              borderWidth={1}
-              borderColor={isDarkMode ? '#262A35' : '$gray300'}
-              borderRadius="$2"
-              paddingHorizontal="$2">
-              <MaterialIcons name="lock" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
+              alignItems="center">
+              <MaterialIcons style={{ marginRight: 8 }} name="lock" size={20} color={isDarkMode ? '#79E3A5' : '$blue600'} />
               <Input
                 placeholder={t('pass_field')}
                 value={password}
@@ -178,11 +139,11 @@ const LoginPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }
 
             <Button
               onPress={handleLogin}
-              backgroundColor="#79E3A5"
-              hoverStyle={{ backgroundColor: '#66D294' }}
-              color="#191C22"
-              padding="$3"
-              borderRadius="$2">
+              backgroundColor={isDarkMode ? '#66D294' : '#0000FF'}
+              fontSize="$5"
+              fontWeight="$6"
+              hoverStyle={{ backgroundColor: isDarkMode ? '#66D294' : '#0000FF' }}
+              color={isDarkMode ? '#000000' : '#FFFFFF'}>
               {t('login')}
             </Button>
           </YStack>

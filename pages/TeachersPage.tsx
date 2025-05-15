@@ -109,6 +109,14 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
     setTeachers([]);
   };
 
+  const handleRoleChange = (value: string) => {
+    if (value === selectedRole) {
+      setSelectedRole('');
+    } else {
+      setSelectedRole(value);
+    }
+  };
+
   if (loading) {
     return (
       <YStack
@@ -142,7 +150,7 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
             <H1
-              fontSize={isLandscape ? textSize + 15 : textSize + 10}
+              fontSize={isLandscape ? textSize + 18 : textSize + 14}
               fontWeight="bold"
               color={headerTextColor}>
               UNIMAP
@@ -202,8 +210,9 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
             />
             <XStack alignItems="center" space="$2">
               <ComboBox
+                view={"horizontal"}
                 value={selectedRole}
-                onValueChange={setSelectedRole}
+                onValueChange={handleRoleChange}
                 items={[
                   { label: 'Practitioners', value: 'cvičiaci' },
                   { label: 'Lecturer', value: 'prednášajúci' },
@@ -215,7 +224,6 @@ const TeachersPage: React.FC<TeachersPageProps> = ({ navigation, initialTeachers
                 labelColor={subTextColor}
                 textColor={headerTextColor}
               />
-              <Button onPress={() => setSelectedRole('')}>{t('reset')}</Button>
             </XStack>
           </YStack>
         </YStack>

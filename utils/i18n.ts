@@ -189,10 +189,38 @@ const resources = {
       id: "ID",
       phone: "Phone",
       teacher_not_found: "Teacher not found",
+
+      ais_id: "AIS ID",
+
+
+      gestureNavigation: "Gesture Navigation",
+      enableGestureNav: "Enable Gesture Navigation",
+      disableSwipe: "Disable Swipes",
+      enable_contrast: "Enable Contrast",
+      shake_only: "Shake Only",
+      tilt_only: "Tilt Only",
+      both_gestures: "Both Gestures",
+      d_user: "Delete User",
+      confirm_delete_user: "Are you sure you want to delete the account?",
+      delete_user_warning: "This action is irreversible. You will not be able to recover your account after deletion!!",
+      confirm_delete_comments: "Are you sure you want to delete all comments?",
+      delete_comments_warning: "This action is irreversible. You will not be able to recover your comments after deletion!!",
+      email_cannot_be_empty: "Enter your new email address!!",
+      take_photo: "Take Photo",
+      from_gallery: "Gallery",
+      standard_avatars: "Standard Avatars",
+      choose_avatar: "Choose Avatar",
+      enter_new_username: "Enter New Username",
+      save: "Save",
+      get_directions: "Get Directions",
+      loading_subjects: "Loading subjects...",
+      loading_teachers: "Loading teachers...",
     },
   },
   sk: {
     translation: {
+      ais_id: "AIS ID",
+
       // Navigation
       home: "Domov",
       profile: "Profil",
@@ -381,10 +409,35 @@ const resources = {
       phone: "Telefón",
       teacher_not_found: "Učiteľ nenájdený",
 
+
+
+      gestureNavigation: "Gestová navigácia",
+      enableGestureNav: "Povoliť gestovú navigáciu",
+      disableSwipe: "Zakázať swipy",
+      enable_contrast: "Povoliť kontrast",
+      shake_only: "Iba trasenie",
+      tilt_only: "Iba naklonenie",
+      both_gestures: "Obe gestá",
+      d_user: "Vymazať usera",
+      confirm_delete_user: "Ste si istý, že chcete vymazať účet?",
+      delete_user_warning: "Táto akcia je nezvratná. Nebudete môcť obnoviť svoj účet po vymazaní!!",
+      confirm_delete_comments: "Ste si istý, že chcete vymazať všetky komentáre?",
+      delete_comments_warning: "Táto akcia je nezvratná. Nebudete môcť obnoviť svoje komentáre po vymazaní!!",
+      email_cannot_be_empty: "Zadajte svoju novú e-mailovú adresu!!",
+      take_photo: "Urobiť foto",
+      from_gallery: "Z galérie",
+      standard_avatars: "Štandardné avatary",
+      choose_avatar: "Vyberte avatar",
+      enter_new_username: "Zadajte nové používateľské meno",
+      save: "Uložiť",
+      get_directions: "Naplánovať trasu",
+      loading_subjects: "Načítavanie predmetov...",
+      loading_teachers: "Načítavanie učiteľov...",
     },
   },
   ua: {
     translation: {
+      ais_id: "АІС ID",
       // Navigation
       home: "Головна",
       profile: "Профіль",
@@ -416,7 +469,7 @@ const resources = {
       change_btn: "Змінити",
       privacy: "Конфіденційність",
       logout: "Вийти",
-      d_comm: "Видалити коментарі",
+      d_comm: "Видалити комент",
       change_pass_btn: "Змінити пароль",
 
       // Settings Page
@@ -562,13 +615,42 @@ const resources = {
       loading_teacher_details: "Завантаження деталей викладача...",
       failed_load_teacher_details: "Не вдалося завантажити деталі викладача. Спробуйте знову.",
       contact_information: "Контактна інформація",
-      send_email: "Надіслати електронний лист",
+      send_email: "Написати",
       subjects_taught: "Предмети викладання",
       roles: "Ролі",
       teacher: "Викладач",
       id: "ID",
       phone: "Телефон",
       teacher_not_found: "Викладача не знайдено",
+
+
+
+      gestureNavigation: "Жестова навігація",
+      enableGestureNav: "Увімкнути жестову навігацію",
+      disableSwipe: "Вимкнути свайпи",
+      enable_contrast: "Увімкнути контрастність",
+      shake_only: "Тільки тряска",
+      tilt_only: "Тільки нахил",
+      both_gestures: "Обидва жести",
+      d_user: "Видалити юзера",
+      confirm_delete_user: "Ви впевнені, що хочете видалити аккаунт?",
+      delete_user_warning: "Ця дія є незворотною. Ви не зможете відновити свій аккаунт після видалення!!",
+      confirm_delete_comments: "Ви впевнені, що хочете видалити всі коментарі?",
+      delete_comments_warning: "Ця дія є незворотною. Ви не зможете відновити свої коментарі після видалення!!",
+      email_cannot_be_empty: "ВВедіть вашу нову електронну пошту!!",
+      take_photo: "Відзняти",
+      from_gallery: "З галереї",
+      standard_avatars: "Стандартні аватари",
+      choose_avatar: "Виберіть аватар",
+      enter_new_username: "Введіть нове ім'я користувача",
+      save: "Зберегти",
+      get_directions: "Прокласти маршрут",
+      loading_subjects: "Завантаження предметів...",
+      loading_teachers: "Завантаження викладачів...",
+
+
+
+
     },
   },
 };

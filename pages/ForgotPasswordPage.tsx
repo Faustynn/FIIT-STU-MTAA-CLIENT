@@ -13,6 +13,10 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
   const isDarkMode = theme === 'dark';
 
   const headerTextColor = isDarkMode ? '#FFFFFF' : '$blue600';
+  const buttonColor = isDarkMode ? '#79E3A5' : '$blue500';
+  const buttonTextColor = isDarkMode ? '#191C22' : '#FFFFFF';
+  const backArrowColor = isDarkMode ? '#79E3A5' : 'black';
+  const iconColor = isDarkMode ? '#79E3A5' : '$blue500';
 
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
@@ -80,7 +84,7 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
       >
         <XStack alignItems="center" marginBottom="$4" space="$0">
           <Button
-            icon={<MaterialIcons name="chevron-left" size={24} color="black" />}
+            icon={<MaterialIcons name="chevron-left" size={24} color={backArrowColor} />}
             onPress={handleGoBack}
             backgroundColor="transparent"
             color={headerTextColor}
@@ -120,44 +124,60 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
 
           <YStack space="$4">
             {step === 1 && (
-              <Input
-                placeholder={t('email_field')}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                backgroundColor="transparent"
-                color={isDarkMode ? '#FFFFFF' : '$gray800'}
-              />
+              <XStack alignItems="center" width="100%">
+                <MaterialIcons name="email" size={24} color={iconColor} style={{ marginRight: 10 }} />
+                <Input
+                  flex={1}
+                  placeholder={t('email_field')}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  backgroundColor="transparent"
+                  color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                />
+              </XStack>
             )}
 
             {step === 2 && (
-              <Input
-                placeholder={t('verif_code_field')}
-                value={verificationCode}
-                onChangeText={setVerificationCode}
-                backgroundColor="transparent"
-                color={isDarkMode ? '#FFFFFF' : '$gray800'}
-              />
+              <XStack alignItems="center" width="100%">
+                <MaterialIcons name="security" size={24} color={iconColor} style={{ marginRight: 10 }} />
+                <Input
+                  flex={1}
+                  placeholder={t('verif_code_field')}
+                  value={verificationCode}
+                  onChangeText={setVerificationCode}
+                  backgroundColor="transparent"
+                  color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                />
+              </XStack>
             )}
 
             {step === 3 && (
               <>
-                <Input
-                  placeholder={t('new_pass')}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  secureTextEntry
-                  backgroundColor="transparent"
-                  color={isDarkMode ? '#FFFFFF' : '$gray800'}
-                />
-                <Input
-                  placeholder={t('conf_new_pass')}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  backgroundColor="transparent"
-                  color={isDarkMode ? '#FFFFFF' : '$gray800'}
-                />
+                <XStack alignItems="center" width="100%" paddingBottom={"$3"}>
+                  <MaterialIcons name="lock" size={24} color={iconColor} style={{ marginRight: 10 }} />
+                  <Input
+                    flex={1}
+                    placeholder={t('new_pass')}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    secureTextEntry
+                    backgroundColor="transparent"
+                    color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                  />
+                </XStack>
+                <XStack alignItems="center" width="100%">
+                  <MaterialIcons name="lock-outline" size={24} color={iconColor} style={{ marginRight: 10 }} />
+                  <Input
+                    flex={1}
+                    placeholder={t('conf_new_pass')}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry
+                    backgroundColor="transparent"
+                    color={isDarkMode ? '#FFFFFF' : '$gray800'}
+                  />
+                </XStack>
               </>
             )}
 
@@ -169,11 +189,9 @@ const ForgotPasswordPage: React.FC<{ navigation: NavigationProp<any> }> = ({ nav
 
             <Button
               onPress={handleNext}
-              backgroundColor="#79E3A5"
-              hoverStyle={{ backgroundColor: '#66D294' }}
-              color="#191C22"
-              padding="$3"
-              borderRadius="$2"
+              backgroundColor={buttonColor}
+              hoverStyle={{ backgroundColor: isDarkMode ? '#66D294' : '$blue600' }}
+              color={buttonTextColor}
               marginTop="$4"
             >
               {step === 3 ? t('rst_pass_btn') : t('next')}

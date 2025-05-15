@@ -404,7 +404,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             alignItems={isLandscape ? 'flex-start' : 'center'}
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
-            <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
+            <H1 fontSize={textSize + 14} fontWeight="bold" color={headerTextColor}>
               UNIMAP
             </H1>
             {hasData ? (
@@ -499,17 +499,6 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             )}
           </XStack>
 
-          {/* Location Permission Status (for admins) */}
-          {isAdmin && (
-            <XStack justifyContent="flex-end" paddingHorizontal="$4" marginBottom="$2">
-              <Text fontSize={12} color={locationPermissionStatus === 'granted' ? '#4CAF50' : '#F44336'}>
-                {locationPermissionStatus === 'granted'
-                  ? t('location_enabled')
-                  : t('location_disabled')}
-              </Text>
-            </XStack>
-          )}
-
           {!hasData && (
             <YStack alignItems="center" justifyContent="center" flex={1}>
               <Text color={subTextColor} fontSize={textSize}>
@@ -524,15 +513,20 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
-              paddingTop: isLandscape ? 5 : 56,
+              paddingTop: isLandscape ? 5 : 15,
               paddingBottom: 24,
               paddingLeft: isLandscape ? 19 : 0,
             }}>
 
             {/* status for admins */}
             {isAdmin && (
-              <YStack marginBottom="$3">
-                <XStack space="$2" alignItems="center" justifyContent="space-between" marginBottom="$2">
+              <XStack justifyContent="space-between" alignItems="center" paddingHorizontal="$4" marginBottom="$2">
+                <Text fontSize={12} color={locationPermissionStatus === 'granted' ? '#4CAF50' : '#F44336'}>
+                  {locationPermissionStatus === 'granted'
+                    ? t('location_enabled')
+                    : t('location_disabled')}
+                </Text>
+                <XStack space="$2" alignItems="center">
                   <Text color={subTextColor}>Status: </Text>
                   <Text color={statusColors[connectionStatus]}>
                     {connectionStatus === ConnectionStatus.CONNECTED ? t('connected') :
@@ -541,20 +535,18 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                           t('connection_error')}
                   </Text>
                 </XStack>
-
                 {badgeCount > 0 && (
                   <Button
                     backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
                     color={headerTextColor}
                     onPress={handleClearBadges}
-                    marginBottom="$2"
                   >
                     <Text>
                       {t('clear_badges')} ({badgeCount})
                     </Text>
                   </Button>
                 )}
-              </YStack>
+              </XStack>
             )}
 
             {/* News section */}

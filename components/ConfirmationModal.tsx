@@ -98,7 +98,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     backgroundColor={confirmButtonColor}
                     onPress={onConfirm}
                   >
-                    <Text color={confirmButtonColor === "#FF617D" ? "#FFFFFF" : "#000000"} fontWeight="bold">
+                    <Text color={confirmButtonColor === "#FF617D" ? "#FFFFFF" : "#FFFFFF"} fontWeight="bold">
                       {confirmText}
                     </Text>
                   </Button>

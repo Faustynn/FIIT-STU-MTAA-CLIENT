@@ -1,8 +1,9 @@
 import { NavigationProp } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Switch, useWindowDimensions, Image } from 'react-native';
-import { H1, XStack, YStack, Text, View, Spinner, Theme, ScrollView, ZStack } from 'tamagui';
+import { StyleSheet, Switch, useWindowDimensions, Image, Pressable } from 'react-native';
+import { H1, XStack, YStack, Text, View, Spinner, Theme, ScrollView, Card } from 'tamagui';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
@@ -61,12 +62,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
     fetchAndParseUser();
   }, []);
 
-  const textColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#000000';
-  const cardColor = highContrast ? '#000000' : isDarkMode ? '#2a2f3b' : '#F0F0F0';
-  const labelColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '#555555';
-  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
+  const accentColor = isDarkMode ? '#4A88F0' : '#3378E8';
+  const textColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#333333';
+  const cardColor = highContrast ? '#000000' : isDarkMode ? '#222831' : '#FFFFFF';
+  const labelColor = highContrast ? '#FFFFFF' : isDarkMode ? '#B8C1D1' : '#6E7582';
+  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#121720' : '#F5F7FA';
+  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : accentColor;
+  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '#6E7582';
+  const cardShadow = isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.08)';
+  const dividerColor = isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+  const switchTrackColor = { false: isDarkMode ? '#3A3F4B' : '#D1D5DB', true: accentColor };
+  const switchThumbColor = isDarkMode ? '#FFFFFF' : '#FFFFFF';
 
   const languages = [
     { label: t('en_lang'), value: 'en' },
@@ -111,257 +117,366 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
         justifyContent="center"
         alignItems="center"
         backgroundColor={backgroundColor}>
-        <Spinner size="large" color={headerTextColor} />
+        <Spinner size="large" color={accentColor} />
       </YStack>
     );
   }
 
+  const SectionHeader = ({ title, icon }: { title: string; icon: React.ReactNode }) => (
+    <XStack alignItems="center" space="$2" paddingVertical="$2" marginBottom="$2">
+      {icon}
+      <Text color={headerTextColor} fontSize={textSize + 2} fontWeight="bold">
+        {title}
+      </Text>
+    </XStack>
+  );
+
+  const SettingItem = ({ label, icon, control, onPress, showDivider = true }: {
+    label: string;
+    icon: React.ReactNode;
+    control: React.ReactNode;
+    onPress?: () => void;
+    showDivider?: boolean;
+  }) => (
+    <Pressable onPress={onPress}>
+      <YStack>
+        <XStack
+          alignItems="center"
+          justifyContent="space-between"
+          paddingVertical="$3"
+        >
+          <XStack alignItems="center" space="$3">
+            {icon}
+            <Text fontSize={textSize} color={textColor}>
+              {label}
+            </Text>
+          </XStack>
+          {control}
+        </XStack>
+        {showDivider && (
+          <View height={1} backgroundColor={dividerColor} />
+        )}
+      </YStack>
+    </Pressable>
+  );
+
   return (
     <Theme name={isDarkMode ? 'dark' : 'light'}>
+      {/* Header */}
+      <XStack backgroundColor={backgroundColor} padding="$4" paddingTop="$6" justifyContent="space-between" alignItems="center">
+        <H1 fontSize={textSize + 14} fontWeight="bold" color={headerTextColor}>
+          UNIMAP
+        </H1>
+        <XStack alignItems="center" space="$2">
+          <YStack alignItems="flex-end">
+            {hasData ? (
+              <>
+                <Text color={subTextColor} fontSize={textSize - 4}>
+                  @{user?.login}
+                </Text>
+                <Text color={headerTextColor} fontWeight="bold">
+                  {user?.getFullName()}
+                </Text>
+              </>
+            ) : (
+              <Text color={subTextColor} fontSize={textSize - 4}>
+                @{t('guest')}
+              </Text>
+            )}
+          </YStack>
+          <View
+            width={40}
+            height={40}
+            borderRadius={20}
+            backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
+            alignItems="center"
+            justifyContent="center"
+            overflow="hidden">
+            {hasData && user?.getAvatarBase64() ? (
+              <Image
+                source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                style={{ width: 40, height: 40, borderRadius: 20 }}
+              />
+            ) : (
+              <Text>😏</Text>
+            )}
+          </View>
+        </XStack>
+      </XStack>
+
       <YStack
         flex={1}
         backgroundColor={backgroundColor}
-        flexDirection={isLandscape ? 'row' : 'column'}
-        paddingTop="$6"
-        paddingBottom="$2"
-        paddingLeft={isLandscape ? 45 : '$4'}
-        paddingRight={isLandscape ? 24 : '$4'}>
-        <YStack flex={isLandscape ? 1 : undefined} marginRight={isLandscape ? '$4' : 0}>
-          {isLandscape ? (
-            <YStack alignItems="flex-start">
-              <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
-                UNIMAP
-              </H1>
-              <YStack alignItems="center" marginTop="$4">
-                {hasData ? (
-                  <>
-                    <Text color={subTextColor} fontSize={textSize - 4}>
-                      @{user?.login}
-                    </Text>
-                    <Text color={headerTextColor} fontWeight="bold">
-                      {user?.getFullName()}
-                    </Text>
-                  </>
-                ) : (
-                  <Text color={subTextColor} fontSize={textSize - 4}>
-                    @guest
-                  </Text>
-                )}
-                <View
-                  width={60}
-                  height={60}
-                  borderRadius={30}
-                  backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
-                  alignItems="center"
-                  justifyContent="center"
-                  marginTop="$2">
-                  {hasData && user?.getAvatarBase64() ? (
-                    <Image
-                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
-                      style={{ width: 60, height: 60, borderRadius: 30 }}
-                    />
-                  ) : (
-                    <Text>😏</Text>
-                  )}
-                </View>
-              </YStack>
-            </YStack>
-          ) : (
-            <XStack justifyContent="space-between" alignItems="center">
-              <H1 fontSize={textSize + 10} fontWeight="bold" color={headerTextColor}>
-                UNIMAP
-              </H1>
-              <XStack alignItems="center" space="$2">
-                <YStack alignItems="flex-end">
-                  {hasData ? (
-                    <>
-                      <Text color={subTextColor} fontSize={textSize - 4}>
-                        @{user?.login}
-                      </Text>
-                      <Text color={headerTextColor} fontWeight="bold">
-                        {user?.getFullName()}
-                      </Text>
-                    </>
-                  ) : (
-                    <Text color={subTextColor} fontSize={textSize - 4}>
-                      @guest
-                    </Text>
-                  )}
-                </YStack>
-                <View
-                  width={40}
-                  height={40}
-                  borderRadius={20}
-                  backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
-                  alignItems="center"
-                  justifyContent="center">
-                  {hasData && user?.getAvatarBase64() ? (
-                    <Image
-                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
-                      style={{ width: 40, height: 40, borderRadius: 20 }}
-                    />
-                  ) : (
-                    <Text>😏</Text>
-                  )}
-                </View>
-              </XStack>
-            </XStack>
-          )}
-        </YStack>
+        paddingBottom="$2">
 
-        <YStack flex={isLandscape ? 3 : 1} overflow="visible">
-          <ScrollView
-            style={[styles.container, { backgroundColor }]}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
-            <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
-                {t('appearance')}
-              </Text>
-              <View style={styles.settingRow}>
-                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('d_mod')}</Text>
+        {/* Settings content */}
+        <ScrollView
+          paddingTop={"$4"}
+          style={[styles.container]}
+          contentContainerStyle={{ paddingBottom: 48 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+
+          {/* Appearance */}
+          <Card
+            elevate
+            bordered
+            animation="bouncy"
+            scale={0.99}
+            marginTop="$-4"
+            marginHorizontal="$4"
+            backgroundColor={cardColor}
+            borderRadius={16}
+            shadowColor={cardShadow}
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.1}
+            shadowRadius={12}
+            paddingHorizontal="$4"
+            paddingVertical="$3">
+
+            <SectionHeader
+              title={t('appearance')}
+              icon={<MaterialIcons name="dark-mode" size={20} color={accentColor} />}
+            />
+
+            <SettingItem
+              label={t('d_mod')}
+              icon={<View width={20} />}
+              control={
                 <Switch
                   value={isDarkMode}
                   onValueChange={toggleTheme}
-                  trackColor={{ false: '#767577', true: '#81b0ff' }}
-                  thumbColor={isDarkMode ? '#374b6a' : '#f4f3f4'}
+                  trackColor={switchTrackColor}
+                  thumbColor={switchThumbColor}
+                  ios_backgroundColor={isDarkMode ? '#3A3F4B' : '#D1D5DB'}
                 />
-              </View>
-            </View>
+              }
+              showDivider={false}
+            />
+          </Card>
 
-            <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
-                {t('gestureNavigation')}
-              </Text>
-              <View style={styles.settingRow}>
-                <Text style={[{ fontSize: textSize, color: textColor }]}>
-                  {t('enableGestureNav')}
-                </Text>
+          {/* Gesture Navigation */}
+          <Card
+            elevate
+            bordered
+            animation="bouncy"
+            scale={0.99}
+            marginTop="$4"
+            marginHorizontal="$4"
+            backgroundColor={cardColor}
+            borderRadius={16}
+            shadowColor={cardShadow}
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.1}
+            shadowRadius={12}
+            paddingHorizontal="$4"
+            paddingVertical="$3">
+
+            <SectionHeader
+              title={t('gestureNavigation')}
+              icon={<MaterialIcons name="gesture" size={20} color={accentColor} />}
+            />
+
+            <SettingItem
+              label={t('enableGestureNav')}
+              icon={<View width={20} />}
+              control={
                 <Switch
                   value={gestureNavigationEnabled}
                   onValueChange={toggleGestureNavigation}
-                  trackColor={{ false: '#767577', true: '#81b0ff' }}
-                  thumbColor={gestureNavigationEnabled ? '#374b6a' : '#f4f3f4'}
+                  trackColor={switchTrackColor}
+                  thumbColor={switchThumbColor}
+                  ios_backgroundColor={isDarkMode ? '#3A3F4B' : '#D1D5DB'}
                 />
-              </View>
+              }
+            />
 
-              {gestureNavigationEnabled && (
-                <YStack space="$2" marginTop="$2">
-                  <Text color={labelColor} fontSize={textSize}>
-                    {t('gestureMode')}
-                  </Text>
-                  <ComboBox
-                    value={gestureMode}
-                    onValueChange={handleGestureModeChange}
-                    items={gestureModes}
-                    placeholder={t('select_gesture_mode')}
-                    labelColor={labelColor}
-                    textColor={textColor}
-                  />
-                  <Text
-                    style={[styles.settingNote, { fontSize: textSize - 2, color: subTextColor }]}>
-                    {gestureMode === 'shake'
-                      ? t('shake_note')
-                      : gestureMode === 'tilt'
-                        ? t('tilt_note')
-                        : t('both_note')}
-                  </Text>
-                </YStack>
-              )}
-
-              <View style={[styles.settingRow, { marginTop: 12 }]}>
-                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('disableSwipe')}</Text>
-                <Switch
-                  value={swipeLocked}
-                  onValueChange={handleSwipeLockChange}
-                  trackColor={{ false: '#767577', true: '#81b0ff' }}
-                  thumbColor={swipeLocked ? '#374b6a' : '#f4f3f4'}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
-                {t('notification')}
-              </Text>
-              <View style={styles.settingRow}>
-                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('en_not')}</Text>
-                <Switch
-                  value={notifications}
-                  onValueChange={setNotifications}
-                  trackColor={{ false: '#767577', true: '#81b0ff' }}
-                  thumbColor={notifications ? '#374b6a' : '#f4f3f4'}
-                />
-              </View>
-              <View style={styles.settingRow}>
-                <Text style={[{ fontSize: textSize, color: textColor }]}>{t('s_not')}</Text>
-                <Switch
-                  value={soundEnabled}
-                  onValueChange={setSoundEnabled}
-                  trackColor={{ false: '#767577', true: '#81b0ff' }}
-                  thumbColor={soundEnabled ? '#374b6a' : '#f4f3f4'}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
-                {t('language')}
-              </Text>
-              <YStack space="$2">
+            {gestureNavigationEnabled && (
+              <YStack paddingVertical="$2" marginBottom="$2">
                 <ComboBox
-                  value={language}
-                  onValueChange={handleLanguageChange}
-                  items={languages}
-                  placeholder={t('select_language')}
+                  view={"horizontal"}
+                  value={gestureMode}
+                  onValueChange={handleGestureModeChange}
+                  items={gestureModes}
+                  placeholder={''}
                   labelColor={labelColor}
                   textColor={textColor}
                 />
               </YStack>
-            </View>
+            )}
 
-            <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-              <Text style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
-                {t('displ_sett')}
-              </Text>
-              <YStack space="$4">
-                <YStack space="$2">
-                  <Text color={labelColor} fontSize={textSize}>
-                    {t('font_s')}
-                  </Text>
-                  <ComboBox
-                    value={fontSize}
-                    onValueChange={setFontSize}
-                    items={fontSizes}
-                    placeholder={t('select_font')}
-                    labelColor={labelColor}
-                    textColor={textColor}
-                  />
-                </YStack>
-                <YStack space="$2">
-                  <View style={[styles.settingCard, { backgroundColor: cardColor }]}>
-                    <Text
-                      style={[styles.settingTitle, { fontSize: textSize + 2, color: textColor }]}>
-                      {t('contrast')}
-                    </Text>
-                    <View style={styles.settingRow}>
-                      <Text style={{ fontSize: textSize, color: textColor }}>
-                        {t('Enable contrast')}
-                      </Text>
-                      <Switch
-                        value={highContrast}
-                        onValueChange={setHighContrast}
-                        trackColor={{ false: '#767577', true: '#81b0ff' }}
-                        thumbColor={highContrast ? '#374b6a' : '#f4f3f4'}
-                      />
-                    </View>
-                  </View>
-                </YStack>
+            <SettingItem
+              label={t('disableSwipe')}
+              icon={<View width={20} />}
+              control={
+                <Switch
+                  value={swipeLocked}
+                  onValueChange={handleSwipeLockChange}
+                  trackColor={switchTrackColor}
+                  thumbColor={switchThumbColor}
+                  ios_backgroundColor={isDarkMode ? '#3A3F4B' : '#D1D5DB'}
+                />
+              }
+              showDivider={false}
+            />
+          </Card>
+
+          {/* Notifications */}
+          <Card
+            elevate
+            bordered
+            animation="bouncy"
+            scale={0.99}
+            marginTop="$4"
+            marginHorizontal="$4"
+            backgroundColor={cardColor}
+            borderRadius={16}
+            shadowColor={cardShadow}
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.1}
+            shadowRadius={12}
+            paddingHorizontal="$4"
+            paddingVertical="$3">
+
+            <SectionHeader
+              title={t('notification')}
+              icon={<MaterialIcons name="notifications" size={20} color={accentColor} />}
+            />
+
+            <SettingItem
+              label={t('en_not')}
+              icon={<View width={20} />}
+              control={
+                <Switch
+                  value={notifications}
+                  onValueChange={setNotifications}
+                  trackColor={switchTrackColor}
+                  thumbColor={switchThumbColor}
+                  ios_backgroundColor={isDarkMode ? '#3A3F4B' : '#D1D5DB'}
+                />
+              }
+            />
+
+            <SettingItem
+              label={t('s_not')}
+              icon={<View width={20} />}
+              control={
+                <Switch
+                  value={soundEnabled}
+                  onValueChange={setSoundEnabled}
+                  trackColor={switchTrackColor}
+                  thumbColor={switchThumbColor}
+                  ios_backgroundColor={isDarkMode ? '#3A3F4B' : '#D1D5DB'}
+                />
+              }
+              showDivider={false}
+            />
+          </Card>
+
+          {/* Language */}
+          <Card
+            elevate
+            bordered
+            animation="bouncy"
+            scale={0.99}
+            marginTop="$4"
+            marginHorizontal="$4"
+            backgroundColor={cardColor}
+            borderRadius={16}
+            shadowColor={cardShadow}
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.1}
+            shadowRadius={12}
+            paddingHorizontal="$4"
+            paddingVertical="$3">
+
+            <SectionHeader
+              title={t('language')}
+              icon={<MaterialIcons name="language" size={20} color={accentColor} />}
+            />
+
+            <YStack paddingVertical="$2">
+              <ComboBox
+                view={"horizontal"}
+                value={language}
+                onValueChange={handleLanguageChange}
+                items={languages}
+                placeholder={t('select_language')}
+                labelColor={labelColor}
+                textColor={textColor}
+              />
+            </YStack>
+          </Card>
+
+          {/* Display Settings */}
+          <Card
+            elevate
+            bordered
+            animation="bouncy"
+            scale={0.99}
+            marginTop="$4"
+            marginHorizontal="$4"
+            backgroundColor={cardColor}
+            borderRadius={16}
+            shadowColor={cardShadow}
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.1}
+            shadowRadius={12}
+            paddingHorizontal="$4"
+            paddingVertical="$3">
+
+            <SectionHeader
+              title={t('displ_sett')}
+              icon={<MaterialIcons name="format-size" size={20} color={accentColor} />}
+            />
+
+            <YStack space="$4" paddingBottom="$2">
+              <YStack space="$2">
+                <Text color={labelColor} fontSize={textSize - 1}>
+                  {t('font_s')}
+                </Text>
+                <ComboBox
+                  view={"horizontal"}
+                  value={fontSize}
+                  onValueChange={setFontSize}
+                  items={fontSizes}
+                  placeholder={t('select_font')}
+                  labelColor={labelColor}
+                  textColor={textColor}
+                />
               </YStack>
-            </View>
-          </ScrollView>
-        </YStack>
+
+              <View height={1} backgroundColor={dividerColor} marginVertical="$2" />
+
+              <SectionHeader
+                title={t('contrast')}
+                icon={<MaterialIcons name="visibility" size={20} color={accentColor} />}
+              />
+
+              <SettingItem
+                label={t('enable_contrast')}
+                icon={<View width={20} />}
+                control={
+                  <Switch
+                    value={highContrast}
+                    onValueChange={setHighContrast}
+                    trackColor={switchTrackColor}
+                    thumbColor={switchThumbColor}
+                    ios_backgroundColor={isDarkMode ? '#3A3F4B' : '#D1D5DB'}
+                  />
+                }
+                showDivider={false}
+              />
+            </YStack>
+          </Card>
+
+          {/* Version info */}
+          <XStack justifyContent="center" marginTop="$6">
+            <Text color={subTextColor} fontSize={textSize - 2}>
+              UNIMAP v0.0.1-Betta_build
+            </Text>
+          </XStack>
+        </ScrollView>
       </YStack>
     </Theme>
   );
@@ -370,28 +485,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    zIndex: 1,
-  },
-  settingCard: {
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    zIndex: 2,
-  },
-  settingTitle: {
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  settingNote: {
-    fontStyle: 'italic',
-    marginTop: 4,
   },
 });
 

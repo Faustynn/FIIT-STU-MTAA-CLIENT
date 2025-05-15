@@ -6,7 +6,7 @@ import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } fr
 import { useTranslation } from 'react-i18next';
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { fetchTeacherDetails, fetchSubjectDetails, getSubjectsForTeacher, Teacher as ApiTeacher, Subject } from '../services/apiService';
+import { fetchTeacherDetails, getSubjectsForTeacher, Subject } from '../services/apiService';
 
 type TeacherDetailProps = {
   route: RouteProp<AppStackParamList, 'TeacherSubPage'>;
@@ -38,6 +38,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
 
   const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
   const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
+  const greenTextColor = highContrast ? '#FFD700' : isDarkMode ? '#79e3a5' : '$blue600';
   const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
   const cardBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
   const sectionBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
@@ -212,11 +213,12 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                     space="$2">
                     {teacher.email && (
                       <XStack space="$2" alignItems="center">
-                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
+                        <MaterialIcons name="email" size={20} color={greenTextColor} />
+                        <Text color={greenTextColor} fontSize={textSize - 1} width={80}>
                           {t('email')}:
                         </Text>
                         <Text
-                          color={headerTextColor}
+                          color={subTextColor}
                           fontSize={textSize - 1}
                           flex={1}>
                           {teacher.email}
@@ -233,26 +235,38 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                       </XStack>
                     )}
                     {teacher.phone && (
-                      <XStack space="$2">
-                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
+                      <XStack space="$2" alignItems="center">
+                        <MaterialIcons name="phone" size={20} color={greenTextColor} />
+                        <Text color={greenTextColor} fontSize={textSize - 1} width={80}>
                           {t('phone')}:
                         </Text>
-                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
+                        <Text color={subTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.phone}
                         </Text>
                       </XStack>
                     )}
                     {teacher.office && (
-                      <XStack space="$2">
-                        <Text color={subTextColor} fontSize={textSize - 1} width={80}>
+                      <XStack space="$2" alignItems="center" paddingTop={"$3"}>
+                        <MaterialIcons name="location-on" size={20} color={greenTextColor} />
+                        <Text color={greenTextColor} fontSize={textSize - 1} width={80}>
                           {t('office')}:
                         </Text>
-                        <Text color={headerTextColor} fontSize={textSize - 1} flex={1}>
+                        <Text color={subTextColor} fontSize={textSize - 1} flex={1}>
                           {teacher.office}
                         </Text>
                       </XStack>
                     )}
                   </YStack>
+                </YStack>
+
+                {/* Comments button */}
+                <YStack paddingHorizontal="$1" marginTop="$5">
+                  <Button
+                    onPress={navigateToComments}
+                    backgroundColor={accentColor}
+                    color={isDarkMode ? 'black' : 'white'}>
+                    {t('view_comments')}
+                  </Button>
                 </YStack>
 
                 {/* Subjects Taught */}
@@ -294,7 +308,7 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                               <Text color={subTextColor} fontSize={textSize - 2} marginBottom="$1">
                                 {t('roles')}:
                               </Text>
-                              {getRolesBadges(item.roles)}
+                              {getRolesBadges(item.roles.map(role => typeof role === 'string' ? role.replace(/['"{}]+/g, '') : String(role)))}
                             </YStack>
                           )}
                         </YStack>
@@ -303,17 +317,6 @@ const TeacherDetail: React.FC<TeacherDetailProps> = ({ route, navigation }) => {
                   </YStack>
                 )}
               </YStack>
-
-              {/* Comments button */}
-              <YStack paddingHorizontal="$1" marginTop="$5">
-                <Button
-                  onPress={navigateToComments}
-                  backgroundColor={accentColor}
-                  color={isDarkMode ? 'black' : 'white'}>
-                  {t('view_comments')}
-                </Button>
-              </YStack>
-
             </ScrollView>
           ) : (
             <YStack justifyContent="center" alignItems="center" flex={1}>

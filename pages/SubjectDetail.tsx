@@ -1,13 +1,13 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
-import { useWindowDimensions, Alert } from 'react-native';
-import { YStack, H1, Theme, XStack, Text, View, ScrollView, Spinner, Button } from 'tamagui';
 import { useTranslation } from 'react-i18next';
+import { useWindowDimensions } from 'react-native';
+import { YStack, H1, Theme, XStack, Text, ScrollView, Spinner, Button } from 'tamagui';
 
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { fetchSubjectDetails, fetchTeachers, getTeachersForSubject, Teacher, Subject } from '../services/apiService';
+import { fetchSubjectDetails, getTeachersForSubject, Teacher, Subject} from '../services/apiService';
 
 type SubjectDetailProps = {
   route: RouteProp<AppStackParamList, 'SubjectSubPage'>;
@@ -97,39 +97,53 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
   // translate study type
   const translateStudyType = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'full-time': return t('full_time');
-      case 'part-time': return t('part_time');
-      case 'distance': return t('distance');
-      case 'online': return t('online');
-      default: return type;
+      case 'full-time':
+        return t('full_time');
+      case 'part-time':
+        return t('part_time');
+      case 'distance':
+        return t('distance');
+      case 'online':
+        return t('online');
+      default:
+        return type;
     }
   };
 
   // translate semester
   const translateSemester = (semester: string) => {
     switch (semester.toLowerCase()) {
-      case 'fall': return t('fall_semester');
-      case 'spring': return t('spring_semester');
-      case 'summer': return t('summer_semester');
-      case 'winter': return t('winter_semester');
-      default: return semester;
+      case 'fall':
+        return t('fall_semester');
+      case 'spring':
+        return t('spring_semester');
+      case 'summer':
+        return t('summer_semester');
+      case 'winter':
+        return t('winter_semester');
+      default:
+        return semester;
     }
   };
 
   // translate end type
   const translateCompletionType = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'exam': return t('exam');
-      case 'credit': return t('credit');
-      case 'classified credit': return t('classified_credit');
-      default: return type;
+      case 'exam':
+        return t('exam');
+      case 'credit':
+        return t('credit');
+      case 'classified credit':
+        return t('classified_credit');
+      default:
+        return type;
     }
   };
 
   // langs. formatter
   const formatLanguages = (languages: string[] | undefined) => {
     if (!languages || languages.length === 0) return t('not_specified');
-    return languages.join(", ");
+    return languages.join(', ');
   };
 
   // grades view
@@ -141,34 +155,54 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
         <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor}>
           {t('grading_scale')}
         </Text>
-        <YStack
-          backgroundColor={sectionBackgroundColor}
-          borderRadius={8}
-          padding="$3"
-          space="$2">
+        <YStack backgroundColor={sectionBackgroundColor} borderRadius={8} padding="$3" space="$2">
           <XStack justifyContent="space-between">
-            <Text color={headerTextColor} fontSize={textSize}>A:</Text>
-            <Text color={headerTextColor} fontSize={textSize}>{subject.ascore || '—'}</Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              A:
+            </Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              {subject.ascore ? `${subject.ascore}%` : '—'}
+            </Text>
           </XStack>
           <XStack justifyContent="space-between">
-            <Text color={headerTextColor} fontSize={textSize}>B:</Text>
-            <Text color={headerTextColor} fontSize={textSize}>{subject.bscore || '—'}</Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              B:
+            </Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              {subject.bscore ? `${subject.bscore}%` : '—'}
+            </Text>
           </XStack>
           <XStack justifyContent="space-between">
-            <Text color={headerTextColor} fontSize={textSize}>C:</Text>
-            <Text color={headerTextColor} fontSize={textSize}>{subject.cscore || '—'}</Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              C:
+            </Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              {subject.cscore ? `${subject.cscore}%` : '—'}
+            </Text>
           </XStack>
           <XStack justifyContent="space-between">
-            <Text color={headerTextColor} fontSize={textSize}>D:</Text>
-            <Text color={headerTextColor} fontSize={textSize}>{subject.dscore || '—'}</Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              D:
+            </Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              {subject.dscore ? `${subject.dscore}%` : '—'}
+            </Text>
           </XStack>
           <XStack justifyContent="space-between">
-            <Text color={headerTextColor} fontSize={textSize}>E:</Text>
-            <Text color={headerTextColor} fontSize={textSize}>{subject.escore || '—'}</Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              E:
+            </Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              {subject.escore ? `${subject.escore}%` : '—'}
+            </Text>
           </XStack>
           <XStack justifyContent="space-between">
-            <Text color={headerTextColor} fontSize={textSize}>FX:</Text>
-            <Text color={headerTextColor} fontSize={textSize}>{subject.FXscore || '—'}</Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              FX:
+            </Text>
+            <Text color={headerTextColor} fontSize={textSize}>
+              {subject.FXscore ? `${subject.FXscore}%` : '—'}
+            </Text>
           </XStack>
         </YStack>
       </YStack>
@@ -186,7 +220,7 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
         </Text>
         <YStack space="$2">
           {subjectTeachers.map((teacher) => {
-            const subjectRoles = teacher.subjects.find(s => s.subjectCode === subject?.code);
+            const subjectRoles = teacher.subjects.find((s) => s.subjectCode === subject?.code);
             const roles = subjectRoles?.roles || [];
 
             return (
@@ -204,25 +238,32 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                 </XStack>
                 {roles.length > 0 && (
                   <Text color={accentColor} fontSize={textSize - 1} marginTop="$1">
-                    {roles.join(", ")}
+                    {roles.map(role => role.replace(/['"{}]+/g, '')).join(', ')}
                   </Text>
                 )}
-                <XStack space="$2" marginTop="$2" flexWrap="wrap">
-                  {teacher.email && (
+                {teacher.email && (
+                  <XStack alignItems="center" space="$1" marginTop="$1">
+                    <MaterialIcons name="email" size={textSize - 2} color={subTextColor} />
                     <Text color={subTextColor} fontSize={textSize - 2}>
-                      📧 {teacher.email}
+                      {teacher.email}
                     </Text>
-                  )}
-                  {teacher.phone && (
+                  </XStack>
+                )}
+                {teacher.phone && (
+                  <XStack alignItems="center" space="$1" marginTop="$1">
+                    <MaterialIcons name="phone" size={textSize - 2} color={subTextColor} />
                     <Text color={subTextColor} fontSize={textSize - 2}>
-                      📞 {teacher.phone}
+                      {teacher.phone}
                     </Text>
-                  )}
-                </XStack>
+                  </XStack>
+                )}
                 {teacher.office && (
-                  <Text color={subTextColor} fontSize={textSize - 2}>
-                    🏢 {t('office')}: {teacher.office}
-                  </Text>
+                  <XStack alignItems="center" space="$1" marginTop="$1">
+                    <MaterialIcons name="location-on" size={textSize - 2} color={subTextColor} />
+                    <Text color={subTextColor} fontSize={textSize - 2}>
+                      {t('office')}: {teacher.office}
+                    </Text>
+                  </XStack>
                 )}
               </YStack>
             );
@@ -248,7 +289,13 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
           {/* Header */}
           <XStack padding="$4" paddingTop="$6" alignItems="center" space="$2">
             <Button
-              icon={<MaterialIcons name="chevron-left" size={24} color={isDarkMode ? 'white' : 'black'} />}
+              icon={
+                <MaterialIcons
+                  name="chevron-left"
+                  size={24}
+                  color={isDarkMode ? 'white' : 'black'}
+                />
+              }
               onPress={handleGoBack}
               backgroundColor="transparent"
               color={headerTextColor}
@@ -316,17 +363,21 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                     borderRadius={8}
                     padding="$3"
                     space="$2">
+
                     <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('study_type')}:</Text> {translateStudyType(subject.studyType)}
+                      <Text fontWeight="bold" color={accentColor}>{t('study_type')}:</Text>{' '}
+                      {translateStudyType(subject.studyType)}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('completion_type')}:</Text> {translateCompletionType(subject.completionType)}
+                      <Text fontWeight="bold" color={accentColor}>{t('completion_type')}:</Text>{' '}
+                      {translateCompletionType(subject.completionType)}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('student_count')}:</Text> {subject.studentCount}
+                      <Text fontWeight="bold" color={accentColor}>{t('student_count')}:</Text> {subject.studentCount}
                     </Text>
                     <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('languages')}:</Text> {formatLanguages(subject.languages)}
+                      <Text fontWeight="bold" color={accentColor}>{t('languages')}:</Text>{' '}
+                      {formatLanguages(subject.languages)}
                     </Text>
                   </YStack>
                 </YStack>
@@ -341,14 +392,17 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                     borderRadius={8}
                     padding="$3"
                     space="$2">
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('course_contents')}:</Text> {subject.courseContents}
+                    <Text fontSize={textSize}>
+                      <Text fontWeight="bold" color={accentColor}>{t('course_contents')}:</Text>{'\n'}
+                      {subject.courseContents}
                     </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('planned_activities')}:</Text> {subject.plannedActivities}
+                    <Text fontSize={textSize}>
+                      <Text fontWeight="bold" color={accentColor}>{t('planned_activities')}:</Text>{'\n'}
+                      {subject.plannedActivities}
                     </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('learning_outcomes')}:</Text> {subject.learningOutcomes}
+                    <Text fontSize={textSize}>
+                      <Text fontWeight="bold" color={accentColor}>{t('learning_outcomes')}:</Text>{'\n'}
+                      {subject.learningOutcomes}
                     </Text>
                   </YStack>
                 </YStack>
@@ -363,14 +417,17 @@ const SubjectDetail: React.FC<SubjectDetailProps> = ({ route, navigation }) => {
                     borderRadius={8}
                     padding="$3"
                     space="$2">
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('assessment_methods')}:</Text> {subject.assesmentMethods}
+                    <Text fontSize={textSize}>
+                      <Text fontWeight="bold" color={accentColor}>{t('assessment_methods')}:</Text>{'\n'}
+                      {subject.assesmentMethods}
                     </Text>
-                    <Text color={headerTextColor} fontSize={textSize}>
-                      <Text fontWeight="bold">{t('evaluation_methods')}:</Text> {subject.evaluationMethods}
+                    <Text fontSize={textSize}>
+                      <Text fontWeight="bold" color={accentColor}>{t('evaluation_methods')}:</Text>{'\n'}
+                      {subject.evaluationMethods}
                     </Text>
                   </YStack>
                 </YStack>
+
 
                 {/* Grading Scale */}
                 {renderGrades()}

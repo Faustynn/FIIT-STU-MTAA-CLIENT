@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, ActivityIndicator, RefreshControl, } from 'react-native';
+import {TouchableOpacity, FlatList, Alert, ActivityIndicator, RefreshControl, } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Button, H4, Text, XStack, YStack, Card, Avatar, Separator, Input, Stack, ScrollView, YGroup, XGroup, Theme, } from "tamagui";
+import { Button, H4, Text, XStack, YStack, Card, Input, Stack, Theme, } from "tamagui";
 import { useTheme, getFontSizeValue } from "../components/SettingsController";
 import { NavigationProp, RouteProp } from "@react-navigation/native";
 import { AppStackParamList } from "../navigation/AppNavigator";
@@ -276,6 +276,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
             {canSeeAdminFeatures && (
               <Button
                 size="$2"
+                fontSize="$1"
                 circular
                 icon={<MaterialIcons name="delete" size={16} color={iconColor} />}
                 backgroundColor="$backgroundTransparent"
@@ -342,6 +343,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
         >
           <Button
             size="$3"
+            fontSize="$1"
             circular
             icon={<MaterialIcons name="arrow-back" size={20} color={iconColor} />}
             onPress={handleGoBack}
@@ -352,6 +354,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
           </Text>
           {/* Display user role based on User class */}
           <Button
+            fontSize="$1"
             size="$2"
             backgroundColor={getRoleBadgeColor()}
             color="white"
@@ -359,6 +362,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
             {getRoleName()}
           </Button>
           <Button
+            fontSize="$1"
             size="$3"
             circular
             icon={<MaterialIcons name="refresh" size={20} color={iconColor} />}
@@ -404,6 +408,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
             <XStack marginHorizontal="$4" marginTop="$2" justifyContent="space-between" alignItems="center">
               <Text fontSize={textSize + 2} fontWeight="bold" color={headerTextColor}>{t('comments')}</Text>
               <Button
+                fontSize="$1"
                 size="$3"
                 backgroundColor="$blue9"
                 onPress={toggleCommentForm}
@@ -446,6 +451,7 @@ const CommentsSubPage: React.FC<CommentsSubPageProps> = ({ route, navigation }) 
                     </XStack>
 
                     <Button
+                      fontSize="$1"
                       backgroundColor="$blue9"
                       onPress={handleSendComment}
                       disabled={isLoading}

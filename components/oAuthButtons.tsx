@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, XStack } from 'tamagui';
+import { Button, XStack, Text } from 'tamagui';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useGoogleAuth, useFacebookAuth } from '../utils/oAuthUtil';
 import { AppStackParamList } from '../navigation/AppNavigator';
@@ -25,31 +25,42 @@ const OAuthButtons: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
     }
   };
 
-  const buttonStyle = {
-    backgroundColor: isDarkMode ? '#262A35' : '#F5F5F5',
-    color: isDarkMode ? '#79E3A5' : '#000000',
-    padding: 10,
-    borderRadius: 4,
-    marginVertical: 5,
-  };
-
   return (
-    <XStack space="$2" flexDirection="column">
+    <XStack space={16} justifyContent="space-between" width="100%">
       <Button
-        style={buttonStyle}
-        onPress={handleGoogleLogin}
+        flex={1}
+        backgroundColor="#DB4437"
+        color="white"
+        borderRadius={8}
+        padding={10}
+        borderWidth={0}
+        pressStyle={{ opacity: 0.9, scale: 0.98 }}
         disabled={isGoogleLoading}
-      >
-        <MaterialCommunityIcons name={'shop'} size={24} color={isDarkMode ? '#79E3A5' : '#000000'} />
-        {isGoogleLoading ? 'Loading...' : 'Google'}
+        onPress={handleGoogleLogin}>
+        <XStack space={8} alignItems="center" justifyContent="center">
+          <MaterialCommunityIcons name="shop" size={20} color="white" />
+          <Text color="white" fontWeight="bold">
+            {isGoogleLoading ? 'Loading...' : 'Google'}
+          </Text>
+        </XStack>
       </Button>
+
       <Button
-        style={buttonStyle}
-        onPress={handleFacebookLogin}
+        flex={1}
+        backgroundColor="#1877F2"
+        color="white"
+        borderRadius={8}
+        padding={10}
+        borderWidth={0}
+        pressStyle={{ opacity: 0.9, scale: 0.98 }}
         disabled={isFacebookLoading}
-      >
-        <MaterialCommunityIcons name={'facebook'} size={24} color={isDarkMode ? '#79E3A5' : '#000000'} />
-        {isFacebookLoading ? 'Loading...' : 'Facebook'}
+        onPress={handleFacebookLogin}>
+        <XStack space={8} alignItems="center" justifyContent="center">
+          <MaterialCommunityIcons name="facebook" size={20} color="white" />
+          <Text color="white" fontWeight="bold">
+            {isFacebookLoading ? 'Loading...' : 'Facebook'}
+          </Text>
+        </XStack>
       </Button>
     </XStack>
   );
