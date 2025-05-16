@@ -33,7 +33,7 @@ const customColors = {
   light: {
     background: '#F5F5F5',
     foreground: '#000000',
-    primary: '#3B82F6',  // blue600
+    primary: '#3B82F6', // blue600
     secondary: '#79E3A5', // green for accent
     gray50: '#FAFAFA',
     gray100: '#F5F5F5',
@@ -71,7 +71,7 @@ const customColors = {
     blue800: '#1E40AF',
     green500: '#79E3A5',
     green600: '#66D294',
-  }
+  },
 };
 
 // Custom theme tokens
@@ -80,7 +80,7 @@ const customTokens = {
   color: {
     ...tokens.color,
     ...customColors.light,
-  }
+  },
 };
 
 // Custom themes
@@ -93,7 +93,7 @@ const customThemes = {
   dark: {
     ...themes.dark,
     ...customColors.dark,
-  }
+  },
 };
 
 export const Container = styled(YStack, {

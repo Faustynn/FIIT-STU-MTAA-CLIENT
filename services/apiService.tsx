@@ -14,7 +14,7 @@ const REGISTR_URL = `${API_URL}register`;
 const FIND_USER_BY_EMAIL_URL = `${API_URL}user/email/`;
 const CONFIRM_CODE_TO_EMAIL = `${API_URL}user/email/code`;
 const CHANGE_PASSWORD = `${API_URL}user/email/password`;
-const SUBJECTS_URL =`${API_URL}resources/subjects`;
+const SUBJECTS_URL = `${API_URL}resources/subjects`;
 const TEACHERS_URL = `${API_URL}resources/teachers`;
 const COMMENTS_URL = `${API_URL}comments/`;
 const PREMIUM_URL = `${API_URL}premium/`;
@@ -250,7 +250,12 @@ export const oAuth2sendAuthenticationRequest = async (token: string, provider: s
 };
 
 // Send registration request
-export const sendRegistrationRequest = async (login: string, username: string, email: string, password: string) => {
+export const sendRegistrationRequest = async (
+  login: string,
+  username: string,
+  email: string,
+  password: string
+) => {
   try {
     const response = await fetch(REGISTR_URL, {
       method: 'POST',
@@ -330,12 +335,6 @@ export const sendNewPasswordRequest = async (email: string, password: string) =>
     return false;
   }
 };
-
-
-
-
-
-
 
 export interface Subject {
   code: string;
@@ -440,16 +439,14 @@ export const parseSubjects = (data: any): Subject[] => {
   }
 
   return subjects;
-}
+};
 function parseSubjectObject(data: any, codeFromKey?: string): Subject | null {
   if (!data) return null;
 
   try {
-
     let languages: string[] = [];
     if (data.languages) {
       if (Array.isArray(data.languages)) {
-
         // ["{\"slovenský jazyk\"", "\"anglický jazyk\"}"]
         if (data.languages.length > 0) {
           const joinedLanguages = data.languages.join(',');
@@ -477,8 +474,8 @@ function parseSubjectObject(data: any, codeFromKey?: string): Subject | null {
       return value.toString();
     };
 
-    const fxScore = data.FXscore !== undefined ? data.FXscore :
-      (data.fxscore !== undefined ? data.fxscore : '0');
+    const fxScore =
+      data.FXscore !== undefined ? data.FXscore : data.fxscore !== undefined ? data.fxscore : '0';
 
     const subject: Subject = {
       code: data.code || codeFromKey || '',
@@ -487,7 +484,7 @@ function parseSubjectObject(data: any, codeFromKey?: string): Subject | null {
       credits: Number(data.credits) || 0,
       studyType: data.studyType || '',
       semester: data.semester || '',
-      languages: languages,
+      languages,
       completionType: data.completionType || '',
       studentCount: Number(data.studentCount) || 0,
       evaluation: data.evaluation === undefined ? null : data.evaluation,
@@ -501,7 +498,7 @@ function parseSubjectObject(data: any, codeFromKey?: string): Subject | null {
       cscore: safeToString(data.cscore),
       dscore: safeToString(data.dscore),
       escore: safeToString(data.escore),
-      FXscore: safeToString(fxScore)
+      FXscore: safeToString(fxScore),
     };
 
     return subject;
@@ -535,26 +532,27 @@ export const parseTeachers = (data: any): Teacher[] => {
 
     const teachersArray = Array.isArray(parsedData)
       ? parsedData
-      : (parsedData?.teachers && Array.isArray(parsedData.teachers)
+      : parsedData?.teachers && Array.isArray(parsedData.teachers)
         ? parsedData.teachers
-        : []);
+        : [];
 
     teachersArray.forEach((item: any) => {
       if (item && typeof item === 'object') {
-        const subjectsArray = Array.isArray(item.subjects)  ? item.subjects.map((subject: any) => {
-            let roles: string[] = [];
-            if (Array.isArray(subject.roles)) {
-              roles = subject.roles;
-            } else if (typeof subject.roles === 'string') {
-              const rolesStr = subject.roles.replace(/^\{|\}$/g, '').replace(/\"/g, '');
-              roles = rolesStr.split(',').map((role: string) => role.trim());
-            }
+        const subjectsArray = Array.isArray(item.subjects)
+          ? item.subjects.map((subject: any) => {
+              let roles: string[] = [];
+              if (Array.isArray(subject.roles)) {
+                roles = subject.roles;
+              } else if (typeof subject.roles === 'string') {
+                const rolesStr = subject.roles.replace(/^\{|\}$/g, '').replace(/\"/g, '');
+                roles = rolesStr.split(',').map((role: string) => role.trim());
+              }
 
-            return {
-              subjectCode: subject.subjectName || '',
-              roles: roles,
-            };
-          })
+              return {
+                subjectCode: subject.subjectName || '',
+                roles,
+              };
+            })
           : [];
 
         const teacherId = item.id.toString();
@@ -602,8 +600,6 @@ export const parseTeachers = (data: any): Teacher[] => {
   return Array.from(teachersMap.values());
 };
 
-
-
 export const fetchSubjects = async (): Promise<Subject[]> => {
   const cachedData = await AsyncStorage.getItem('CACHED_SUBJECTS');
   if (cachedData) {
@@ -633,7 +629,7 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
       }
 
       const rawData = await response.json();
-  //    console.log('Received subjects data:', JSON.stringify(rawData, null, 2));
+      //    console.log('Received subjects data:', JSON.stringify(rawData, null, 2));
       const subjects = parseSubjects(rawData);
 
       await AsyncStorage.setItem('CACHED_SUBJECTS', JSON.stringify(subjects));
@@ -675,7 +671,10 @@ export const fetchSubjectDetails = async (subjectId: string | number): Promise<S
       return found;
     } catch (err) {
       attempt++;
-      console.error(` fetchSubjectDetails failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`, err);
+      console.error(
+        ` fetchSubjectDetails failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`,
+        err
+      );
       await new Promise((res) => setTimeout(res, 15000));
 
       if (attempt >= maxAttempts) {
@@ -725,7 +724,10 @@ export const fetchTeachers = async (): Promise<Teacher[]> => {
       return teachers;
     } catch (err) {
       attempt++;
-      console.error(` fetchTeachers failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`, err);
+      console.error(
+        ` fetchTeachers failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`,
+        err
+      );
       await new Promise((res) => setTimeout(res, 15000));
 
       if (attempt >= maxAttempts) {
@@ -763,7 +765,10 @@ export const fetchTeacherDetails = async (teacherId: string | number): Promise<T
       return found;
     } catch (err) {
       attempt++;
-      console.error(`❌ fetchTeacherDetails failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`, err);
+      console.error(
+        `❌ fetchTeacherDetails failed (attempt ${attempt}/${maxAttempts}), retrying in 15s...`,
+        err
+      );
       await new Promise((res) => setTimeout(res, 15000));
 
       if (attempt >= maxAttempts) {
@@ -779,35 +784,29 @@ export const fetchTeacherDetails = async (teacherId: string | number): Promise<T
 export const getTeachersForSubject = async (subjectCode: string): Promise<Teacher[]> => {
   const allTeachers = await fetchTeachers();
 
-  return allTeachers.filter(teacher => teacher.subjects.some(subject => subject.subjectCode === subjectCode)
+  return allTeachers.filter((teacher) =>
+    teacher.subjects.some((subject) => subject.subjectCode === subjectCode)
   );
 };
-export const getSubjectsForTeacher = async (teacherId: number | string): Promise<{subject: Subject, roles: string[]}[]> => {
+export const getSubjectsForTeacher = async (
+  teacherId: number | string
+): Promise<{ subject: Subject; roles: string[] }[]> => {
   const teacher = await fetchTeacherDetails(teacherId);
   const allSubjects = await fetchSubjects();
-  const result: {subject: Subject, roles: string[]}[] = [];
+  const result: { subject: Subject; roles: string[] }[] = [];
 
   for (const teacherSubject of teacher.subjects) {
-    const subject = allSubjects.find(s => s.code === teacherSubject.subjectCode);
+    const subject = allSubjects.find((s) => s.code === teacherSubject.subjectCode);
     if (subject) {
       result.push({
         subject,
-        roles: teacherSubject.roles
+        roles: teacherSubject.roles,
       });
     }
   }
 
   return result;
 };
-
-
-
-
-
-
-
-
-
 
 export const buyPremium = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
@@ -949,7 +948,11 @@ export const changeUserName = async (email: string | undefined, newName: string)
 };
 
 // Change user avatar
-export const updateUserAvatar = async (userId: number | undefined, base64ImageData: string, fileName: string | undefined) => {
+export const updateUserAvatar = async (
+  userId: number | undefined,
+  base64ImageData: string,
+  fileName: string | undefined
+) => {
   if (!userId || !base64ImageData || !fileName) return false;
 
   try {
@@ -1013,11 +1016,6 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
   }
 };
 
-
-
-
-
-
 // Fetch all comments for a specific teacher
 export const get_all_teachers_comments = async (teacherId: number | string): Promise<any> => {
   if (!teacherId) return false;
@@ -1026,7 +1024,7 @@ export const get_all_teachers_comments = async (teacherId: number | string): Pro
     const response = await fetch(`${ALL_TEACHERS_URL}${teacherId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
       },
     });
 
@@ -1045,7 +1043,13 @@ export const get_all_teachers_comments = async (teacherId: number | string): Pro
   return true;
 };
 // Add new comment for teacher
-export const add_new_commet_teachers = async (jsonBody: { code: string | number; user_id: number; rating: number | string; text: string; levelAccess: number; }): Promise<boolean> => {
+export const add_new_commet_teachers = async (jsonBody: {
+  code: string | number;
+  user_id: number;
+  rating: number | string;
+  text: string;
+  levelAccess: number;
+}): Promise<boolean> => {
   if (!jsonBody) return false;
 
   try {
@@ -1091,7 +1095,6 @@ export const delete_teacher_comment = async (comment_id: number): Promise<any> =
   }
 };
 
-
 // Fetch all comments for a specific subject
 export const get_all_subjects_comments = async (subjectId: number | string): Promise<any> => {
   if (!subjectId) return false;
@@ -1100,7 +1103,7 @@ export const get_all_subjects_comments = async (subjectId: number | string): Pro
     const response = await fetch(`${ALL_SUBJECTS_URL}${subjectId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
+        Authorization: `Bearer ${await AsyncStorage.getItem('ACCESS_TOKEN')}`,
       },
     });
 
@@ -1119,7 +1122,13 @@ export const get_all_subjects_comments = async (subjectId: number | string): Pro
   return true;
 };
 // Add new comment for subject
-export const add_new_commet_subjects = async (jsonBody: { code: string | number; user_id: number; rating: number | string; text: string; levelAccess: number; }): Promise<boolean> => {
+export const add_new_commet_subjects = async (jsonBody: {
+  code: string | number;
+  user_id: number;
+  rating: number | string;
+  text: string;
+  levelAccess: number;
+}): Promise<boolean> => {
   if (!jsonBody) return false;
 
   try {
@@ -1152,7 +1161,6 @@ export const delete_subject_comment = async (teacherId: number): Promise<any> =>
   try {
     const response = await fetch(`${DELETE_SUBJECTS_COMMENT_URL}${teacherId}`, {
       method: 'DELETE',
-
     });
 
     if (response.status === 204) {

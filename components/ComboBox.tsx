@@ -16,14 +16,14 @@ type ComboBoxProps = {
 };
 
 export const ComboBox = ({
-                           value,
-                           onValueChange,
-                           items,
-                           placeholder,
-                           labelColor,
-                           textColor,
-                           view,
-                         }: ComboBoxProps) => {
+  value,
+  onValueChange,
+  items,
+  placeholder,
+  labelColor,
+  textColor,
+  view,
+}: ComboBoxProps) => {
   const { theme, fontSize, highContrast } = useTheme();
 
   const isDarkMode = theme === 'dark';
