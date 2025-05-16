@@ -1,5 +1,5 @@
 import { NavigationProp } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Switch, useWindowDimensions, Image, Pressable } from 'react-native';
 import { H1, XStack, YStack, Text, View, Spinner, Theme, ScrollView, Card } from 'tamagui';
@@ -10,58 +10,36 @@ import User from '../components/User';
 import '../utils/i18n';
 import { ComboBox } from '../components/ComboBox';
 
+// Cash all data
+const cache = {
+  user: null as User | null,
+  hasCheckedStorage: false as boolean,
+};
+
 type SettingsPageProps = {
   navigation: NavigationProp<any>;
   onSwipeLockChange: (enabled: boolean) => void;
 };
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChange }) => {
-  const {
-    theme,
-    toggleTheme,
-    gestureNavigationEnabled,
-    toggleGestureNavigation,
-    gestureMode,
-    setGestureMode,
-    fontSize,
-    setFontSize,
-    highContrast,
-    setHighContrast,
-  } = useTheme();
+
+  // states and hooks
+  const { theme, toggleTheme, gestureNavigationEnabled, toggleGestureNavigation, gestureMode, setGestureMode, fontSize, setFontSize, highContrast, setHighContrast, } = useTheme();
   const isDarkMode = theme === 'dark';
   const { t, i18n } = useTranslation();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const textSize = getFontSizeValue(fontSize);
-
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasData, setHasData] = useState(false);
+  const [user, setUser] = useState<User | null>(() => cache.user);
+  const [isLoading, setIsLoading] = useState(!cache.hasCheckedStorage);
+  const [hasData, setHasData] = useState(!!cache.user);
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [language, setLanguage] = useState(i18n.language || 'en');
   const [swipeLocked, setSwipeLocked] = useState(false);
+  const isMounted = useRef(true);
 
-  useEffect(() => {
-    const fetchAndParseUser = async () => {
-      try {
-        const storedUser = await User.fromStorage();
-        if (storedUser) {
-          setUser(storedUser);
-          setHasData(true);
-        } else {
-          setHasData(false);
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        setHasData(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchAndParseUser();
-  }, []);
-
+  // Memoized styles
   const accentColor = isDarkMode ? '#4A88F0' : '#3378E8';
   const textColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '#333333';
   const cardColor = highContrast ? '#000000' : isDarkMode ? '#222831' : '#FFFFFF';
@@ -73,6 +51,37 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation, onSwipeLockChan
   const dividerColor = isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
   const switchTrackColor = { false: isDarkMode ? '#3A3F4B' : '#D1D5DB', true: accentColor };
   const switchThumbColor = isDarkMode ? '#FFFFFF' : '#FFFFFF';
+
+  useEffect(() => {
+    const fetchAndParseUser = async () => {
+      // Only fetch if dont checked storage yet or it not in cache
+      if (cache.hasCheckedStorage && cache.user) {
+        return;
+      }
+
+      try {
+        const storedUser = await User.fromStorage();
+        if (storedUser) {
+          setUser(storedUser);
+          cache.user = storedUser; // Save to cache
+          setHasData(true);
+        } else {
+          setHasData(false);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        setHasData(false);
+      } finally {
+        setIsLoading(false);
+        cache.hasCheckedStorage = true; // Mark as checked
+      }
+    };
+
+    if (isMounted.current) {
+      fetchAndParseUser();
+      isMounted.current = false;
+    }
+  }, []);
 
   const languages = [
     { label: t('en_lang'), value: 'en' },

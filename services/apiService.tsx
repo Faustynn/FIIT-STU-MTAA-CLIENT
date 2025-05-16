@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { User } from '../components/User';
 
 // API URLs
-export const API_URL = 'http://147.175.161.201:8080/api/unimap_pc/';
+export const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
 
 const oAuth_LOGIN_URL = `${API_URL}oauth2/login`;
 const CHECK_CONNECTION_URL = `${API_URL}check-connection`;

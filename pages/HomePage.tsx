@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { YStack, XStack, H1, Text, Theme, ScrollView, View, Spinner, Button } from "tamagui";
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import { NavigationProp, useFocusEffect } from "@react-navigation/native";
@@ -14,6 +14,14 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 
+// Cash all data
+const cache = {
+  user: null as User | null,
+  news: [] as NewsModel[],
+  userLocation: null as Location.LocationObject | null,
+  pushToken: null as string | null,
+};
+
 enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
   CONNECTING = 'CONNECTING',
@@ -25,22 +33,23 @@ type HomePageProps = {
   navigation: NavigationProp<any>;
 };
 
+// Вынесем утилиты наружу для предотвращения повторного создания функций
 const openWebLink = (url: string) => {
   Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
 };
 
-//open maps with directions
+// Открыть карты с направлениями
 const openMapsWithDirections = (destLatitude: number, destLongitude: number, userLatitude?: number, userLongitude?: number) => {
   let url = '';
 
-  // user share location
+  // Если пользователь поделился местоположением
   if (userLatitude !== undefined && userLongitude !== undefined) {
     if (Platform.OS === 'ios') {
       url = `maps://app?saddr=${userLatitude},${userLongitude}&daddr=${destLatitude},${destLongitude}`;
     } else {
       url = `google.navigation:q=${destLatitude},${destLongitude}&origin=${userLatitude},${userLongitude}`;
     }
-  } else { // user dont share location make only navigation to dest
+  } else { // Если не поделился, просто направление к месту назначения
     if (Platform.OS === 'ios') {
       url = `maps://app?daddr=${destLatitude},${destLongitude}`;
     } else {
@@ -60,10 +69,35 @@ const openMapsWithDirections = (destLatitude: number, destLongitude: number, use
     .catch(err => console.error('An error occurred', err));
 };
 
+// check coords
 const hasValidCoordinates = (newsItem: NewsModel) => {
-  // check coords
-  return newsItem.coordinates !== undefined && newsItem.coordinates !== null && newsItem.coordinates.latitude !== undefined && newsItem.coordinates.longitude !== undefined && newsItem.coordinates.latitude !== 0 && newsItem.coordinates.longitude !== 0;
+  return newsItem.coordinates !== undefined &&
+    newsItem.coordinates !== null &&
+    newsItem.coordinates.latitude !== undefined &&
+    newsItem.coordinates.longitude !== undefined &&
+    newsItem.coordinates.latitude !== 0 &&
+    newsItem.coordinates.longitude !== 0;
 };
+
+
+const utilities = [
+  {
+    key: 'fiit_dis',
+    url: 'https://discord.gg/dX48acpNS8',
+  },
+  {
+    key: 'fx_com',
+    url: 'https://www.notion.so/FX-com-54cdb158085e4377b832ece310a5603d',
+  },
+  {
+    key: 'mladost',
+    url: 'https://protective-april-ef1.notion.site/SD-Mladost-abe968a31d404360810b53acbbb357cc',
+  },
+  {
+    key: 'fiit_tg',
+    url: 'https://t.me/fiitstu'
+  },
+];
 
 const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const { t } = useTranslation();
@@ -74,114 +108,137 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
-  const [user, setUser] = useState<User>(null as any);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasData, setHasData] = useState(false);
+  const [user, setUser] = useState<User | null>(() => cache.user as User | null);
+  const [isLoading, setIsLoading] = useState(!cache.user);
+  const [hasData, setHasData] = useState(!!cache.user);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [news, setNews] = useState<NewsModel[]>([]);
+  const [news, setNews] = useState<NewsModel[]>(() => cache.news as NewsModel[]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   const [badgeCount, setBadgeCount] = useState<number>(0);
-  const [pushToken, setPushToken] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
+  const [pushToken, setPushToken] = useState<string | null>(() => cache.pushToken);
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(() => cache.userLocation);
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<string | null>(null);
+
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
+  const firstUpdateRef = useRef<boolean>(true);
 
-  // ask for notification permissions
-  useEffect(() => {
-    const requestNotificationPermissions = async () => {
-      try {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
+  // cash notif.
+  const [notificationInitialized, setNotificationInitialized] = useState(false);
 
-        if (existingStatus !== 'granted') {
-          const { status } = await Notifications.requestPermissionsAsync({
-            ios: {
-              allowAlert: true,
-              allowBadge: true,
-              allowSound: true,
-              allowDisplayInCarPlay: true,
-              allowCriticalAlerts: true,
-              provideAppNotificationSettings: true,
-              allowProvisional: true,
-            },
-          });
-          finalStatus = status;
-        }
+  const styles = useMemo(() => ({
+    backgroundColor: highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50',
+    headerTextColor: highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600',
+    subTextColor: highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800',
+    cardBackgroundColor: highContrast ? '#000000' : isDarkMode ? '#1E2129' : '$F5F5F5',
+    linkTextColor: highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '$blue600',
+    statusColors: {
+      [ConnectionStatus.CONNECTED]: '#4CAF50',
+      [ConnectionStatus.CONNECTING]: '#FFC107',
+      [ConnectionStatus.DISCONNECTED]: '#9E9E9E',
+      [ConnectionStatus.ERROR]: '#F44336'
+    }
+  }), [highContrast, isDarkMode]);
 
-        if (finalStatus !== 'granted') {
-          console.log('Error getting permission for notifications');
-          return;
-        }
+  // Lazy loading for permissions notf.
+  const requestNotificationPermissions = useCallback(async () => {
+    if (notificationInitialized) return;
 
-        console.log('Permissions for notif. granted');
-      } catch (error) {
-        console.error('Err while requesting notification permissions:', error);
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync({
+          ios: {
+            allowAlert: true,
+            allowBadge: true,
+            allowSound: true,
+            allowDisplayInCarPlay: true,
+            allowCriticalAlerts: true,
+            provideAppNotificationSettings: true,
+            allowProvisional: true,
+          },
+        });
+        finalStatus = status;
       }
-    };
 
-    requestNotificationPermissions();
+      if (finalStatus !== 'granted') {
+        console.log('Error getting permission for notifications');
+        return;
+      }
+
+      console.log('Permissions for notif. granted');
+      setNotificationInitialized(true);
+    } catch (error) {
+      console.error('Err while requesting notification permissions:', error);
+    }
+  }, [notificationInitialized]);
+
+
+  // Lazy loading geolocation permiss.
+  const requestLocationPermissions = useCallback(async (forceRequest = false) => {
+    if (cache.userLocation && !forceRequest) {
+      setUserLocation(cache.userLocation);
+      return;
+    }
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setLocationPermissionStatus(status);
+
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation(location);
+        cache.userLocation = location; // Сохраняем в кеш
+        console.log('User location acquired');
+      } else {
+        console.log('Location permission denied');
+      }
+    } catch (error) {
+      console.error('Error requesting location permissions:', error);
+    }
   }, []);
 
-  // Request location permissions and get user location
-  useEffect(() => {
-    const requestLocationPermissions = async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        setLocationPermissionStatus(status);
+  // Lazy loading notif.
+  const initNotifications = useCallback(async () => {
+    if (notificationInitialized) return;
 
-        if (status === 'granted') {
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
-          setUserLocation(location);
-          console.log('User location acquired:', location.coords);
-        } else {
-          console.log('Location permission denied');
-        }
-      } catch (error) {
-        console.error('Error requesting location permissions:', error);
+    // notif. settings
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+
+    await notificationService.initialize();
+
+    const count = await notificationService.getBadgeCountAsync();
+    setBadgeCount(count);
+
+    // liseners setings
+    notificationListener.current = notificationService.addNotificationReceivedListener(
+      notification => {
+        const newsId = notification.request.content.data?.newsId;
+        console.log(`Received notification for news ID: ${newsId}`);
       }
-    };
+    );
 
-    requestLocationPermissions();
-  }, []);
+    responseListener.current = notificationService.addNotificationResponseReceivedListener(
+      response => {
+        const newsId = response.notification.request.content.data?.newsId;
+        console.log(`User tapped on notification for news ID: ${newsId}`);
+      }
+    );
 
-  // notification service and listener
-  useEffect(() => {
-    const initNotifications = async () => {
-      // Configure notification handling
-      Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowAlert: true,
-          shouldPlaySound: true,
-          shouldSetBadge: true,
-          shouldShowBanner: true,
-          shouldShowList: true,
-        }),
-      });
-
-      await notificationService.initialize();
-
-      const count = await notificationService.getBadgeCountAsync();
-      setBadgeCount(count);
-
-      notificationListener.current = notificationService.addNotificationReceivedListener(
-        notification => {
-          const newsId = notification.request.content.data?.newsId;
-          console.log(`Received notification for news ID: ${newsId}`);
-        }
-      );
-
-      responseListener.current = notificationService.addNotificationResponseReceivedListener(
-        response => {
-          const newsId = response.notification.request.content.data?.newsId;
-          console.log(`User tapped on notification for news ID: ${newsId}`);
-        }
-      );
-
-      // debug
+    if (!pushToken) {
       try {
         let token = null;
         const projectId = Constants.expoConfig?.extra?.eas?.projectId;
@@ -196,76 +253,69 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
         if (token) {
           setPushToken(token.data);
-          console.log('Push token for this device:', token.data);
+          cache.pushToken = token.data; // save token to cash
+          console.log('Push token acquired');
         }
       } catch (error) {
         console.error('Error getting push token:', error);
       }
-    };
+    }
 
-    initNotifications();
+    setNotificationInitialized(true);
+  }, [notificationInitialized, pushToken]);
 
-    // Listen for app state changes
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-    return () => {
-      // Clean up listeners
-      if (notificationListener.current) {
-        notificationService.removeNotificationSubscription(notificationListener.current);
-      }
-      if (responseListener.current) {
-        notificationService.removeNotificationSubscription(responseListener.current);
-      }
-      subscription.remove();
-    };
-  }, []);
-
-  const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+  // check app. state
+  const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
     if (
       appState.current.match(/inactive|background/) &&
       nextAppState === 'active'
     ) {
       console.log('App has come to the foreground');
-      await notificationService.resetBadgeCount();
-      setBadgeCount(0);
+      if (notificationInitialized) {
+        await notificationService.resetBadgeCount();
+        setBadgeCount(0);
+      }
 
-      // Update user location when app comes to foreground
       if (locationPermissionStatus === 'granted') {
         try {
           const location = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
           });
           setUserLocation(location);
+          cache.userLocation = location;
         } catch (error) {
           console.error('Error updating user location:', error);
         }
       }
 
-      // Reconnect to SSE if disconnected
       if (connectionStatus !== ConnectionStatus.CONNECTED) {
         sseService.connectToSSEServer();
       }
-    } else if (
-      appState.current === 'active' &&
-      nextAppState.match(/inactive|background/)
-    ) {
-      console.log('App has gone to the background');
     }
 
     appState.current = nextAppState;
-  };
+  }, [connectionStatus, locationPermissionStatus, notificationInitialized]);
 
+  // tak user from cash
   useEffect(() => {
     const fetchAndParseUser = async () => {
+      // Если пользователь уже есть в кеше, не загружаем повторно
+      if (cache.user) {
+        setUser(cache.user as User);
+        setHasData(true);
+        setIsAdmin(cache.user.isAdmin());
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const storedUser = await User.fromStorage();
         if (storedUser) {
           setUser(storedUser);
+          cache.user = storedUser; // Сохраняем в кеш
           setHasData(true);
-
-          if (storedUser.isAdmin) {
-            setIsAdmin(storedUser.isAdmin());
-          }
+          setIsAdmin(storedUser.isAdmin());
         }
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -275,54 +325,80 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         setIsLoading(false);
       }
     };
+
     fetchAndParseUser();
   }, []);
 
-  // Connect to SSE when we load screen
+  // init app observer
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+
+      // Очищаем слушатели уведомлений при размонтировании
+      if (notificationListener.current) {
+        notificationService.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        notificationService.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, [handleAppStateChange]);
+
+  // connect to sse
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       const newsListener = (newsList: NewsModel[]) => {
         setNews(newsList);
+        cache.news = newsList; // Сохраняем в кеш
       };
 
       const connectionListener = (status: ConnectionStatus) => {
         setConnectionStatus(status);
       };
 
+      // Инициализируем уведомления только при необходимости
+      if (isAdmin || hasData) {
+        initNotifications();
+        requestNotificationPermissions();
+      }
+
+      // Запрашиваем геопозицию только если администратор
+      // или если есть новости с координатами
+      if (isAdmin || news.some(hasValidCoordinates)) {
+        requestLocationPermissions();
+      }
+
       sseService.addNewsListener(newsListener);
       sseService.addConnectionListener(connectionListener);
       notificationService.addNewsUpdateHandler(newsListener);
       notificationService.addConnectionStatusHandler(connectionListener);
 
-      // Connect to SSE server
+      // Подключаемся к SSE серверу
       sseService.connectToSSEServer();
 
-      // Clean if we leave screen
       return () => {
         sseService.removeNewsListener(newsListener);
         sseService.removeConnectionListener(connectionListener);
         notificationService.removeNewsUpdateHandler(newsListener);
         notificationService.removeConnectionStatusHandler(connectionListener);
       };
-    }, [])
+    }, [isAdmin, hasData, initNotifications, requestLocationPermissions, requestNotificationPermissions])
   );
 
-  // clear badge count
-  const handleClearBadges = async () => {
+  const handleClearBadges = useCallback(async () => {
     await notificationService.resetBadgeCount();
     setBadgeCount(0);
-  };
-
-  // Handler for location icon press
-  const handleLocationPress = async (newsItem: NewsModel) => {
-    // Check if news have valid coords
+  }, []);
+  const handleLocationPress = useCallback(async (newsItem: NewsModel) => {
     if (!hasValidCoordinates(newsItem)) {
       Alert.alert(t('no_location'), t('no_location_message'), [{ text: t('ok'), style: 'default' }]);
       return;
     }
 
     try {
-      let currentLocation = userLocation; // take coords
+      let currentLocation = userLocation;
 
       if (locationPermissionStatus !== 'granted') {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -336,24 +412,28 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         }
       }
 
-      // Get curr. location
-      currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setUserLocation(currentLocation);
+      // Получаем текущее местоположение только если разрешение получено
+      if (locationPermissionStatus === 'granted') {
+        currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation(currentLocation);
+        cache.userLocation = currentLocation; // Обновляем кеш
+      }
 
-      // Open maps with directions
+      // Открываем карты с направлениями
       if (newsItem.coordinates) {
         openMapsWithDirections(
           newsItem.coordinates.latitude,
           newsItem.coordinates.longitude,
-          currentLocation.coords.latitude,
-          currentLocation.coords.longitude
+          currentLocation?.coords.latitude,
+          currentLocation?.coords.longitude
         );
       }
     } catch (error) {
       console.error('Error handling location press:', error);
 
+      // Если не удалось получить местоположение, просто показываем место назначения
       if (hasValidCoordinates(newsItem) && newsItem.coordinates) {
         openMapsWithDirections(
           newsItem.coordinates.latitude,
@@ -361,28 +441,26 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
         );
       }
     }
-  };
+  }, [locationPermissionStatus, t, userLocation]);
 
-  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
-  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
-  const cardBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#1E2129' : '$F5F5F5';
-  const linkTextColor = highContrast ? '#FFD700' : isDarkMode ? '#79E3A5' : '$blue600';
-  const statusColors = {
-    [ConnectionStatus.CONNECTED]: '#4CAF50',
-    [ConnectionStatus.CONNECTING]: '#FFC107',
-    [ConnectionStatus.DISCONNECTED]: '#9E9E9E',
-    [ConnectionStatus.ERROR]: '#F44336'
-  };
+  // utility list
+  const utilityList = useMemo(() => {
+    return utilities.map(util => ({
+      title: t(util.key),
+      desc: t(`${util.key}_desc`),
+      url: util.url
+    }));
+  }, [t]);
 
+  // loading screen
   if (isLoading) {
     return (
       <YStack
         flex={1}
         justifyContent="center"
         alignItems="center"
-        backgroundColor={backgroundColor}>
-        <Spinner size="large" color={headerTextColor} />
+        backgroundColor={styles.backgroundColor}>
+        <Spinner size="large" color={styles.headerTextColor} />
       </YStack>
     );
   }
@@ -391,7 +469,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
     <Theme name={isDarkMode ? 'dark' : 'light'}>
       <YStack
         flex={1}
-        backgroundColor={backgroundColor}
+        backgroundColor={styles.backgroundColor}
         paddingTop="$6"
         paddingBottom="$2"
         paddingLeft={isLandscape ? 45 : '$4'}
@@ -404,16 +482,16 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             alignItems={isLandscape ? 'flex-start' : 'center'}
             flexDirection={isLandscape ? 'column' : 'row'}
             gap="$4">
-            <H1 fontSize={textSize + 14} fontWeight="bold" color={headerTextColor}>
+            <H1 fontSize={textSize + 14} fontWeight="bold" color={styles.headerTextColor}>
               UNIMAP
             </H1>
             {hasData ? (
               isLandscape ? (
                 <YStack alignItems="flex-start">
-                  <Text color={subTextColor} fontSize={textSize - 2}>
+                  <Text color={styles.subTextColor} fontSize={textSize - 2}>
                     @{user?.login}
                   </Text>
-                  <Text color={headerTextColor} fontWeight="bold" fontSize={textSize}>
+                  <Text color={styles.headerTextColor} fontWeight="bold" fontSize={textSize}>
                     {user?.getFullName()}
                   </Text>
                   <View
@@ -444,7 +522,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                       </View>
                     )}
                     <Image
-                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                      source={{ uri: `data:image/png;base64,${user?.getAvatarBase64()}` }}
                       style={{ width: 60, height: 60, borderRadius: 30 }}
                     />
                   </View>
@@ -452,10 +530,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               ) : (
                 <XStack alignItems="center" space="$2">
                   <YStack alignItems="flex-end">
-                    <Text color={subTextColor} fontSize={textSize - 2}>
+                    <Text color={styles.subTextColor} fontSize={textSize - 2}>
                       @{user?.login}
                     </Text>
-                    <Text color={headerTextColor} fontWeight="bold" fontSize={textSize}>
+                    <Text color={styles.headerTextColor} fontWeight="bold" fontSize={textSize}>
                       {user?.getFullName()}
                     </Text>
                   </YStack>
@@ -486,14 +564,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                       </View>
                     )}
                     <Image
-                      source={{ uri: `data:image/png;base64,${user.getAvatarBase64()}` }}
+                      source={{ uri: `data:image/png;base64,${user?.getAvatarBase64()}` }}
                       style={{ width: 40, height: 40, borderRadius: 20 }}
                     />
                   </View>
                 </XStack>
               )
             ) : (
-              <Text color={subTextColor} fontSize={textSize - 2}>
+              <Text color={styles.subTextColor} fontSize={textSize - 2}>
                 @guest
               </Text>
             )}
@@ -501,7 +579,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
 
           {!hasData && (
             <YStack alignItems="center" justifyContent="center" flex={1}>
-              <Text color={subTextColor} fontSize={textSize}>
+              <Text color={styles.subTextColor} fontSize={textSize}>
                 No data found. Showing default content.
               </Text>
             </YStack>
@@ -527,8 +605,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                     : t('location_disabled')}
                 </Text>
                 <XStack space="$2" alignItems="center">
-                  <Text color={subTextColor}>Status: </Text>
-                  <Text color={statusColors[connectionStatus]}>
+                  <Text color={styles.subTextColor}>Status: </Text>
+                  <Text color={styles.statusColors[connectionStatus]}>
                     {connectionStatus === ConnectionStatus.CONNECTED ? t('connected') :
                       connectionStatus === ConnectionStatus.CONNECTING ? t('connecting') :
                         connectionStatus === ConnectionStatus.DISCONNECTED ? t('disconnected') :
@@ -538,7 +616,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 {badgeCount > 0 && (
                   <Button
                     backgroundColor={isDarkMode ? '#2A2F3B' : '#CCCCCC'}
-                    color={headerTextColor}
+                    color={styles.headerTextColor}
                     onPress={handleClearBadges}
                   >
                     <Text>
@@ -555,10 +633,10 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
                 <MaterialIcons
                   name="article"
                   size={20}
-                  color={subTextColor}
+                  color={styles.subTextColor}
                   style={{ marginRight: 8 }}
                 />
-                <Text fontSize={textSize + 2} color={subTextColor}>
+                <Text fontSize={textSize + 2} color={styles.subTextColor}>
                   {t('news_upd')}
                 </Text>
               </XStack>
@@ -566,18 +644,18 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               {/* Status indicators for admins */}
               {isAdmin && (
                 connectionStatus === ConnectionStatus.CONNECTED ? (
-                  <Text fontSize={12} color={statusColors[ConnectionStatus.CONNECTED]}>
+                  <Text fontSize={12} color={styles.statusColors[ConnectionStatus.CONNECTED]}>
                     {t('live')}
                   </Text>
                 ) : connectionStatus === ConnectionStatus.CONNECTING ? (
                   <XStack alignItems="center" space="$1">
-                    <Spinner size="small" color={statusColors[ConnectionStatus.CONNECTING]} />
-                    <Text fontSize={12} color={statusColors[ConnectionStatus.CONNECTING]}>
+                    <Spinner size="small" color={styles.statusColors[ConnectionStatus.CONNECTING]} />
+                    <Text fontSize={12} color={styles.statusColors[ConnectionStatus.CONNECTING]}>
                       {t('connecting')}
                     </Text>
                   </XStack>
                 ) : (
-                  <Text fontSize={12} color={statusColors[ConnectionStatus.DISCONNECTED]}>
+                  <Text fontSize={12} color={styles.statusColors[ConnectionStatus.DISCONNECTED]}>
                     {t('offline')}
                   </Text>
                 )
@@ -587,7 +665,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             {/* Connection Status Message for admins*/}
             {isAdmin && connectionStatus === ConnectionStatus.CONNECTING && (
               <YStack alignItems="center" marginBottom="$3">
-                <Text color={statusColors[ConnectionStatus.CONNECTING]} fontSize={14}>
+                <Text color={styles.statusColors[ConnectionStatus.CONNECTING]} fontSize={14}>
                   {t('attempting_connection')}
                 </Text>
               </YStack>
@@ -597,8 +675,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             {connectionStatus === ConnectionStatus.DISCONNECTED && (
               <YStack alignItems="center" marginBottom="$3">
                 <XStack alignItems="center" space="$2">
-                  <Spinner size="small" color={statusColors[ConnectionStatus.CONNECTING]} />
-                  <Text color={statusColors[ConnectionStatus.DISCONNECTED]} fontSize={14}>
+                  <Spinner size="small" color={styles.statusColors[ConnectionStatus.CONNECTING]} />
+                  <Text color={styles.statusColors[ConnectionStatus.DISCONNECTED]} fontSize={14}>
                     {isAdmin ? t('trying_to_connect') : t('loading_news')}
                   </Text>
                 </XStack>
@@ -608,15 +686,15 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
             {/* News Cards */}
             {news.length === 0 ? (
               <YStack
-                backgroundColor={cardBackgroundColor}
+                backgroundColor={styles.cardBackgroundColor}
                 borderRadius="$2"
                 padding="$4"
                 marginBottom="$3"
                 width="100%"
                 alignItems="center"
               >
-                <MaterialIcons name="info-outline" size={24} color={subTextColor} style={{ marginBottom: 8 }} />
-                <Text fontSize={textSize} color={subTextColor} textAlign="center">
+                <MaterialIcons name="info-outline" size={24} color={styles.subTextColor} style={{ marginBottom: 8 }} />
+                <Text fontSize={textSize} color={styles.subTextColor} textAlign="center">
                   {connectionStatus === ConnectionStatus.CONNECTED
                     ? t('no_news_found')
                     : t('offline_mode')}
@@ -624,14 +702,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               </YStack>
             ) : (
               news.map((newsItem) => (
-                <YStack key={newsItem.id} backgroundColor={cardBackgroundColor} borderRadius="$2" padding="$4" marginBottom="$3" width="100%">
-                  <Text fontSize={textSize + 4} fontWeight="bold" color={headerTextColor} marginBottom="$2">
+                <YStack key={newsItem.id} backgroundColor={styles.cardBackgroundColor} borderRadius="$2" padding="$4" marginBottom="$3" width="100%">
+                  <Text fontSize={textSize + 4} fontWeight="bold" color={styles.headerTextColor} marginBottom="$2">
                     {newsItem.title}
                   </Text>
-                  <Text fontSize={textSize} color={subTextColor} lineHeight={textSize + 6}>
+                  <Text fontSize={textSize} color={styles.subTextColor} lineHeight={textSize + 6}>
                     {newsItem.content}
                   </Text>
-                  <Text fontSize={12} color={subTextColor} position="absolute" top={8} right={8}>
+                  <Text fontSize={12} color={styles.subTextColor} position="absolute" top={8} right={8}>
                     {new Date(newsItem.date_of_creation).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })}
                   </Text>
 
@@ -653,53 +731,38 @@ const HomePage: React.FC<HomePageProps> = ({ navigation }) => {
               ))
             )}
 
+            {/* Utils */}
             <XStack alignItems="center" marginTop="$4" marginBottom="$3">
               <MaterialIcons
                 name="build"
                 size={20}
-                color={subTextColor}
+                color={styles.subTextColor}
                 style={{ marginRight: 8 }}
               />
-              <Text fontSize={textSize + 2} color={subTextColor}>
+              <Text fontSize={textSize + 2} color={styles.subTextColor}>
                 {t('utils')}
               </Text>
             </XStack>
 
-            {[
-              {
-                title: t('fiit_dis'),
-                desc: t('fiit_dis_desc'),
-                url: 'https://discord.gg/dX48acpNS8',
-              },
-              {
-                title: t('fx_com'),
-                desc: t('fx_com_desc'),
-                url: 'https://www.notion.so/FX-com-54cdb158085e4377b832ece310a5603d',
-              },
-              {
-                title: t('mladost'),
-                desc: t('mladost_desc'),
-                url: 'https://protective-april-ef1.notion.site/SD-Mladost-abe968a31d404360810b53acbbb357cc',
-              },
-              { title: t('fiit_tg'), desc: t('fiit_tg_desc'), url: 'https://t.me/fiitstu' },
-            ].map(({ title, desc, url }, i) => (
+            {/* utils list */}
+            {utilityList.map((item, i) => (
               <YStack
                 key={i}
-                backgroundColor={cardBackgroundColor}
+                backgroundColor={styles.cardBackgroundColor}
                 borderRadius="$2"
                 padding="$4"
                 marginBottom="$3"
                 width="100%"
-                onPress={() => openWebLink(url)}>
+                onPress={() => openWebLink(item.url)}>
                 <Text
                   fontSize={textSize + 4}
                   fontWeight="bold"
-                  color={linkTextColor}
+                  color={styles.linkTextColor}
                   marginBottom="$2">
-                  {title}
+                  {item.title}
                 </Text>
-                <Text fontSize={textSize} color={subTextColor}>
-                  {desc}
+                <Text fontSize={textSize} color={styles.subTextColor}>
+                  {item.desc}
                 </Text>
               </YStack>
             ))}

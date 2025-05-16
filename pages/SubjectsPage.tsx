@@ -1,13 +1,37 @@
-import { NavigationProp } from '@react-navigation/native';
+import { NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { ComboBox } from 'components/ComboBox';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, useWindowDimensions } from 'react-native';
-import { YStack, XStack, H1, Text, Theme, View, Input, ScrollView, Spinner, Button } from 'tamagui';
+import { Image, useWindowDimensions, AppState, AppStateStatus } from 'react-native';
+import { YStack, XStack, H1, Text, Theme, View, Input, ScrollView, Button } from 'tamagui';
 
 import { useTheme, getFontSizeValue } from '../components/SettingsController';
 import User from '../components/User';
 import { fetchSubjects, Subject } from '../services/apiService';
+import SkeletonLoader from '../components/SkeletonLoader';
+
+// Cash all data
+const subjectsCache = {
+  user: null as User | null,
+  subjects: [] as Subject[],
+  filteredSubjects: [] as Subject[],
+  lastFetched: 0,
+  hasData: false,
+  searchQuery: '',
+  selectedSemester: '',
+  selectedType: '',
+  selectedLevel: '',
+  connectionStatus: 'DISCONNECTED' as 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR',
+};
+
+// expr. time 30 min.
+const CACHE_EXPIRATION_TIME = 30 * 60 * 1000;
+
+// prevent function recreation
+const shouldForceRefresh = () => {
+  const now = Date.now();
+  return now - subjectsCache.lastFetched > CACHE_EXPIRATION_TIME;
+};
 
 const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigation }) => {
   const { theme, fontSize, highContrast } = useTheme();
@@ -17,88 +41,202 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
-  const [user, setUser] = useState<User | null>(null);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSemester, setSelectedSemester] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState('');
-  const [loading, setLoading] = useState(true);
+  // hooks and states
+  const [user, setUser] = useState<User | null>(() => subjectsCache.user);
+  const [subjects, setSubjects] = useState<Subject[]>(() => subjectsCache.subjects);
+  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>(() => subjectsCache.filteredSubjects.length > 0 ? subjectsCache.filteredSubjects : subjectsCache.subjects);
+  const [searchQuery, setSearchQuery] = useState(() => subjectsCache.searchQuery);
+  const [selectedSemester, setSelectedSemester] = useState(() => subjectsCache.selectedSemester);
+  const [selectedType, setSelectedType] = useState(() => subjectsCache.selectedType);
+  const [selectedLevel, setSelectedLevel] = useState(() => subjectsCache.selectedLevel);
+  const [loading, setLoading] = useState(!subjectsCache.hasData);
   const [error, setError] = useState<string | null>(null);
-  const [hasData, setHasData] = useState(false);
+  const [hasData, setHasData] = useState(subjectsCache.hasData);
+  const [connectionStatus, setConnectionStatus] = useState(subjectsCache.connectionStatus);
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const initialMount = useRef(true);
+  const dataFetchedRef = useRef(false);
 
-  const headerTextColor = highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600';
-  const subTextColor = highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800';
-  const inputBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const itemBackgroundColor = highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5';
-  const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
+  // Memoized styles
+  const styles = React.useMemo(() => ({
+    headerTextColor: highContrast ? '#FFD700' : isDarkMode ? '#FFFFFF' : '$blue600',
+    subTextColor: highContrast ? '#FFFFFF' : isDarkMode ? '#A0A7B7' : '$gray800',
+    inputBackgroundColor: highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5',
+    itemBackgroundColor: highContrast ? '#000000' : isDarkMode ? '#2A2F3B' : '#F5F5F5',
+    backgroundColor: highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50',
+    statusColors: {
+      CONNECTED: '#4CAF50',
+      CONNECTING: '#FFC107',
+      DISCONNECTED: '#9E9E9E',
+      ERROR: '#F44336'
+    }
+  }), [highContrast, isDarkMode]);
 
-  useEffect(() => {
-    let isMounted = true;
+  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
+    if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      console.log('App has come to the foreground in SubjectsPage');
 
-    const fetchAndParseUser = async () => {
-      try {
-        const storedUser = await User.fromStorage();
-        if (isMounted) {
-          setUser(storedUser ?? null);
-          setHasData(!!storedUser);
-        }
-      } catch {
-        if (isMounted) setHasData(false);
+      // Check if cache is expired
+      if (shouldForceRefresh()) {
+        console.log('Cache expired, refreshing subjects data');
+        setConnectionStatus('CONNECTING');
+        loadSubjects(true);
       }
-    };
+    }
+    appState.current = nextAppState;
+  }, []);
 
-    const loadSubjects = async () => {
-      if (isMounted) setLoading(true);
+  // Optimized subjects data loading
+  const loadSubjects = useCallback(async (forceRefresh = false) => {
+    // Skip loading if we have cached data
+    if (subjectsCache.subjects.length > 0 && !forceRefresh) {
+      console.log('Using cached subjects data');
+      setSubjects(subjectsCache.subjects);
+      setFilteredSubjects(subjectsCache.filteredSubjects.length > 0 ?
+        subjectsCache.filteredSubjects : subjectsCache.subjects);
+      setConnectionStatus(subjectsCache.connectionStatus);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const data = await fetchSubjects();
-        if (isMounted && data) {
-          setSubjects(data);
-          setFilteredSubjects(data);
-          setError(null);
-        }
-      } catch (err) {
-        console.error(' Error loading subjects:', err);
-        if (isMounted) {
-          setError(t('failed_to_load_subjects'));
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+    setLoading(true);
+    setConnectionStatus('CONNECTING');
+
+    try {
+      const data = await fetchSubjects();
+      if (data) {
+        setSubjects(data);
+        // Apply any existing filters
+        const filtered = applyFilters(data, searchQuery, selectedSemester, selectedType, selectedLevel);
+        setFilteredSubjects(filtered);
+
+        // Update cache
+        subjectsCache.subjects = data;
+        subjectsCache.filteredSubjects = filtered;
+        subjectsCache.lastFetched = Date.now();
+        subjectsCache.connectionStatus = 'CONNECTED';
+
+        setConnectionStatus('CONNECTED');
+        setError(null);
       }
-    };
+    } catch (err) {
+      console.error('Error loading subjects:', err);
+      setError(t('failed_to_load_subjects'));
+      setConnectionStatus('ERROR');
+      subjectsCache.connectionStatus = 'ERROR';
+    } finally {
+      setLoading(false);
+    }
+  }, [t, searchQuery, selectedSemester, selectedType, selectedLevel]);
 
-    fetchAndParseUser();
-    loadSubjects();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [t]);
-
-  useEffect(() => {
-    const filtered = subjects.filter((subject) => {
+  // Filter application utility function
+  const applyFilters = (subjects: Subject[], query: string, semester: string, type: string, level: string) => {
+    return subjects.filter((subject) => {
       const matchesSearch =
-        subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subject.code.toLowerCase().includes(searchQuery.toLowerCase());
+        subject.name.toLowerCase().includes(query.toLowerCase()) ||
+        subject.code.toLowerCase().includes(query.toLowerCase());
 
-      const matchesSemester = selectedSemester ? subject.semester === selectedSemester : true;
-      const matchesType = selectedType ? subject.type === selectedType : true;
-      const matchesLevel = selectedLevel ? subject.studyType === selectedLevel : true;
+      const matchesSemester = semester ? subject.semester === semester : true;
+      const matchesType = type ? subject.type === type : true;
+      const matchesLevel = level ? subject.studyType === level : true;
 
       return matchesSearch && matchesSemester && matchesType && matchesLevel;
     });
+  };
 
+  // Fetch user data from storage or cache with improved error handling
+  const fetchAndParseUser = useCallback(async () => {
+    // If we have cached user - use it
+    if (subjectsCache.user) {
+      setUser(subjectsCache.user);
+      setHasData(true);
+      return;
+    }
+
+    try {
+      const storedUser = await User.fromStorage();
+      if (storedUser) {
+        setUser(storedUser);
+        subjectsCache.user = storedUser;
+        subjectsCache.hasData = true;
+        setHasData(true);
+      }
+    } catch (error) {
+      console.error('Error loading user in SubjectsPage:', error);
+      setHasData(false);
+    }
+  }, []);
+
+  // setup lazy loading of user data
+  useEffect(() => {
+    let isMounted = true;
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    if (initialMount.current) {
+      console.log('Initial mount of SubjectsPage');
+      fetchAndParseUser();
+      if (!dataFetchedRef.current) {
+        loadSubjects();
+        dataFetchedRef.current = true;
+      }
+      initialMount.current = false;
+    }
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, [handleAppStateChange, fetchAndParseUser, loadSubjects]);
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('SubjectsPage focused');
+
+      if (isInitialMount) {
+        setIsInitialMount(false);
+        return;
+      }
+
+      // Check to refresh data when coming back to screen
+      if (shouldForceRefresh()) {
+        console.log('Cache expired on focus, refreshing subjects data');
+        loadSubjects(true);
+      } else {
+        console.log('Using cached data on focus');
+        // Check that use the latest cached data if not refreshing
+        if (subjectsCache.filteredSubjects.length > 0) {
+          setFilteredSubjects(subjectsCache.filteredSubjects);
+        }
+      }
+
+      return () => {
+        subjectsCache.searchQuery = searchQuery;
+        subjectsCache.selectedSemester = selectedSemester;
+        subjectsCache.selectedType = selectedType;
+        subjectsCache.selectedLevel = selectedLevel;
+      };
+    }, [loadSubjects, isInitialMount, searchQuery, selectedSemester, selectedType, selectedLevel])
+  );
+
+
+  // Apply filters when search criteria changes
+  useEffect(() => {
+    const filtered = applyFilters(subjects, searchQuery, selectedSemester, selectedType, selectedLevel);
     setFilteredSubjects(filtered);
+
+    // Update cache
+    subjectsCache.filteredSubjects = filtered;
+    subjectsCache.searchQuery = searchQuery;
+    subjectsCache.selectedSemester = selectedSemester;
+    subjectsCache.selectedType = selectedType;
+    subjectsCache.selectedLevel = selectedLevel;
   }, [searchQuery, selectedSemester, selectedType, selectedLevel, subjects]);
 
+  // Handlers for filters
   const handleRetryLoad = () => {
     setError(null);
-    setLoading(true);
-    setSubjects([]);
+    loadSubjects(true); // Force refresh
   };
 
   const handleSemesterChange = (value: string) => {
@@ -125,18 +263,18 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
     }
   };
 
-  if (loading) {
+  // Show skeleton loader on initial loading
+  if (loading && !subjectsCache.hasData) {
     return (
-      <YStack
-        flex={1}
-        justifyContent="center"
-        alignItems="center"
-        backgroundColor={backgroundColor}>
-        <Spinner size="large" color={headerTextColor} />
-        <Text color={subTextColor} marginTop="$4">
-          {t('loading_subjects')}
-        </Text>
-      </YStack>
+      <Theme name={isDarkMode ? 'dark' : 'light'}>
+        <SkeletonLoader
+          type="subject"
+          itemCount={5}
+          isLandscape={isLandscape}
+          backgroundColor={isDarkMode ? '#2A2F3B' : '#E0E0E0'}
+          highlightColor={isDarkMode ? '#3D4452' : '#F0F0F0'}
+        />
+      </Theme>
     );
   }
 
@@ -144,7 +282,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
     <Theme name={isDarkMode ? 'dark' : 'light'}>
       <YStack
         flex={1}
-        backgroundColor={backgroundColor}
+        backgroundColor={styles.backgroundColor}
         paddingTop="$6"
         paddingBottom="$2"
         paddingLeft={isLandscape ? 45 : '$4'}
@@ -160,7 +298,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
             <H1
               fontSize={isLandscape ? textSize + 18 : textSize + 14}
               fontWeight="bold"
-              color={headerTextColor}>
+              color={styles.headerTextColor}>
               UNIMAP
             </H1>
             {!isLandscape && (
@@ -168,15 +306,15 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                 <YStack alignItems="flex-end">
                   {hasData ? (
                     <>
-                      <Text color={subTextColor} fontSize={textSize - 4}>
+                      <Text color={styles.subTextColor} fontSize={textSize - 4}>
                         @{user?.login}
                       </Text>
-                      <Text color={headerTextColor} fontWeight="bold">
+                      <Text color={styles.headerTextColor} fontWeight="bold">
                         {user?.getFullName()}
                       </Text>
                     </>
                   ) : (
-                    <Text color={subTextColor} fontSize={textSize - 4}>
+                    <Text color={styles.subTextColor} fontSize={textSize - 4}>
                       @guest
                     </Text>
                   )}
@@ -203,7 +341,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
 
           {/* Search & Filters */}
           <YStack marginTop="$4" space="$4" marginBottom={isLandscape ? 48 : 8}>
-            <Text fontSize={textSize + 15} fontWeight="bold" color={headerTextColor}>
+            <Text fontSize={textSize + 15} fontWeight="bold" color={styles.headerTextColor}>
               {t('subjects')}
             </Text>
 
@@ -211,16 +349,16 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('search_subj')}
-              placeholderTextColor={subTextColor}
+              placeholderTextColor={styles.subTextColor}
               opacity={0.6}
-              backgroundColor={inputBackgroundColor}
+              backgroundColor={styles.inputBackgroundColor}
               borderRadius={8}
               padding="$3"
-              color={headerTextColor}
+              color={styles.headerTextColor}
             />
 
             <YStack space="$2">
-              <Text color={subTextColor} fontSize={textSize}>
+              <Text color={styles.subTextColor} fontSize={textSize}>
                 {t('filters')}
               </Text>
               {isLandscape ? (
@@ -236,8 +374,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                           { label: 'LS', value: 'LS' },
                         ]}
                         placeholder={t('semester')}
-                        labelColor={subTextColor}
-                        textColor={headerTextColor}
+                        labelColor={styles.subTextColor}
+                        textColor={styles.headerTextColor}
                       />
                       <ComboBox
                         view={'horizontal'}
@@ -248,8 +386,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                           { label: 'Optional', value: 'povinné-voliteľný' },
                         ]}
                         placeholder={t('subj_type')}
-                        labelColor={subTextColor}
-                        textColor={headerTextColor}
+                        labelColor={styles.subTextColor}
+                        textColor={styles.headerTextColor}
                       />
                       <ComboBox
                         view={'horizontal'}
@@ -260,8 +398,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                           { label: 'Engineer', value: 'inženierský' },
                         ]}
                         placeholder={t('study_lvl')}
-                        labelColor={subTextColor}
-                        textColor={headerTextColor}
+                        labelColor={styles.subTextColor}
+                        textColor={styles.headerTextColor}
                       />
                     </XStack>
                   </ScrollView>
@@ -277,8 +415,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                       { label: 'LS', value: 'LS' },
                     ]}
                     placeholder={t('semester')}
-                    labelColor={subTextColor}
-                    textColor={headerTextColor}
+                    labelColor={styles.subTextColor}
+                    textColor={styles.headerTextColor}
                   />
                   <ComboBox
                     view={'horizontal'}
@@ -289,8 +427,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                       { label: 'Optional', value: 'povinné-voliteľný' },
                     ]}
                     placeholder={t('subj_type')}
-                    labelColor={subTextColor}
-                    textColor={headerTextColor}
+                    labelColor={styles.subTextColor}
+                    textColor={styles.headerTextColor}
                   />
                   <ComboBox
                     view={'horizontal'}
@@ -301,8 +439,8 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                       { label: 'Engineer', value: 'inženierský' },
                     ]}
                     placeholder={t('study_lvl')}
-                    labelColor={subTextColor}
-                    textColor={headerTextColor}
+                    labelColor={styles.subTextColor}
+                    textColor={styles.headerTextColor}
                   />
                 </XStack>
               )}
@@ -320,9 +458,17 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
               paddingLeft: isLandscape ? 19 : 0,
             }}>
             <YStack space="$2">
-              <Text color={subTextColor} fontSize={textSize}>
+              <Text color={styles.subTextColor} fontSize={textSize}>
                 {t('result')} ({filteredSubjects.length})
               </Text>
+
+              {/* Loading indicator when refresh */}
+              {loading && subjectsCache.hasData && (
+                <Text color={styles.subTextColor} fontSize={textSize - 2} marginBottom="$2">
+                  {t('updating')}...
+                </Text>
+              )}
+
               {error ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
                   <Text color="$red10" fontSize={textSize}>
@@ -334,11 +480,11 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                 </YStack>
               ) : filteredSubjects.length === 0 ? (
                 <YStack justifyContent="center" alignItems="center" paddingVertical="$10">
-                  <Text color={subTextColor} fontSize={textSize}>
+                  <Text color={styles.subTextColor} fontSize={textSize}>
                     {t('no_subjects_found')}
                   </Text>
                   {searchQuery && (
-                    <Text color={subTextColor} marginTop="$2">
+                    <Text color={styles.subTextColor} marginTop="$2">
                       {t('adjust_search')}
                     </Text>
                   )}
@@ -348,7 +494,7 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                   {filteredSubjects.map((subject) => (
                     <YStack
                       key={subject.code}
-                      backgroundColor={itemBackgroundColor}
+                      backgroundColor={styles.itemBackgroundColor}
                       borderRadius={8}
                       padding="$3"
                       space="$1"
@@ -356,18 +502,18 @@ const SubjectsPage: React.FC<{ navigation: NavigationProp<any> }> = ({ navigatio
                         navigation.navigate('SubjectSubPage', { subjectId: subject.code })
                       }>
                       <XStack justifyContent="space-between">
-                        <Text color={headerTextColor} fontSize={textSize + 2} fontWeight="bold">
+                        <Text color={styles.headerTextColor} fontSize={textSize + 2} fontWeight="bold">
                           {subject.name}
                         </Text>
-                        <Text color={subTextColor} fontSize={textSize - 2}>
+                        <Text color={styles.subTextColor} fontSize={textSize - 2}>
                           {subject.code}
                         </Text>
                       </XStack>
-                      <Text color={subTextColor} fontSize={textSize - 3}>
+                      <Text color={styles.subTextColor} fontSize={textSize - 3}>
                         {subject.type}, {subject.semester}, {subject.credits} {t('credits')}
                       </Text>
                       {subject.languages && subject.languages.length > 0 && (
-                        <Text color={subTextColor} fontSize={textSize - 3}>
+                        <Text color={styles.subTextColor} fontSize={textSize - 3}>
                           {t('languages')}: {subject.languages.join(', ')}
                         </Text>
                       )}

@@ -159,7 +159,7 @@ export class SseService {
         NotificationService.notifyNewsUpdate(updatedNews);
       }
 
-      console.log('News list updated, total news:', this.newsList.length);
+//      console.log('News list updated, total news:', this.newsList.length);
     } catch (e) {
       console.error('Error parsing news list:', e);
     }

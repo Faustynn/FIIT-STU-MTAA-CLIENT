@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationProp } from '@react-navigation/native';
+import { NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, TextInput, FlatList, TouchableOpacity, ScrollView, useWindowDimensions, } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -20,6 +20,13 @@ import {
   deleteUser,
   updateUserAvatar,
 } from '../services/apiService';
+
+// Cash all data
+const cache = {
+  user: null as User | null,
+  isPremium: false,
+  filteredAvatars: [] as typeof standardAvatars,
+};
 
 type AvatarSelectionModalProps = {
   isVisible: boolean;
@@ -51,16 +58,20 @@ type ProfilePageProps = {
   navigation: NavigationProp<any>;
 };
 
-// Изменения в компоненте AvatarSelectionModal
 const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({ isVisible, onClose, onSelectAvatar, onTakePhoto, onChooseFromGallery, isDarkMode, textSize, highContrast, }) => {
   const { t } = useTranslation();
-  const [isPremium, setIsPremium] = useState(false);
-  const [filteredAvatars, setFilteredAvatars] = useState<typeof standardAvatars>([]);
+  const [isPremium, setIsPremium] = useState(() => cache.isPremium);
+  const [filteredAvatars, setFilteredAvatars] = useState<typeof standardAvatars>(() => cache.filteredAvatars);
+
+
   useEffect(() => {
     const checkPremiumStatus = async () => {
       if (isVisible) {
-        const premiumStatus = await User.isPremium();
-        setIsPremium(premiumStatus);
+        if (!cache.isPremium) {
+          const premiumStatus = await User.isPremium();
+          setIsPremium(premiumStatus);
+          cache.isPremium = premiumStatus;
+        }
       }
     };
 
@@ -70,18 +81,22 @@ const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({ isVisible, 
   useEffect(() => {
     const filterAvatars = async () => {
       if (isVisible) {
-        const isAdmin = await User.isAdmin();
+        if (cache.filteredAvatars.length === 0) {
+          const isAdmin = await User.isAdmin();
 
-        const filtered = await Promise.all(
-          standardAvatars.map(async (avatar) => {
-            if (avatar.role === 'all') return true;
-            if (avatar.role === 'premium' && isPremium) return true;
-            if (avatar.role === 'admin' && isAdmin) return true;
-            return false;
-          })
-        );
+          const filtered = await Promise.all(
+            standardAvatars.map(async (avatar) => {
+              if (avatar.role === 'all') return true;
+              if (avatar.role === 'premium' && isPremium) return true;
+              if (avatar.role === 'admin' && isAdmin) return true;
+              return false;
+            })
+          );
 
-        setFilteredAvatars(standardAvatars.filter((_, index) => filtered[index]));
+          const newFilteredAvatars = standardAvatars.filter((_, index) => filtered[index]);
+          setFilteredAvatars(newFilteredAvatars);
+          cache.filteredAvatars = newFilteredAvatars;
+        }
       }
     };
 
@@ -195,15 +210,16 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   // Form states
   const [newUsername, setNewUsername] = useState('');
   const [email, setEmail] = useState('');
-
-  // App states
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasData, setHasData] = useState(false);
+  const [user, setUser] = useState<User | null>(() => cache.user);
+  const [isLoading, setIsLoading] = useState(!cache.user);
+  const [hasData, setHasData] = useState(!!cache.user);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
+  const firstRenderRef = useRef(true);
+  const hasInitializedRef = useRef(!!cache.user);
+  const [isPremium, setIsPremium] = useState(() => cache.isPremium);
 
   // Theme colors
   const backgroundColor = highContrast ? '#000000' : isDarkMode ? '#191C22' : '$gray50';
@@ -214,43 +230,89 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
   const secondaryButtonColor = highContrast ? '#FFA500' : isDarkMode ? '#79E3A5' : '#4A86E8';
   const dangerButtonColor = highContrast ? '#FF4444' : '#FF617D';
 
-  const [isPremium, setIsPremium] = useState(false);
-
-  useEffect(() => {
-    const checkPremiumStatus = async () => {
+  // Check premium status
+  const checkPremiumStatus = useCallback(async () => {
+    try {
       const premiumStatus = await User.isPremium();
       setIsPremium(premiumStatus);
-    };
-
-    checkPremiumStatus();
+      cache.isPremium = premiumStatus;
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+    }
   }, []);
 
-  useEffect(() => {
-    const fetchAndParseUser = async () => {
-      try {
-        const storedUser = await User.fromStorage();
-        if (storedUser) {
-          setUser(storedUser);
-          setNewUsername(storedUser.username);
-          setHasData(true);
-        } else {
-          setHasData(false);
+  // take user data
+  const fetchUserData = useCallback(async () => {
+    // Skip if already in cache
+    if (cache.user) return;
+
+    setIsLoading(true);
+    try {
+      const storedUser = await User.fromStorage();
+      if (storedUser) {
+        setUser(storedUser);
+        setNewUsername(storedUser.username);
+        setHasData(true);
+        cache.user = storedUser;
+
+        // Update premium status
+        if (!cache.isPremium) {
+          const premiumStatus = await User.isPremium();
+          setIsPremium(premiumStatus);
+          cache.isPremium = premiumStatus;
         }
-      } catch (error) {
-        console.error(t('error_fetching_user'), error);
-        setHasData(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    fetchAndParseUser();
-  }, []);
+        hasInitializedRef.current = true;
+      } else {
+        setHasData(false);
+      }
+    } catch (error) {
+      console.error(t('error_fetching_user'), error);
+      setHasData(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
+
+
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasInitializedRef.current) {
+        fetchUserData();
+      }
+
+      setError(null);
+      setSuccessMessage(null);
+
+      // Check premium status
+      if (hasData && !firstRenderRef.current) {
+        checkPremiumStatus();
+      }
+
+      firstRenderRef.current = false;
+
+      return () => {};
+    }, [fetchUserData, hasData, checkPremiumStatus])
+  );
+
+  // Initial data load on mount
+  useEffect(() => {
+    if (!hasInitializedRef.current) {
+      fetchUserData();
+    }
+  }, [fetchUserData]);
 
   const handleLogout = async () => {
+    // Clear cache when logging out
+    cache.user = null;
+    cache.isPremium = false;
+    cache.filteredAvatars = [];
+
     await AsyncStorage.clear();
     setUser(null);
     setHasData(false);
+    hasInitializedRef.current = false;
     navigation.navigate('Login');
   };
 
@@ -271,6 +333,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
           const updatedUser = new User({ ...user, username: newUsername.trim() });
           await updatedUser.saveToStorage();
           setUser(updatedUser);
+          cache.user = updatedUser; // Update cache
         }
       } else {
         setError(t('change_username_failed'));
@@ -298,8 +361,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         const updatedUser = new User({ ...user, premium: true });
         await updatedUser.saveToStorage();
         setUser(updatedUser);
+        cache.user = updatedUser; // Update cache
 
         setIsPremium(true);
+        cache.isPremium = true;
+
+        // Clear filtered avatars
+        cache.filteredAvatars = [];
       } else {
         setError(t('buy_prem_failed'));
         setSuccessMessage(null);
@@ -317,6 +385,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
       if (isChanged) {
         setSuccessMessage(t('delete_user_success'));
         setError(null);
+
+        // Clear cache
+        cache.user = null;
+        cache.isPremium = false;
+        cache.filteredAvatars = [];
+
         setTimeout(() => {
           handleLogout();
         }, 2000);
@@ -349,6 +423,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         const updatedUser = new User({ ...user, email: email.trim() });
         await updatedUser.saveToStorage();
         setUser(updatedUser);
+        cache.user = updatedUser; // Update cache
         setEmail('');
       } else {
         setError(t('email_changed_failed'));
@@ -407,6 +482,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         const updatedUser = new User({ ...user, avatar: base64Data, avatar_name: fileName });
         await updatedUser.saveToStorage();
         setUser(updatedUser);
+        cache.user = updatedUser; // Update cache
         setSuccessMessage(t('avatar_updated_success'));
         setError(null);
       } else {
@@ -453,12 +529,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
         const updatedUser = new User({ ...user, avatar: base64Data, avatar_name: fileName });
         await updatedUser.saveToStorage();
         setUser(updatedUser);
+        cache.user = updatedUser; // Update cache
 
         setSuccessMessage(t('avatar_updated_success'));
         setError(null);
-
-        setUser(null);
-        setTimeout(() => setUser(updatedUser), 0);
       } else {
         setError(t('avatar_update_failed'));
         setSuccessMessage(null);
@@ -523,7 +597,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !hasInitializedRef.current) {
     return (
       <YStack
         flex={1}
