@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-
 import { User } from '../components/User';
+import Toast from 'react-native-toast-message';
+
 
 // API URLs
 export const API_URL = 'http://192.168.0.119:8080/api/unimap_pc/';
@@ -959,29 +960,21 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
       return false;
     }
 
-    const fileExtension = fileName.split('.').pop()?.toLowerCase();
-    let contentType = '';
-    switch (fileExtension) {
-      case 'png':
-        contentType = 'image/png';
-        break;
-      case 'jpeg':
-      case 'jpg':
-        contentType = 'image/jpeg';
-        break;
-      case 'gif':
-        contentType = 'image/gif';
-        break;
-      default:
-        contentType = 'image/jpeg';
-    }
+    const ext = fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
+    const contentTypeMap: Record<string, string> = {
+      png: 'image/png',
+      jpeg: 'image/jpeg',
+      jpg: 'image/jpeg',
+      gif: 'image/gif',
+    };
+    const contentType = contentTypeMap[ext] ?? 'image/jpeg';
 
     const formData = new FormData();
     formData.append('file', {
       uri:
         Platform.OS === 'android'
           ? `data:${contentType};base64,${base64ImageData}`
-          : base64ImageData.includes('data:')
+          : base64ImageData.startsWith('data:')
             ? base64ImageData
             : `data:${contentType};base64,${base64ImageData}`,
       name: fileName,
@@ -990,23 +983,33 @@ export const updateUserAvatar = async (userId: number | undefined, base64ImageDa
 
     const response = await fetch(CHANGE_USER_AVATAR_URL, {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
       body: formData,
     });
 
     if (response.ok) {
-      console.log('Avatar updated successfully');
-
       await User.setAvatarBase64(base64ImageData);
       await User.setAvatarName(fileName);
       return true;
-    } else {
-      const errorText = await response.text();
-      console.error(`Avatar update failed: ${response.status} - ${errorText}`);
+    }
+
+    const errorText = await response.text();
+    if (response.status === 422) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Avatar',
+        text2: 'This avatar is too hot, please choose another one ;)',
+      });
       return false;
     }
+
+    console.error(`Avatar update failed: ${response.status} - ${errorText}`);
+    Toast.show({
+      type: 'error',
+      text1: 'I can\'t change your avatar',
+      text2: 'Try again later.',
+    });
+    return false;
   } catch (error) {
     console.error('Change avatar request failed:', error);
     return false;

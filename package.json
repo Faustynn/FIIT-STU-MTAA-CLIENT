@@ -49,6 +49,7 @@
     "react-native-match-media-polyfill": "^1.0.3",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "^4.10.0",
+    "react-native-toast-message": "^2.3.0",
     "react-native-uuid": "^2.0.3",
     "react-native-vector-icons": "10.2.0",
     "tamagui": "1.126.8"
